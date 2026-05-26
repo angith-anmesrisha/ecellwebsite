@@ -1,72 +1,115 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [showLinks, setShowLinks] = useState(false);
+  
+  const lastScrollY = useRef(0);
 
-  // Detect scroll to shrink and blur the navbar
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll);
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // 1. If user scrolls DOWN past 100px, expand to show links
+      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+        setShowLinks(true);
+      } 
+      // 2. If user scrolls UP, collapse back to just the logo
+      else if (currentScrollY < lastScrollY.current) {
+        setShowLinks(false);
+        setIsOpen(false);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
     <>
-      <motion.nav
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-          scrolled ? "py-3 bg-black/60 backdrop-blur-md border-b border-white/10 shadow-2xl" : "py-6 bg-transparent"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-6 md:px-10 flex justify-between items-center">
-          <div className="relative flex items-center">
-            <Image 
-              src="/ecell-logo.png" 
-              alt="BIMTECH E-Cell Logo"
-              width={scrolled ? 100 : 120} 
-              height={40} 
-              style={{ height: 'auto' }}
-              className="object-contain transition-all duration-300"
-            />
+      {/* Centered Navbar Controller Wrap */}
+      <div className="fixed top-6 left-0 w-full flex justify-center px-6 z-50 pointer-events-none">
+        <motion.nav
+          layout
+          animate={{
+            borderRadius: "9999px"
+          }}
+          transition={{ type: "spring", stiffness: 300, damping: 32 }}
+          className="pointer-events-auto flex items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 shadow-2xl px-5 h-12 min-h-[48px]"
+        >
+          {/* Inner flex layout mapping */}
+          <div className="flex items-center justify-between w-full h-full gap-6">
+            
+            {/* Logo Container - Clean, centered alignment bounds */}
+            <div className="relative h-7 w-24 flex items-center shrink-0">
+              <Image 
+                src="/ecell-logo.png" 
+                alt="BIMTECH E-Cell Logo"
+                fill
+                priority
+                sizes="120px"
+                className="object-contain object-center"
+              />
+            </div>
+
+            {/* Desktop Links - Perfectly leveled inside the main coordinate axis */}
+            <AnimatePresence mode="popLayout">
+              {showLinks && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10, filter: "blur(4px)" }}
+                  animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                  exit={{ opacity: 0, x: -10, filter: "blur(4px)" }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  className="hidden md:flex items-center gap-6 h-full"
+                >
+                  <a href="#about" className="text-sm font-medium text-white/70 hover:text-white transition flex items-center h-full">About</a>
+                  <a href="#team" className="text-sm font-medium text-white/70 hover:text-white transition flex items-center h-full">Board</a>
+                  <a href="#contact" className="text-sm font-medium text-white/70 hover:text-white transition flex items-center h-full">Connect</a>
+                  <button className="px-4 py-1 bg-white text-black text-xs font-bold rounded-full hover:bg-gray-200 transition shadow-lg shrink-0 self-center">
+                    Join Us
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Mobile Hamburger Toggle */}
+            <AnimatePresence>
+              {showLinks && (
+                <motion.button 
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="md:hidden text-white flex items-center justify-center h-full" 
+                  onClick={() => setIsOpen(!isOpen)}
+                >
+                  {isOpen ? <X size={18} /> : <Menu size={18} />}
+                </motion.button>
+              )}
+            </AnimatePresence>
+
           </div>
+        </motion.nav>
+      </div>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#about" className="text-sm font-medium text-white/70 hover:text-white transition">About</a>
-            <a href="#team" className="text-sm font-medium text-white/70 hover:text-white transition">Board</a>
-            <button className="px-6 py-2 bg-white text-black font-semibold rounded-full hover:bg-gray-200 transition">
-              Login / Signup
-            </button>
-          </div>
-
-          {/* Mobile Hamburger Toggle */}
-          <button className="md:hidden text-white" onClick={() => setIsOpen(!isOpen)}>
-            {isOpen ? <X size={28} /> : <Menu size={28} />}
-          </button>
-        </div>
-      </motion.nav>
-
-      {/* Mobile Menu Dropdown */}
+      {/* Mobile Dropdown Layout Menu */}
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && showLinks && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-[70px] left-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 z-40 md:hidden flex flex-col items-center py-8 space-y-6 shadow-2xl"
+            exit={{ opacity: 0, y: -10 }}
+            className="fixed top-20 left-6 right-6 bg-black/90 backdrop-blur-xl border border-white/10 z-40 md:hidden flex flex-col items-center py-6 space-y-4 rounded-2xl shadow-2xl"
           >
-            <a href="#about" className="text-lg font-medium text-white/80" onClick={() => setIsOpen(false)}>About</a>
-            <a href="#team" className="text-lg font-medium text-white/80" onClick={() => setIsOpen(false)}>Board</a>
-            <button className="px-8 py-3 mt-4 bg-white text-black font-bold rounded-full w-3/4">
-              Login / Signup
-            </button>
+            <a href="#about" className="text-base font-medium text-white/80" onClick={() => setIsOpen(false)}>About</a>
+            <a href="#team" className="text-base font-medium text-white/80" onClick={() => setIsOpen(false)}>Board</a>
+            <a href="#contact" className="text-base font-medium text-white/80" onClick={() => setIsOpen(false)}>Connect</a>
           </motion.div>
         )}
       </AnimatePresence>
