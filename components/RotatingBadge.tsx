@@ -24,14 +24,17 @@ export default function RotatingBadge() {
         </svg>
       </div>
 
-      {/* Center Static Container - Replaced text with your Logo */}
-      <div className="absolute z-10 w-20 h-20 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center shadow-2xl p-3">
+      {}
+      {/* Center Static Container - Solid White for clean visibility */}
+      {/* Center Static Container - High-opacity frosted glass with drop shadow */}
+      <div className="absolute z-10 w-20 h-20 bg-white/80 backdrop-blur-xl border border-white/40 rounded-full flex items-center justify-center shadow-2xl p-2.5">
         <Image 
           src="/ecell-logo.png" 
           alt="BIMTECH E-Cell Center Logo"
-          width={60} 
-          height={60} 
-          className="object-contain"
+          width={56} 
+          height={56} 
+          style={{ height: 'auto' }}
+          className="object-contain drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]"
         />
       </div>
     </div>
