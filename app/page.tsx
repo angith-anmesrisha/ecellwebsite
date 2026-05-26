@@ -1,4 +1,4 @@
-"use client"; // Required because we are tracking scroll state
+"use client";
 
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -7,6 +7,7 @@ import InfiniteMarquee from '@/components/InfiniteMarquee';
 import AnimatedWord from '@/components/AnimatedWord';
 import Navbar from '@/components/Navbar';
 import TeamCard from '@/components/TeamCard';
+import ConnectSection from '@/components/ConnectSection';
 
 export default function Home() {
   const containerRef = useRef(null);
@@ -15,7 +16,7 @@ export default function Home() {
     offset: ["start start", "end start"],
   });
 
-  // Parallax translation: The background moves 50% slower than the foreground
+  // Parallax translation: The background grid moves 50% slower than the content layers
   const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
   return (
@@ -27,13 +28,14 @@ export default function Home() {
         className="absolute inset-0 bg-grid-pattern opacity-50 z-0 h-[200vh]" 
       />
 
+      {/* Glassmorphism Floating Sticky Header */}
       <Navbar />
 
       {/* Hero Section */}
       <main className="relative z-10 flex flex-col pt-40 sm:pt-44 md:pt-48 pb-20">
         <div className="flex-1 flex flex-col lg:flex-row items-center justify-between px-6 md:px-10 max-w-7xl mx-auto w-full gap-12 lg:gap-0">
           
-          {/* Left Column: Typography */}
+          {/* Left Column: Typography Layout */}
           <div className="flex-1 space-y-4 md:space-y-6 text-center lg:text-left z-20">
             <p className="text-blue-500 font-medium tracking-widest uppercase text-xs md:text-sm">
               Where Aspiration Meets Opportunity
@@ -47,18 +49,19 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Right Column: Rotational Graphic */}
+          {/* Right Column: High-End Rotational Graphic Widget */}
           <div className="flex-1 flex justify-center items-center scale-75 md:scale-100 z-20">
             <RotatingBadge />
           </div>
         </div>
 
+        {/* Rolling Banner */}
         <div className="w-full mt-24 z-20">
           <InfiniteMarquee />
         </div>
       </main>
 
-      {/* Team Board Section */}
+      {/* Executive Board Section */}
       <section id="team" className="relative z-10 px-6 md:px-10 max-w-7xl mx-auto py-32">
         <div className="mb-16">
           <h2 className="text-4xl md:text-5xl font-black tracking-tight">THE <span className="text-blue-500">BOARD.</span></h2>
@@ -72,6 +75,9 @@ export default function Home() {
           <TeamCard name="John Smith" role="Operations Head" />
         </div>
       </section>
+
+      {/* Premium Social Links & Contact Form Component */}
+      <ConnectSection />
 
     </div>
   );

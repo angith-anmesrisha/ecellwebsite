@@ -32,6 +32,7 @@ export default function Navbar() {
               alt="BIMTECH E-Cell Logo"
               width={scrolled ? 100 : 120} 
               height={40} 
+              style={{ height: 'auto' }}
               className="object-contain transition-all duration-300"
             />
           </div>
