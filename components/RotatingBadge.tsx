@@ -1,4 +1,7 @@
+"use client";
+
 import React from 'react';
+import Image from 'next/image'; // Import the Next.js optimized Image component
 
 export default function RotatingBadge() {
   return (
@@ -12,7 +15,7 @@ export default function RotatingBadge() {
           {/* Defined circular path */}
           <path id="circlePath" d="M 50, 50 m -40, 0 a 40,40 0 1,1 80,0 a 40,40 0 1,1 -80,0" fill="transparent" />
           
-          {/* Updated text with correct spelling and slightly reduced font size */}
+          {/* Text with correct formatting */}
           <text className="text-[9px] font-bold uppercase tracking-widest fill-white/80">
             <textPath href="#circlePath" startOffset="0%">
               • INNOVATION • ENTREPRENEURSHIP • BIMTECH E-CELL • 
@@ -21,9 +24,15 @@ export default function RotatingBadge() {
         </svg>
       </div>
 
-      {/* Center Static Logo or Icon */}
-      <div className="absolute z-10 w-20 h-20 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center shadow-2xl">
-        <span className="text-white font-bold text-xl">EC</span>
+      {/* Center Static Container - Replaced text with your Logo */}
+      <div className="absolute z-10 w-20 h-20 bg-white/10 backdrop-blur-md border border-white/20 rounded-full flex items-center justify-center shadow-2xl p-3">
+        <Image 
+          src="/ecell-logo.png" 
+          alt="BIMTECH E-Cell Center Logo"
+          width={60} 
+          height={60} 
+          className="object-contain"
+        />
       </div>
     </div>
   );
