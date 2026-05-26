@@ -42,19 +42,19 @@ export default function Navbar() {
             borderRadius: "9999px"
           }}
           transition={{ type: "spring", stiffness: 300, damping: 32 }}
-          className="pointer-events-auto flex items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 shadow-2xl px-5 h-12 min-h-[48px]"
+          className="pointer-events-auto flex items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 shadow-2xl px-6 h-16 min-h-[64px]"
         >
           {/* Inner flex layout mapping */}
-          <div className="flex items-center justify-between w-full h-full gap-6">
+          <div className="flex items-center justify-between w-full h-full gap-8">
             
-            {/* Logo Container - Clean, centered alignment bounds */}
-            <div className="relative h-7 w-24 flex items-center shrink-0">
+            {/* Logo Container - Scaled up for peak clarity and legibility */}
+            <div className="relative h-16 w-40 flex items-center shrink-0">
               <Image 
                 src="/ecell-logo.png" 
                 alt="BIMTECH E-Cell Logo"
                 fill
                 priority
-                sizes="120px"
+                sizes="180px"
                 className="object-contain object-center"
               />
             </div>
