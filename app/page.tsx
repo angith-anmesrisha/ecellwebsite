@@ -30,7 +30,7 @@ export default function Home() {
       <Navbar />
 
       {/* Hero Section */}
-      <main className="relative z-10 flex flex-col pt-32 md:pt-48 pb-20">
+      <main className="relative z-10 flex flex-col pt-40 sm:pt-44 md:pt-48 pb-20">
         <div className="flex-1 flex flex-col lg:flex-row items-center justify-between px-6 md:px-10 max-w-7xl mx-auto w-full gap-12 lg:gap-0">
           
           {/* Left Column: Typography */}
