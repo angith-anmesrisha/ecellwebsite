@@ -9,6 +9,7 @@ import Navbar from '@/components/Navbar';
 import TeamCard from '@/components/TeamCard';
 import ConnectSection from '@/components/ConnectSection';
 import PitchSimulator from "@/components/PitchSimulator";
+import AiStories from "@/components/AiStories";
 
 // Curated aesthetic quotes list
 const STARTUP_QUOTES = [
@@ -145,6 +146,14 @@ export default function Home() {
             <InfiniteMarquee />
           </div>
         </main>
+        {/* Live AI News Stories Feed Panel */}
+        <section id="ai-feed" className="relative z-10 py-12 border-b border-white/5">
+          <div className="text-center mb-6">
+           <h3 className="text-xs font-mono tracking-widest uppercase text-blue-500 font-bold">Live Feed</h3>
+            <h2 className="text-2xl font-black text-white tracking-tight mt-1">Today's Intelligence Core</h2>
+          </div>
+       <AiStories />
+        </section>
 
         {/* Executive Board Section */}
         <section id="team" className="relative z-10 px-6 md:px-10 max-w-7xl mx-auto py-32">
@@ -159,6 +168,7 @@ export default function Home() {
             <TeamCard name="John Smith" role="Operations Head" />
           </div>
         </section>
+        
         {/* Interactive Pitch Simulator Sandbox Section */}
       <section id="simulator" className="relative z-10 px-6 md:px-10 max-w-7xl mx-auto py-24 border-t border-white/5">
         <div className="mb-12 text-center md:text-left">
