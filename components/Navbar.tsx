@@ -4,10 +4,12 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
+import JoinModal from "./JoinModal"; // 1. Imported the modal at the top
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [showLinks, setShowLinks] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); // 2. Setup the modal state tracker
   
   const lastScrollY = useRef(0);
 
@@ -15,11 +17,9 @@ export default function Navbar() {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
-      // 1. If user scrolls DOWN past 100px, expand to show links
       if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
         setShowLinks(true);
       } 
-      // 2. If user scrolls UP, collapse back to just the logo
       else if (currentScrollY < lastScrollY.current) {
         setShowLinks(false);
         setIsOpen(false);
@@ -47,8 +47,8 @@ export default function Navbar() {
           {/* Inner flex layout mapping */}
           <div className="flex items-center justify-between w-full h-full gap-8">
             
-            {/* Logo Container - Scaled up for peak clarity and legibility */}
-            <div className="relative h-16 w-40 flex items-center shrink-0">
+            {/* Logo Container */}
+            <div className="relative h-12 w-40 flex items-center shrink-0">
               <Image 
                 src="/ecell-logo.png" 
                 alt="BIMTECH E-Cell Logo"
@@ -59,7 +59,7 @@ export default function Navbar() {
               />
             </div>
 
-            {/* Desktop Links - Perfectly leveled inside the main coordinate axis */}
+            {/* Desktop Links */}
             <AnimatePresence mode="popLayout">
               {showLinks && (
                 <motion.div
@@ -72,7 +72,12 @@ export default function Navbar() {
                   <a href="#about" className="text-sm font-medium text-white/70 hover:text-white transition flex items-center h-full">About</a>
                   <a href="#team" className="text-sm font-medium text-white/70 hover:text-white transition flex items-center h-full">Board</a>
                   <a href="#contact" className="text-sm font-medium text-white/70 hover:text-white transition flex items-center h-full">Connect</a>
-                  <button className="px-4 py-1 bg-white text-black text-xs font-bold rounded-full hover:bg-gray-200 transition shadow-lg shrink-0 self-center">
+                  
+                  {/* 3. Attached the onClick trigger to the Join Us button */}
+                  <button 
+                    onClick={() => setIsModalOpen(true)}
+                    className="px-4 py-1.5 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition shadow-lg shrink-0 self-center"
+                  >
                     Join Us
                   </button>
                 </motion.div>
@@ -105,14 +110,23 @@ export default function Navbar() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="fixed top-20 left-6 right-6 bg-black/90 backdrop-blur-xl border border-white/10 z-40 md:hidden flex flex-col items-center py-6 space-y-4 rounded-2xl shadow-2xl"
+            className="fixed top-24 left-6 right-6 bg-black/90 backdrop-blur-xl border border-white/10 z-40 md:hidden flex flex-col items-center py-6 space-y-4 rounded-2xl shadow-2xl"
           >
             <a href="#about" className="text-base font-medium text-white/80" onClick={() => setIsOpen(false)}>About</a>
             <a href="#team" className="text-base font-medium text-white/80" onClick={() => setIsOpen(false)}>Board</a>
             <a href="#contact" className="text-base font-medium text-white/80" onClick={() => setIsOpen(false)}>Connect</a>
+            <button 
+              onClick={() => { setIsOpen(false); setIsModalOpen(true); }}
+              className="px-6 py-2 bg-white text-black text-sm font-bold rounded-full"
+            >
+              Join Us
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 4. Rendered the modal outside the core wrapper trees */}
+      <JoinModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </>
   );
 }
