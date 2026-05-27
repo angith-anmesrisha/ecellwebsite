@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import Link from "next/link";
+import { ArrowUpRight, Sparkles } from "lucide-react";
+
 import RotatingBadge from '@/components/RotatingBadge';
-import InfiniteMarquee from '@/components/InfiniteMarquee';
 import AnimatedWord from '@/components/AnimatedWord';
 import Navbar from '@/components/Navbar';
 import TeamCard from '@/components/TeamCard';
@@ -61,7 +63,7 @@ export default function Home() {
             className="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center px-6"
           >
             <div className="max-w-2xl text-center space-y-6">
-              {/* Animated Accent Accent Bar */}
+              {/* Animated Accent Bar */}
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: "40px" }}
@@ -140,16 +142,15 @@ export default function Home() {
               <RotatingBadge />
             </div>
           </div>
-
-          
         </main>
+
         {/* Live AI News Stories Feed Panel */}
         <section id="ai-feed" className="relative z-10 py-12 border-b border-white/5">
           <div className="text-center mb-6">
-           <h3 className="text-xs font-mono tracking-widest uppercase text-blue-500 font-bold">Live Feed</h3>
+            <h3 className="text-xs font-mono tracking-widest uppercase text-blue-500 font-bold">Live Feed</h3>
             <h2 className="text-2xl font-black text-white tracking-tight mt-1">Today's Intelligence Core</h2>
           </div>
-       <AiStories />
+          <AiStories />
         </section>
 
         {/* Executive Board Section */}
@@ -167,23 +168,50 @@ export default function Home() {
         </section>
         
         {/* Interactive Pitch Simulator Sandbox Section */}
-      <section id="simulator" className="relative z-10 px-6 md:px-10 max-w-7xl mx-auto py-24 border-t border-white/5">
-        <div className="mb-12 text-center md:text-left">
-        <h2 className="text-4xl md:text-5xl font-black tracking-tight">
-          TEST YOUR <span className="text-blue-500">VENTURE.</span>
-      </h2>
-      <p className="text-white/60 mt-3 max-w-lg">
-      Run your startup architecture choices through our algorithmic sandbox model to generate strategic evaluation metrics instantly.
-      </p>
-        </div>
-  
-      <PitchSimulator />
-      </section>            
+        <section id="simulator" className="relative z-10 px-6 md:px-10 max-w-7xl mx-auto py-24 border-t border-white/5">
+          <div className="mb-12 text-center md:text-left">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight">
+              TEST YOUR <span className="text-blue-500">VENTURE.</span>
+            </h2>
+            <p className="text-white/60 mt-3 max-w-lg">
+              Run your startup architecture choices through our algorithmic sandbox model to generate strategic evaluation metrics instantly.
+            </p>
+          </div>
+    
+          <PitchSimulator />
+        </section>
+
+        {/* NEW PRODUCTION ENTRY POINT: HIGH-ENGAGEMENT RECRUITMENT BANNER COMPONENT */}
+        <section className="w-full max-w-7xl mx-auto px-6 md:px-10 pb-24 relative z-10">
+          <div className="w-full bg-zinc-950 border border-white/10 rounded-2xl p-8 md:p-12 relative overflow-hidden flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 group hover:border-blue-500/30 transition-all duration-500">
+            
+            {/* Ambient Decorative Background Blur Orb */}
+            <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none group-hover:bg-blue-500/20 transition-all duration-500" />
+            
+            <div className="space-y-2 max-w-2xl">
+              <div className="text-[10px] font-mono font-bold tracking-widest text-blue-500 uppercase flex items-center gap-1.5">
+                <Sparkles size={12} className="animate-pulse" />
+                Cohort Cycle 2026
+              </div>
+              <h3 className="text-2xl md:text-3xl font-black tracking-tight text-white">
+                Build the Future of BIMTECH Entrepreneurship
+              </h3>
+              <p className="text-xs text-white/50 leading-relaxed max-w-xl">
+                Applications for official executive board positions open this July. Choose your domain track, clear our un-cheatable automated assessment pipelines, and lock in your slot for the final Personal Interview rounds.
+              </p>
+            </div>
+
+            <Link href="/recruitment" className="w-full lg:w-auto shrink-0 z-20">
+              <button className="w-full lg:w-auto px-6 py-3.5 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-zinc-200 transition-all flex items-center justify-center gap-2 group-hover:scale-[1.01] active:scale-[0.99]">
+                <span>Enter Recruitment Portal</span>
+                <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </button>
+            </Link>
+          </div>
+        </section>
 
         {/* Premium Social Links & Contact Form Component */}
         <ConnectSection />
-        
-
       </div>
     </>
   );

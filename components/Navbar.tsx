@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
+import Link from "next/link";
 import JoinModal from "./JoinModal"; // 1. Imported the modal at the top
 
 export default function Navbar() {
@@ -115,12 +116,11 @@ export default function Navbar() {
             <a href="#about" className="text-base font-medium text-white/80" onClick={() => setIsOpen(false)}>About</a>
             <a href="#team" className="text-base font-medium text-white/80" onClick={() => setIsOpen(false)}>Board</a>
             <a href="#contact" className="text-base font-medium text-white/80" onClick={() => setIsOpen(false)}>Connect</a>
-            <button 
-              onClick={() => { setIsOpen(false); setIsModalOpen(true); }}
-              className="px-6 py-2 bg-white text-black text-sm font-bold rounded-full"
-            >
-              Join Us
-            </button>
+            <Link href="/recruitment" onClick={() => setIsOpen(false)}>
+            <span className="inline-block px-6 py-2 bg-white text-black text-sm font-bold rounded-full text-center cursor-pointer">
+             Join Us
+            </span>
+            </Link>
           </motion.div>
         )}
       </AnimatePresence>
