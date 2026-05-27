@@ -197,7 +197,7 @@ export default function Home() {
                 Build the Future of BIMTECH Entrepreneurship
               </h3>
               <p className="text-xs text-white/50 leading-relaxed max-w-xl">
-                Applications for official executive board positions open this July. Choose your domain track, clear our un-cheatable automated assessment pipelines, and lock in your slot for the final Personal Interview rounds.
+                Applications for official executive board positions opens soon. Choose your domain track, clear our assessment pipelines, and lock in your slot for the final Personal Interview rounds.
               </p>
             </div>
 
