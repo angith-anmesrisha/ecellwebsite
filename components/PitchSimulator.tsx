@@ -18,24 +18,86 @@ export default function PitchSimulator() {
   const modelOptions = ["SaaS Subscription", "Marketplace Commission", "Freemium Tier", "Transactional/D2C"];
   const pricingOptions = ["Budget-Friendly", "Value-Based", "Premium", "Enterprise Custom"];
 
-  // Core scoring engine computed locally on the client-side
-  const calculateViabilityScore = () => {
-    let score = 65; // Base score
-    if (formData.model === "SaaS Subscription" && formData.pricing === "Enterprise Custom") score += 20;
-    if (formData.model === "Marketplace Commission" && formData.targetMarket === "Gen-Z Consumers") score += 15;
-    if (formData.model === "Freemium Tier" && formData.pricing === "Budget-Friendly") score += 10;
-    if (formData.startupName.length > 3) score += 5;
-    return Math.min(score, 100);
+  // Client-Side Semantic Analysis Engine
+  const analyzeVentureSemantics = () => {
+    const name = formData.startupName.toLowerCase().trim();
+    const problem = formData.problem.toLowerCase().trim();
+    const combined = `${name} ${problem}`;
+
+    // 1. Content Guard / Joke Detector
+    const redFlags = ["nigga", "nigger", "spam", "asdf", "fuck", "shit", "test", "crap", "joke"];
+    if (redFlags.some(flag => combined.includes(flag))) {
+      return { 
+        isValid: false, 
+        reason: "joke", 
+        scoreModifier: -100, 
+        industry: "Rejected", 
+        insight: "CRITICAL FLAG: The simulation matrix detected non-standard operational terms or joke definitions. Venture concept rejected by E-Cell sandbox guidelines." 
+      };
+    }
+
+    if (name.length < 3 || problem.length < 15) {
+      return { 
+        isValid: false, 
+        reason: "short", 
+        scoreModifier: -40, 
+        industry: "Undetermined", 
+        insight: "INSUFFICIENT DATA: Your problem statement is too brief for structural parsing. Investors require sharp, descriptive problem statements. Expand on your bottleneck." 
+      };
+    }
+
+    // 2. Dynamic Industry Classification Core
+    let industry = "General Tech";
+    let scoreModifier = 0;
+    let insight = "";
+
+    if (combined.includes("agri") || combined.includes("farm") || combined.includes("crop")) {
+      industry = "Agritech";
+      scoreModifier = formData.targetMarket === "SMEs & Retailers" ? 20 : 5;
+      insight = `Targeting ${formData.targetMarket} with an ${industry} solution is highly viable for agricultural regional clusters. Watch out for fragmented supply line overheads.`;
+    } else if (combined.includes("health") || combined.includes("med") || combined.includes("doctor") || combined.includes("clinic")) {
+      industry = "Healthtech";
+      scoreModifier = formData.targetMarket === "Healthcare Providers" ? 25 : -10;
+      insight = formData.targetMarket === "Healthcare Providers" 
+        ? "Perfect alignment. Institutional healthcare buyers value risk mitigation, clear patient outcomes, and high data security standard frameworks."
+        : "Market mismatch warning. Direct consumer healthcare applications face steep organic user acquisition friction compared to provider pipelines.";
+    } else if (combined.includes("chain") || combined.includes("supply") || combined.includes("logistic") || combined.includes("shipping") || combined.includes("delivery")) {
+      industry = "Logistics & Supply Chain";
+      scoreModifier = formData.model === "SaaS Subscription" ? 20 : 10;
+      insight = `Excellent automation horizon. Solving legacy structural bottlenecks via a ${formData.model} architecture provides clear cost-reduction tracking data for your enterprise metrics.`;
+    } else if (combined.includes("ai") || combined.includes("llm") || combined.includes("agent") || combined.includes("automation") || combined.includes("gpt")) {
+      industry = "Artificial Intelligence";
+      scoreModifier = formData.pricing === "Enterprise Custom" ? 20 : 5;
+      insight = `High-velocity domain. Because you are launching an ${industry} platform, shifting toward ${formData.pricing} tiers will protect your unit economics from fluctuating API computing overheads.`;
+    } else if (combined.includes("finance") || combined.includes("pay") || combined.includes("wallet") || combined.includes("lend") || combined.includes("bank")) {
+      industry = "Fintech";
+      scoreModifier = formData.targetMarket === "SMEs & Retailers" || formData.targetMarket === "Gen-Z Consumers" ? 15 : 5;
+      insight = `High-value vector. Your ${industry} blueprint requires navigating strict regulatory compliance frameworks, but possesses massive transactional scaling capabilities.`;
+    } else {
+      industry = "Digital Enterprise";
+      scoreModifier = 0;
+      insight = "Standard operational concept parsed. To maximize venture viability index ratings, inject clearer vertical keywords (e.g., AI, logistics, or health) into your problem statement parameters.";
+    }
+
+    return { isValid: true, reason: "clean", scoreModifier, industry, insight };
   };
 
-  const getStrategicAdvice = () => {
-    if (formData.model === "SaaS Subscription") {
-      return "Excellent structural choice. Focus on calculating your Customer Acquisition Cost (CAC) early and pitch your Monthly Recurring Revenue (MRR) consistency to angel investors.";
+  // Upgraded Dynamic Scoring Router
+  const calculateViabilityScore = () => {
+    const analysis = analyzeVentureSemantics();
+    if (!analysis.isValid) {
+      return analysis.reason === "joke" ? 0 : 25;
     }
-    if (formData.model === "Marketplace Commission") {
-      return "High scaling potential, but watch your liquidity. Your primary marketing challenge will be solving the chicken-and-egg problem to acquire both buyers and sellers simultaneously.";
-    }
-    return "Ensure your user retention metrics are exceptionally strong before seeking venture funding. Focus heavily on expanding your viral loop expansion mechanics.";
+
+    let score = 65; // Base configuration floor
+    
+    if (formData.model === "SaaS Subscription") score += 10;
+    if (formData.model === "Marketplace Commission") score += 5;
+    
+    // Inject structural modifier from text parsing
+    score += analysis.scoreModifier;
+
+    return Math.max(10, Math.min(score, 100));
   };
 
   const handleReset = () => {
@@ -43,9 +105,10 @@ export default function PitchSimulator() {
     setStep(1);
   };
 
+  const semanticResult = analyzeVentureSemantics();
+
   return (
     <div className="w-full max-w-4xl mx-auto bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-10 shadow-2xl overflow-hidden relative">
-      {/* Visual background grid texture matching your site aesthetic */}
       <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none z-0" />
 
       <div className="relative z-10 space-y-8">
@@ -56,7 +119,7 @@ export default function PitchSimulator() {
             <h3 className="text-2xl font-black tracking-tight text-white mt-1">Venture Logic Simulator</h3>
           </div>
           <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg text-xs font-mono text-white/60">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
             Step {step} of 3
           </div>
         </div>
@@ -186,14 +249,14 @@ export default function PitchSimulator() {
               exit={{ opacity: 0 }}
               className="space-y-6"
             >
-              {/* Dynamic Score Panel */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="p-5 bg-white/5 border border-white/10 rounded-xl flex flex-col justify-center items-center text-center relative overflow-hidden group">
+                {/* Score Widget */}
+                <div className="p-5 bg-white/5 border border-white/10 rounded-xl flex flex-col justify-center items-center text-center relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-bl-full flex items-center justify-center text-blue-500 opacity-40">
                     <Sparkles size={16} />
                   </div>
                   <span className="text-[10px] font-bold tracking-widest text-white/40 uppercase">Viability Index</span>
-                  <div className="text-4xl font-black text-white tracking-tight my-2">
+                  <div className={`text-4xl font-black tracking-tight my-2 ${calculateViabilityScore() === 0 ? 'text-red-500' : 'text-white'}`}>
                     {calculateViabilityScore()}%
                   </div>
                   <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden mt-1">
@@ -201,16 +264,23 @@ export default function PitchSimulator() {
                       initial={{ width: 0 }} 
                       animate={{ width: `${calculateViabilityScore()}%` }} 
                       transition={{ duration: 1, ease: "easeOut" }}
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-full" 
+                      className={`h-full ${calculateViabilityScore() === 0 ? 'bg-red-500' : 'bg-gradient-to-r from-blue-500 to-purple-500'}`} 
                     />
                   </div>
                 </div>
 
-                {/* Details Matrix Block */}
+                {/* Details Summary Block */}
                 <div className="p-5 bg-white/5 border border-white/10 rounded-xl space-y-2 md:col-span-2">
                   <span className="text-[10px] font-bold tracking-widest text-blue-500 uppercase font-mono">Executive Summary Structure</span>
                   <h4 className="text-xl font-black text-white tracking-tight">{formData.startupName}</h4>
-                  <p className="text-xs text-white/60 leading-relaxed"><strong className="text-white">Problem Statement:</strong> {formData.problem}</p>
+                  
+                  {/* AI Dynamic Industry Badge Pin */}
+                  <div className="text-[10px] font-mono uppercase font-bold tracking-wider text-purple-400 mt-0.5 flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${calculateViabilityScore() === 0 ? 'bg-red-500' : 'bg-purple-400 animate-pulse'}`} />
+                    Parsed Sector: {semanticResult.industry}
+                  </div>
+
+                  <p className="text-xs text-white/60 leading-relaxed pt-1"><strong className="text-white">Problem Statement:</strong> {formData.problem}</p>
                   <div className="flex flex-wrap gap-2 pt-2">
                     <span className="px-2.5 py-1 bg-white/5 border border-white/10 rounded-md text-[11px] font-medium text-white/80">{formData.targetMarket}</span>
                     <span className="px-2.5 py-1 bg-white/5 border border-white/10 rounded-md text-[11px] font-medium text-white/80">{formData.model}</span>
@@ -219,16 +289,16 @@ export default function PitchSimulator() {
                 </div>
               </div>
 
-              {/* Consultation Output Card */}
-              <div className="p-5 bg-blue-500/5 border border-blue-500/20 rounded-xl space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-blue-400 font-mono">
+              {/* Consultation Assessment Alert Block */}
+              <div className={`p-5 rounded-xl space-y-2 border ${calculateViabilityScore() === 0 ? 'bg-red-500/5 border-red-500/20' : 'bg-blue-500/5 border-blue-500/20'}`}>
+                <div className={`flex items-center gap-2 text-xs font-bold tracking-widest uppercase font-mono ${calculateViabilityScore() === 0 ? 'text-red-400' : 'text-blue-400'}`}>
                   <DollarSign size={14} />
                   E-Cell Advisory Assessment
                 </div>
-                <p className="text-xs text-white/70 leading-relaxed font-sans">{getStrategicAdvice()}</p>
+                <p className="text-xs text-white/70 leading-relaxed font-sans">{semanticResult.insight}</p>
               </div>
 
-              {/* Bottom Controllers */}
+              {/* Action Buttons */}
               <div className="flex flex-wrap gap-3 pt-2">
                 <button 
                   onClick={handleReset}
@@ -238,8 +308,9 @@ export default function PitchSimulator() {
                   <span>Simulate Alternative Concept</span>
                 </button>
                 <button 
+                  disabled={calculateViabilityScore() === 0}
                   onClick={() => window.print()}
-                  className="px-5 py-3 bg-white text-black text-xs font-bold rounded-xl hover:bg-gray-200 transition flex items-center gap-2 shadow-lg"
+                  className="px-5 py-3 bg-white text-black text-xs font-bold rounded-xl hover:bg-gray-200 transition flex items-center gap-2 shadow-lg disabled:opacity-20 disabled:hover:bg-white"
                 >
                   <FileText size={14} />
                   <span>Export Strategic Roadmap (PDF)</span>
