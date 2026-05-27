@@ -8,6 +8,7 @@ import AnimatedWord from '@/components/AnimatedWord';
 import Navbar from '@/components/Navbar';
 import TeamCard from '@/components/TeamCard';
 import ConnectSection from '@/components/ConnectSection';
+import PitchSimulator from "@/components/PitchSimulator";
 
 // Curated aesthetic quotes list
 const STARTUP_QUOTES = [
@@ -158,9 +159,23 @@ export default function Home() {
             <TeamCard name="John Smith" role="Operations Head" />
           </div>
         </section>
+        {/* Interactive Pitch Simulator Sandbox Section */}
+      <section id="simulator" className="relative z-10 px-6 md:px-10 max-w-7xl mx-auto py-24 border-t border-white/5">
+        <div className="mb-12 text-center md:text-left">
+        <h2 className="text-4xl md:text-5xl font-black tracking-tight">
+          TEST YOUR <span className="text-blue-500">VENTURE.</span>
+      </h2>
+      <p className="text-white/60 mt-3 max-w-lg">
+      Run your startup architecture choices through our algorithmic sandbox model to generate strategic evaluation metrics instantly.
+      </p>
+        </div>
+  
+      <PitchSimulator />
+      </section>            
 
         {/* Premium Social Links & Contact Form Component */}
         <ConnectSection />
+        
 
       </div>
     </>
