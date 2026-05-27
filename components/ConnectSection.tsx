@@ -14,7 +14,7 @@ export default function ConnectSection() {
           <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
         </svg>
       ), 
-      url: "https://instagram.com", 
+      url: "https://www.instagram.com/ecell_bimtech?igsh=bHhkNmlieWQ4cmd3",
       color: "hover:text-pink-500 hover:shadow-[0_0_15px_rgba(236,72,153,0.5)]" 
     },
     { 
@@ -26,23 +26,14 @@ export default function ConnectSection() {
           <circle cx="4" cy="4" r="2"/>
         </svg>
       ), 
-      url: "https://linkedin.com", 
+      url: "https://www.linkedin.com/in/e-cell-bimtech-57b2231a/",
       color: "hover:text-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]" 
     },
-    { 
-      name: "Twitter / X", 
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>
-        </svg>
-      ), 
-      url: "https://twitter.com", 
-      color: "hover:text-sky-400 hover:shadow-[0_0_15px_rgba(56,189,248,0.5)]" 
-    },
+    
     { 
       name: "Email", 
       icon: <Mail size={24} />, 
-      url: "mailto:ecell@bimtech.ac.in", 
+      url: "mailto:ecell@bimtech.ac.in",
       color: "hover:text-blue-400 hover:shadow-[0_0_15px_rgba(96,165,250,0.5)]" 
     },
   ];
