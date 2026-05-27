@@ -141,10 +141,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Rolling Banner */}
-          <div className="w-full mt-24 z-20">
-            <InfiniteMarquee />
-          </div>
+          
         </main>
         {/* Live AI News Stories Feed Panel */}
         <section id="ai-feed" className="relative z-10 py-12 border-b border-white/5">
