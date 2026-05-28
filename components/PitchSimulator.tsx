@@ -2,324 +2,270 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lightbulb, DollarSign, Target, Sparkles, RefreshCw, FileText } from "lucide-react";
+import { Sparkles, RefreshCw, FileText, CheckCircle, ShieldAlert, Cpu, Layers } from "lucide-react";
 
 export default function PitchSimulator() {
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    startupName: "",
-    problem: "",
-    targetMarket: "B2B Enterprises",
-    model: "SaaS Subscription",
-    pricing: "Premium"
-  });
+  const [startupTitle, setStartupTitle] = useState("");
+  const [problemStatement, setProblemStatement] = useState("");
+  const [selectedSector, setSelectedSector] = useState("Artificial Intelligence");
+  const [selectedModel, setSelectedModel] = useState("SaaS Subscription");
+  const [selectedPricing, setSelectedPricing] = useState("Premium Pricing");
 
-  const marketOptions = ["B2B Enterprises", "Gen-Z Consumers", "SMEs & Retailers", "Healthcare Providers"];
-  const modelOptions = ["SaaS Subscription", "Marketplace Commission", "Freemium Tier", "Transactional/D2C"];
-  const pricingOptions = ["Budget-Friendly", "Value-Based", "Premium", "Enterprise Custom"];
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSimulated, setHasSimulated] = useState(false);
+  const [viabilityIndex, setViabilityIndex] = useState(50);
+  const [advisoryAssessment, setAdvisoryAssessment] = useState("");
+  const [isViolationBlock, setIsViolationBlock] = useState(false);
 
-  // Client-Side Semantic Analysis Engine
-  const analyzeVentureSemantics = () => {
-    const name = formData.startupName.toLowerCase().trim();
-    const problem = formData.problem.toLowerCase().trim();
-    const combined = `${name} ${problem}`;
+  const handleSimulateArchitecture = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!startupTitle || !problemStatement) return;
 
-    // 1. Content Guard / Joke Detector
-    const redFlags = ["nigga", "nigger", "spam", "asdf", "fuck", "shit", "test", "crap", "joke"];
-    if (redFlags.some(flag => combined.includes(flag))) {
-      return { 
-        isValid: false, 
-        reason: "joke", 
-        scoreModifier: -100, 
-        industry: "Rejected", 
-        insight: "CRITICAL FLAG: The simulation matrix detected non-standard operational terms or joke definitions. Venture concept rejected by E-Cell sandbox guidelines." 
-      };
+    setIsLoading(true);
+    setHasSimulated(false);
+    setIsViolationBlock(false);
+
+    try {
+      // Execute handshake with Approach A server moderation checkpoint
+      const verifyPayload = await fetch("/api/moderate-pitch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: startupTitle,
+          problem: problemStatement,
+          sector: selectedSector
+        })
+      });
+
+      const auditLog = await verifyPayload.json();
+
+      if (auditLog.isFlagged) {
+        setViabilityIndex(0);
+        setIsViolationBlock(true);
+        if (auditLog.categoryReason === "ETHICAL_COMPLIANCE_VIOLATION") {
+          setAdvisoryAssessment(
+            "CRITICAL COMPLIANCE REFUSAL: This concept triggers automatic regulatory filters. The E-Cell algorithmic sandbox completely blocks architectures promoting illegal frameworks, human rights violations, or unethical business models."
+          );
+        } else {
+          setAdvisoryAssessment(
+            "SIMULATION ERROR: Problem statement is too brief or insubstantial. Please write a descriptive paragraph outlining an authentic target market scenario to generate logical advisory metrics."
+          );
+        }
+        setHasSimulated(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // --- SCALABLE BUSINESS INTELLIGENCE EQUATION CORE ---
+      let computedScore = 55;
+
+      // Expanded Sector Switch Architecture
+      switch (selectedSector) {
+        case "Artificial Intelligence":
+        case "Cybersecurity Nodes":
+          computedScore += 15;
+          break;
+        case "FinTech Nodes":
+        case "B2B SaaS Ecosystems":
+        case "CleanTech & Renewable Energy":
+          computedScore += 12;
+          break;
+        case "Sustainable Supply Chains":
+        case "Autonomous Mobility":
+        case "HealthTech & Telemedicine":
+          computedScore += 10;
+          break;
+        case "AgriTech Ecosystems":
+        case "EdTech Systems":
+        case "Web3 & Tokenomics":
+          computedScore += 7;
+          break;
+        case "Direct Consumer Retail":
+          computedScore += 5;
+          break;
+        default:
+          computedScore += 8;
+      }
+
+      // Monetization Layout Model Adjustments
+      if (selectedModel === "SaaS Subscription") computedScore += 10;
+      if (selectedModel === "B2B Enterprise Contracts") computedScore += 12;
+
+      // Value Alignment Capture
+      if (selectedPricing === "Premium Pricing") computedScore += 8;
+      if (selectedPricing === "Value-Based Tiering") computedScore += 10;
+
+      // Market Variance Turbulence Simulation
+      const operationalVariance = Math.floor(Math.random() * 7) - 3;
+      const finalizedIndex = Math.min(98, Math.max(15, computedScore + operationalVariance));
+
+      // Build contextually synchronized advice strings
+      let assessmentBrief = `High-velocity ${selectedSector} framework layout confirmed. Incorporating a ${selectedModel} model paired with ${selectedPricing} establishes robust initial cash generation thresholds. Ensure your pilot sprints focus heavily on tracking explicit client acquisition conversion parameters to offset infrastructure overheads.`;
+      
+      if (selectedSector === "Artificial Intelligence" && selectedPricing === "Premium Pricing") {
+        assessmentBrief += " Moving toward premium pricing tiers will properly protect your operational margins against fluctuating API data processing costs.";
+      }
+
+      setViabilityIndex(finalizedIndex);
+      setAdvisoryAssessment(assessmentBrief);
+      setHasSimulated(true);
+
+    } catch (err) {
+      console.error("Handshake loop with compliance layer broken:", err);
+      setViabilityIndex(25);
+      setAdvisoryAssessment("SYSTEM CORRUPTION: Communication channel with the validation array timed out.");
+      setHasSimulated(true);
+    } finally {
+      setIsLoading(false);
     }
-
-    if (name.length < 3 || problem.length < 15) {
-      return { 
-        isValid: false, 
-        reason: "short", 
-        scoreModifier: -40, 
-        industry: "Undetermined", 
-        insight: "INSUFFICIENT DATA: Your problem statement is too brief for structural parsing. Investors require sharp, descriptive problem statements. Expand on your bottleneck." 
-      };
-    }
-
-    // 2. Dynamic Industry Classification Core
-    let industry = "General Tech";
-    let scoreModifier = 0;
-    let insight = "";
-
-    if (combined.includes("agri") || combined.includes("farm") || combined.includes("crop")) {
-      industry = "Agritech";
-      scoreModifier = formData.targetMarket === "SMEs & Retailers" ? 20 : 5;
-      insight = `Targeting ${formData.targetMarket} with an ${industry} solution is highly viable for agricultural regional clusters. Watch out for fragmented supply line overheads.`;
-    } else if (combined.includes("health") || combined.includes("med") || combined.includes("doctor") || combined.includes("clinic")) {
-      industry = "Healthtech";
-      scoreModifier = formData.targetMarket === "Healthcare Providers" ? 25 : -10;
-      insight = formData.targetMarket === "Healthcare Providers" 
-        ? "Perfect alignment. Institutional healthcare buyers value risk mitigation, clear patient outcomes, and high data security standard frameworks."
-        : "Market mismatch warning. Direct consumer healthcare applications face steep organic user acquisition friction compared to provider pipelines.";
-    } else if (combined.includes("chain") || combined.includes("supply") || combined.includes("logistic") || combined.includes("shipping") || combined.includes("delivery")) {
-      industry = "Logistics & Supply Chain";
-      scoreModifier = formData.model === "SaaS Subscription" ? 20 : 10;
-      insight = `Excellent automation horizon. Solving legacy structural bottlenecks via a ${formData.model} architecture provides clear cost-reduction tracking data for your enterprise metrics.`;
-    } else if (combined.includes("ai") || combined.includes("llm") || combined.includes("agent") || combined.includes("automation") || combined.includes("gpt")) {
-      industry = "Artificial Intelligence";
-      scoreModifier = formData.pricing === "Enterprise Custom" ? 20 : 5;
-      insight = `High-velocity domain. Because you are launching an ${industry} platform, shifting toward ${formData.pricing} tiers will protect your unit economics from fluctuating API computing overheads.`;
-    } else if (combined.includes("finance") || combined.includes("pay") || combined.includes("wallet") || combined.includes("lend") || combined.includes("bank")) {
-      industry = "Fintech";
-      scoreModifier = formData.targetMarket === "SMEs & Retailers" || formData.targetMarket === "Gen-Z Consumers" ? 15 : 5;
-      insight = `High-value vector. Your ${industry} blueprint requires navigating strict regulatory compliance frameworks, but possesses massive transactional scaling capabilities.`;
-    } else {
-      industry = "Digital Enterprise";
-      scoreModifier = 0;
-      insight = "Standard operational concept parsed. To maximize venture viability index ratings, inject clearer vertical keywords (e.g., AI, logistics, or health) into your problem statement parameters.";
-    }
-
-    return { isValid: true, reason: "clean", scoreModifier, industry, insight };
   };
-
-  // Upgraded Dynamic Scoring Router
-  const calculateViabilityScore = () => {
-    const analysis = analyzeVentureSemantics();
-    if (!analysis.isValid) {
-      return analysis.reason === "joke" ? 0 : 25;
-    }
-
-    let score = 65; // Base configuration floor
-    
-    if (formData.model === "SaaS Subscription") score += 10;
-    if (formData.model === "Marketplace Commission") score += 5;
-    
-    // Inject structural modifier from text parsing
-    score += analysis.scoreModifier;
-
-    return Math.max(10, Math.min(score, 100));
-  };
-
-  const handleReset = () => {
-    setFormData({ startupName: "", problem: "", targetMarket: "B2B Enterprises", model: "SaaS Subscription", pricing: "Premium" });
-    setStep(1);
-  };
-
-  const semanticResult = analyzeVentureSemantics();
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-10 shadow-2xl overflow-hidden relative">
-      <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none z-0" />
+    <div className="w-full bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 relative shadow-2xl">
+      
+      {/* LEFT INPUT PANEL */}
+      <form onSubmit={handleSimulateArchitecture} className="lg:col-span-5 p-6 md:p-8 border-b lg:border-b-0 lg:border-r border-white/10 space-y-5 bg-black/30">
+        <div className="space-y-1">
+          <label className="text-[10px] font-mono font-bold uppercase tracking-widest text-blue-500">Venture Architecture</label>
+          <h3 className="text-lg font-bold text-white tracking-tight">Concept Simulator Input</h3>
+        </div>
 
-      <div className="relative z-10 space-y-8">
-        {/* Header Block */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-white/10 pb-6 gap-4">
-          <div>
-            <span className="text-[10px] uppercase tracking-widest text-blue-500 font-mono font-bold">Interactive Sandbox</span>
-            <h3 className="text-2xl font-black tracking-tight text-white mt-1">Venture Logic Simulator</h3>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase font-mono tracking-wider text-white/40">Startup Brand Name</label>
+            <input required type="text" value={startupTitle} onChange={(e) => setStartupTitle(e.target.value)} placeholder="e.g., Nexis Core" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-white/10 focus:outline-none focus:border-blue-500 font-mono" />
           </div>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg text-xs font-mono text-white/60">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-            Step {step} of 3
+
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase font-mono tracking-wider text-white/40">Target Problem Statement</label>
+            <textarea required rows={3} value={problemStatement} onChange={(e) => setProblemStatement(e.target.value)} placeholder="Describe the explicit operational bottleneck or market friction layout your venture is built to eliminate..." className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white placeholder-white/10 focus:outline-none focus:border-blue-500 font-mono resize-none" />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase font-mono tracking-wider text-white/40">Domain Sector Node</label>
+            <select value={selectedSector} onChange={(e) => setSelectedSector(e.target.value)} className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono">
+              {/* DEEP TECH & INTELLIGENCE */}
+              <option disabled className="text-white/30 font-bold bg-black">-- Deep Tech Cluster --</option>
+              <option value="Artificial Intelligence">Artificial Intelligence & LLMOps</option>
+              <option value="Autonomous Mobility">Autonomous Mobility & Robotics</option>
+              <option value="Cybersecurity Nodes">Cybersecurity & Cryptographic Nets</option>
+              
+              {/* FINTECH & DIGITAL ECONOMY */}
+              <option disabled className="text-white/30 font-bold bg-black">-- Financial Infrastructures --</option>
+              <option value="FinTech Nodes">FinTech, Neo-Banking & DeFi</option>
+              <option value="B2B SaaS Ecosystems">B2B SaaS Infrastructure Tools</option>
+              <option value="Web3 & Tokenomics">Web3 Protocols & Digital Identity</option>
+              
+              {/* SUSTAINABILITY & ESG */}
+              <option disabled className="text-white/30 font-bold bg-black">-- Climate Tech & Operations --</option>
+              <option value="Sustainable Supply Chains">Sustainable Supply Chains & Logistics</option>
+              <option value="CleanTech & Renewable Energy">CleanTech & Renewable Energy Core</option>
+              <option value="AgriTech Ecosystems">AgriTech & Controlled Environment Farming</option>
+              
+              {/* CONSUMER ENTERPRISE */}
+              <option disabled className="text-white/30 font-bold bg-black">-- Consumer Enterprise --</option>
+              <option value="Direct Consumer Retail">Direct-to-Consumer (D2C) Brands</option>
+              <option value="HealthTech & Telemedicine">HealthTech & Precision Medicine Platforms</option>
+              <option value="EdTech Systems">EdTech & Continuous Learning Sandbox</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase font-mono tracking-wider text-white/40">Monetization Engine</label>
+              <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono">
+                <option>SaaS Subscription</option>
+                <option>B2B Enterprise Contracts</option>
+                <option>Transactional Cut</option>
+                <option>Freemium Scale</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase font-mono tracking-wider text-white/40">Pricing Matrix</label>
+              <select value={selectedPricing} onChange={(e) => setSelectedPricing(e.target.value)} className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono">
+                <option>Premium Pricing</option>
+                <option>Value-Based Tiering</option>
+                <option>Cost-Plus Baseline</option>
+                <option>Dynamic Flow Mapping</option>
+              </select>
+            </div>
           </div>
         </div>
 
+        <button type="submit" disabled={isLoading || !startupTitle || !problemStatement} className="w-full py-3 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 disabled:opacity-20 transition active:scale-[0.99]">
+          <Sparkles size={14} className={isLoading ? "animate-spin text-blue-500" : ""} />
+          <span>{isLoading ? "Running Mathematical Models..." : "Simulate Business Architecture"}</span>
+        </button>
+      </form>
+
+      {/* RIGHT OUTPUT PANEL */}
+      <div className="lg:col-span-7 p-6 md:p-8 flex flex-col justify-center bg-zinc-950/40 relative">
         <AnimatePresence mode="wait">
-          {/* STEP 1: INITIAL PROFILE IDENTITY */}
-          {step === 1 && (
-            <motion.div
-              key="step1"
-              initial={{ opacity: 0, x: 15 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -15 }}
-              className="space-y-5"
-            >
-              <div className="flex items-center gap-2 text-white/80 font-medium text-sm">
-                <Lightbulb size={16} className="text-blue-500" />
-                Define Your Core Concept
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold text-white/40 uppercase tracking-wider">Startup Venture Name</label>
-                  <input
-                    type="text"
-                    value={formData.startupName}
-                    onChange={(e) => setFormData({ ...formData, startupName: e.target.value })}
-                    placeholder="e.g., NexaFlow AI"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-blue-500 transition"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold text-white/40 uppercase tracking-wider">Core Problem Solved</label>
-                  <input
-                    type="text"
-                    value={formData.problem}
-                    onChange={(e) => setFormData({ ...formData, problem: e.target.value })}
-                    placeholder="e.g., High shipping delays in sustainable supply chains"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-blue-500 transition"
-                  />
-                </div>
-              </div>
-              <button
-                disabled={!formData.startupName || !formData.problem}
-                onClick={() => setStep(2)}
-                className="w-full md:w-auto px-6 py-3 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-gray-200 transition disabled:opacity-40 disabled:hover:bg-white"
-              >
-                Configure Market Strategy
-              </button>
+          {!hasSimulated && !isLoading ? (
+            <motion.div key="empty-prompt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-12 space-y-2 font-mono text-xs text-white/30">
+              <Cpu size={24} className="mx-auto text-white/10 mb-2 animate-pulse" />
+              <p>Sandbox engine standby. Input configuration parameters to initiate algorithmic modeling sequences.</p>
             </motion.div>
-          )}
-
-          {/* STEP 2: REVENUE ENGINE SETUP */}
-          {step === 2 && (
-            <motion.div
-              key="step2"
-              initial={{ opacity: 0, x: 15 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -15 }}
-              className="space-y-6"
-            >
-              <div className="flex items-center gap-2 text-white/80 font-medium text-sm">
-                <Target size={16} className="text-blue-500" />
-                Map Your Go-To-Market Mechanics
+          ) : isLoading ? (
+            <motion.div key="loading-prompt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6 max-w-sm mx-auto w-full">
+              <div className="space-y-1 text-center font-mono">
+                <div className="text-[10px] uppercase tracking-widest text-blue-500 font-bold animate-pulse">Assembling Execution Trees</div>
+                <p className="text-xs text-white/40">Parsing syntax structures for semantic integrity loops...</p>
               </div>
-              <div className="space-y-4">
-                {/* Target Audience Options */}
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-white/40 uppercase tracking-wider">Target Demographic</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {marketOptions.map((opt) => (
-                      <button
-                        key={opt}
-                        onClick={() => setFormData({ ...formData, targetMarket: opt })}
-                        className={`p-3 text-xs rounded-xl border transition text-center ${formData.targetMarket === opt ? 'bg-blue-500/10 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Business Model Selection */}
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-white/40 uppercase tracking-wider">Monetization Framework</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {modelOptions.map((opt) => (
-                      <button
-                        key={opt}
-                        onClick={() => setFormData({ ...formData, model: opt })}
-                        className={`p-3 text-xs rounded-xl border transition text-center ${formData.model === opt ? 'bg-blue-500/10 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Pricing Strategy */}
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold text-white/40 uppercase tracking-wider">Pricing Tier Model</label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {pricingOptions.map((opt) => (
-                      <button
-                        key={opt}
-                        onClick={() => setFormData({ ...formData, pricing: opt })}
-                        className={`p-3 text-xs rounded-xl border transition text-center ${formData.pricing === opt ? 'bg-blue-500/10 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10'}`}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => setStep(1)} className="px-5 py-3 bg-white/5 border border-white/10 text-white/80 text-xs font-bold rounded-xl hover:bg-white/10 transition">Back</button>
-                <button onClick={() => setStep(3)} className="px-6 py-3 bg-blue-500 text-white text-xs font-bold rounded-xl hover:bg-blue-600 transition shadow-lg shadow-blue-500/20">Generate Model Matrix</button>
+              <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden relative">
+                <motion.div initial={{ left: "-100%" }} animate={{ left: "100%" }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} className="absolute top-0 bottom-0 w-1/2 bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
               </div>
             </motion.div>
-          )}
+          ) : (
+            <motion.div key="results-prompt" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6 h-full flex flex-col justify-between">
+              
+              {/* RADIAL PROGRESS DISPLAY METRIC */}
+              <div className="border border-white/5 bg-white/[0.01] p-5 rounded-xl space-y-4 relative overflow-hidden">
+                <div className="flex justify-between items-center font-mono text-[10px] uppercase tracking-wider text-white/40">
+                  <span className="flex items-center gap-1"><Layers size={10} /> Algorithmic Index Tracking</span>
+                  <span className="font-bold text-white">Calculated Matrix Complete</span>
+                </div>
 
-          {/* STEP 3: ANALYTICS & REVEAL MATRIX */}
-          {step === 3 && (
-            <motion.div
-              key="step3"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              className="space-y-6"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {/* Score Widget */}
-                <div className="p-5 bg-white/5 border border-white/10 rounded-xl flex flex-col justify-center items-center text-center relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 rounded-bl-full flex items-center justify-center text-blue-500 opacity-40">
-                    <Sparkles size={16} />
-                  </div>
-                  <span className="text-[10px] font-bold tracking-widest text-white/40 uppercase">Viability Index</span>
-                  <div className={`text-4xl font-black tracking-tight my-2 ${calculateViabilityScore() === 0 ? 'text-red-500' : 'text-white'}`}>
-                    {calculateViabilityScore()}%
-                  </div>
-                  <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden mt-1">
-                    <motion.div 
-                      initial={{ width: 0 }} 
-                      animate={{ width: `${calculateViabilityScore()}%` }} 
-                      transition={{ duration: 1, ease: "easeOut" }}
-                      className={`h-full ${calculateViabilityScore() === 0 ? 'bg-red-500' : 'bg-gradient-to-r from-blue-500 to-purple-500'}`} 
-                    />
+                <div className="text-center py-2 space-y-1">
+                  <div className="text-[10px] font-mono tracking-widest text-white/40 uppercase">Venture Viability Index</div>
+                  <div className={`text-5xl font-black font-mono tracking-tighter ${isViolationBlock ? 'text-red-500 animate-pulse' : 'text-white'}`}>
+                    {viabilityIndex}%
                   </div>
                 </div>
 
-                {/* Details Summary Block */}
-                <div className="p-5 bg-white/5 border border-white/10 rounded-xl space-y-2 md:col-span-2">
-                  <span className="text-[10px] font-bold tracking-widest text-blue-500 uppercase font-mono">Executive Summary Structure</span>
-                  <h4 className="text-xl font-black text-white tracking-tight">{formData.startupName}</h4>
-                  
-                  {/* AI Dynamic Industry Badge Pin */}
-                  <div className="text-[10px] font-mono uppercase font-bold tracking-wider text-purple-400 mt-0.5 flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${calculateViabilityScore() === 0 ? 'bg-red-500' : 'bg-purple-400 animate-pulse'}`} />
-                    Parsed Sector: {semanticResult.industry}
-                  </div>
-
-                  <p className="text-xs text-white/60 leading-relaxed pt-1"><strong className="text-white">Problem Statement:</strong> {formData.problem}</p>
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    <span className="px-2.5 py-1 bg-white/5 border border-white/10 rounded-md text-[11px] font-medium text-white/80">{formData.targetMarket}</span>
-                    <span className="px-2.5 py-1 bg-white/5 border border-white/10 rounded-md text-[11px] font-medium text-white/80">{formData.model}</span>
-                    <span className="px-2.5 py-1 bg-white/5 border border-white/10 rounded-md text-[11px] font-medium text-white/80">{formData.pricing} Pricing</span>
-                  </div>
+                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden relative">
+                  <motion.div initial={{ width: 0 }} animate={{ width: `${viabilityIndex}%` }} transition={{ duration: 1, ease: "easeOut" }} className={`absolute top-0 bottom-0 rounded-full ${isViolationBlock ? 'bg-red-500' : 'bg-gradient-to-r from-blue-500 to-purple-500'}`} />
                 </div>
               </div>
 
-              {/* Consultation Assessment Alert Block */}
-              <div className={`p-5 rounded-xl space-y-2 border ${calculateViabilityScore() === 0 ? 'bg-red-500/5 border-red-500/20' : 'bg-blue-500/5 border-blue-500/20'}`}>
-                <div className={`flex items-center gap-2 text-xs font-bold tracking-widest uppercase font-mono ${calculateViabilityScore() === 0 ? 'text-red-400' : 'text-blue-400'}`}>
-                  <DollarSign size={14} />
-                  E-Cell Advisory Assessment
+              {/* DYNAMIC COMPLIANCE ADVISORY BLOCK */}
+              <div className={`p-5 rounded-xl border flex gap-3 items-start ${isViolationBlock ? 'bg-red-500/5 border-red-500/20 text-red-200' : 'bg-blue-500/5 border-blue-500/10 text-white/90'}`}>
+                {isViolationBlock ? <ShieldAlert size={18} className="text-red-500 shrink-0 mt-0.5 animate-bounce" /> : <CheckCircle size={18} className="text-blue-500 shrink-0 mt-0.5" />}
+                <div className="space-y-1">
+                  <div className="text-[10px] font-mono font-bold tracking-widest uppercase text-white/40 flex items-center gap-1">
+                    {isViolationBlock ? "Compliance Refusal Warning" : "Strategic Advisory Assessment"}
+                  </div>
+                  <p className="text-xs font-mono leading-relaxed select-none">{advisoryAssessment}</p>
                 </div>
-                <p className="text-xs text-white/70 leading-relaxed font-sans">{semanticResult.insight}</p>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap gap-3 pt-2">
-                <button 
-                  onClick={handleReset}
-                  className="px-5 py-3 bg-white/5 border border-white/10 text-white/80 text-xs font-bold rounded-xl hover:bg-white/10 transition flex items-center gap-2"
-                >
-                  <RefreshCw size={14} />
-                  <span>Simulate Alternative Concept</span>
+              {/* UTILITY ACTION PANEL ROW FOOTER */}
+              <div className="flex gap-3 pt-2 font-mono text-xs">
+                <button onClick={() => { setHasSimulated(false); setStartupTitle(""); setProblemStatement(""); }} className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg hover:bg-white/10 transition flex items-center gap-1.5 active:scale-[0.98]">
+                  <RefreshCw size={12} /> Clear Simulation
                 </button>
-                <button 
-                  disabled={calculateViabilityScore() === 0}
-                  onClick={() => window.print()}
-                  className="px-5 py-3 bg-white text-black text-xs font-bold rounded-xl hover:bg-gray-200 transition flex items-center gap-2 shadow-lg disabled:opacity-20 disabled:hover:bg-white"
-                >
-                  <FileText size={14} />
-                  <span>Export Strategic Roadmap (PDF)</span>
-                </button>
+                {!isViolationBlock && (
+                  <button onClick={() => window.print()} className="px-4 py-2 bg-white text-black font-bold rounded-lg hover:bg-zinc-200 transition flex items-center gap-1.5 active:scale-[0.98]">
+                    <FileText size={12} /> Export Roadmap (PDF)
+                  </button>
+                )}
               </div>
+
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
     </div>
   );
 }
