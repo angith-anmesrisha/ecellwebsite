@@ -116,7 +116,7 @@ export default function AiStories() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="relative w-full max-w-md h-[75vh] max-h-[600px] bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 flex flex-col justify-between shadow-2xl overflow-hidden z-40"
+              className="relative w-full max-w-md h-[75vh] max-h-[600px] bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 flex flex-col justify-between shadow-2xl overflow-hidden z-[150]"
             >
               {/* Background ambient decorative orb */}
               <div className="absolute -top-20 -left-20 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none" />
