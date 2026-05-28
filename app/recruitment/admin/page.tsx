@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Sliders, Film, Briefcase, Trophy, Trash2, ArrowLeft, ShieldCheck, Lock, Calendar as CalendarIcon, Save } from "lucide-react";
+import { Sliders, Film, Briefcase, Trophy, Trash2, ArrowLeft, ShieldCheck, Lock, Calendar as CalendarIcon, Save, AlertTriangle } from "lucide-react";
 
 interface Submission {
   id: string;
@@ -33,11 +33,15 @@ export default function AdminDashboard() {
     if (timePart) setTargetTimeInput(timePart.substring(0, 5));
 
     if (isAuthenticated) {
-      const data = JSON.parse(localStorage.getItem("ecell_submissions") || "[]");
-      const sortedData = data.sort((a: Submission, b: Submission) => b.score - a.score);
-      setSubmissions(sortedData);
+      loadSubmissions();
     }
   }, [isAuthenticated]);
+
+  const loadSubmissions = () => {
+    const data = JSON.parse(localStorage.getItem("ecell_submissions") || "[]");
+    const sortedData = data.sort((a: Submission, b: Submission) => b.score - a.score);
+    setSubmissions(sortedData);
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +65,19 @@ export default function AdminDashboard() {
       const remaining = submissions.filter(item => item.id !== id);
       setSubmissions(remaining);
       localStorage.setItem("ecell_submissions", JSON.stringify(remaining));
+    }
+  };
+
+  // --- NEW FEATURE: GLOBAL HARD RESET ---
+  const handleHardReset = () => {
+    const confirmation1 = confirm("⚠️ CRITICAL WARNING: You are about to wipe the entire recruitment leaderboard. This will permanently delete ALL student scores and evaluation logs. Proceed?");
+    if (confirmation1) {
+      const confirmation2 = confirm("FINAL CONFIRMATION: This action is completely irreversible. Are you absolutely sure you want to reset all data nodes?");
+      if (confirmation2) {
+        localStorage.removeItem("ecell_submissions");
+        setSubmissions([]);
+        alert("System Reset Complete. All applicant execution records have been purged.");
+      }
     }
   };
 
@@ -106,9 +123,18 @@ export default function AdminDashboard() {
             </div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight mt-1">E-Cell Recruitment Leaderboard</h1>
           </div>
-          <button onClick={() => window.location.href = "/recruitment"} className="text-xs font-mono border border-white/10 bg-white/5 px-3 py-1.5 rounded-lg text-white/60 hover:text-white transition flex items-center gap-1.5">
-            <ArrowLeft size={14} /> Return Portal
-          </button>
+          <div className="flex gap-3 w-full md:w-auto">
+            {/* Hard Reset Trigger Button */}
+            <button 
+              onClick={handleHardReset}
+              className="text-xs font-mono border border-red-500/30 bg-red-500/10 px-3 py-1.5 rounded-lg text-red-400 hover:bg-red-500/20 transition flex items-center gap-1.5"
+            >
+              <AlertTriangle size={14} /> Hard Reset Database
+            </button>
+            <button onClick={() => window.location.href = "/recruitment"} className="text-xs font-mono border border-white/10 bg-white/5 px-3 py-1.5 rounded-lg text-white/60 hover:text-white transition flex items-center gap-1.5 shrink-0">
+              <ArrowLeft size={14} /> Return Portal
+            </button>
+          </div>
         </div>
 
         {/* RECRUITMENT CLOCK TRIGGER OVERRIDE MODULE */}
