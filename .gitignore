@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# 🔐 Security Gates
+.env
+.env.local
+.env.production
+.env.development
+
+# Next.js Build Logs
+.next/
+out/
+build/
