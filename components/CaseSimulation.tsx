@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { AlertTriangle, Clock, Send, ShieldCheck, FileText } from "lucide-react";
+import { AlertTriangle, Clock, Send, ShieldCheck, FileText, Loader2 } from "lucide-react";
 
 interface CaseSimulationProps {
   candidateId: string;
@@ -14,6 +14,7 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
   const [assembledScenario, setAssembledScenario] = useState("");
   const [userSubmission, setUserSubmission] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // --- DETERMINISTIC SCENARIO MATRIX ---
   const scenarioPool = {
@@ -98,17 +99,57 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
     }
   }, [candidateId, candidateEmail, department]);
 
-  const handleSubmitCase = (e: React.FormEvent) => {
+  const handleSubmitCase = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (userSubmission.trim().split(/\s+/).length < 20) {
-      alert("Strategic solutions must be substantive. Please elaborate further on your structural plan.");
+    
+    const currentCount = userSubmission.trim() === "" ? 0 : userSubmission.trim().split(/\s+/).length;
+    if (currentCount < 50) {
+      alert("Strategic solutions must be substantive. Please elaborate further to meet the minimum 50-word requirement.");
       return;
     }
 
     if (confirm("Lock final execution plan? Once submitted, this node cannot be re-edited.")) {
-      localStorage.setItem(`ecell_r2_submission_${candidateId}`, userSubmission);
-      setIsSubmitted(true);
-      onComplete(userSubmission);
+      setIsSubmitting(true);
+      
+      try {
+        // Dispatching structural payload to the local free evaluation middleware route
+        const response = await fetch("/api/recruitment/submit-case", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: candidateEmail,
+            caseAnswer: userSubmission,
+          }),
+        });
+
+        const resData = await response.json();
+
+        if (response.ok && resData.success) {
+          // Lock the submission state in local memory cache logs
+          localStorage.setItem(`ecell_r2_submission_${candidateId}`, userSubmission);
+          
+          // Re-sync fallback backup array mapping for the master admin reviews
+          const localLogTree = JSON.parse(localStorage.getItem("ecell_submissions_backup_tree") || "[]");
+          const syncedTree = localLogTree.map((item: any) => {
+            if (item.email.toLowerCase() === candidateEmail.toLowerCase()) {
+              return { ...item, caseAnswer: userSubmission };
+            }
+            return item;
+          });
+          localStorage.setItem("ecell_submissions_backup_tree", JSON.stringify(syncedTree));
+
+          setIsSubmitted(true);
+          onComplete(userSubmission);
+        } else {
+          alert(`Submission Failed: ${resData.error || "The server rejected the strategy packet configuration node."}`);
+        }
+      } catch (err) {
+        alert("Network Handshake Fault: Unable to reach the evaluation gateway. Check your terminal connection logs and retry.");
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -154,7 +195,7 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
           </p>
         </div>
 
-        {/* INPUT RESPONSE INPUTS */}
+        {/* INPUT RESPONSE FORM */}
         <form onSubmit={handleSubmitCase} className="space-y-3">
           <div className="space-y-1">
             <div className="flex justify-between items-center text-[10px] uppercase font-mono text-white/40 tracking-wider">
@@ -166,19 +207,28 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
             <textarea
               required
               rows={6}
+              disabled={isSubmitting}
               value={userSubmission}
               onChange={(e) => setUserSubmission(e.target.value)}
               placeholder="Outline your chronological operation sequence, mitigation steps, communication strategies, and resource management pipelines..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white placeholder-white/20 focus:outline-none focus:border-amber-500 font-mono resize-none leading-relaxed"
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white placeholder-white/20 focus:outline-none focus:border-amber-500 font-mono resize-none leading-relaxed disabled:opacity-40"
             />
           </div>
 
           <button
             type="submit"
-            disabled={currentWordCount < 50}
+            disabled={currentWordCount < 50 || isSubmitting}
             className="w-full py-2.5 bg-white text-black text-[10px] font-mono tracking-widest font-black uppercase rounded-xl flex items-center justify-center gap-2 transition hover:bg-zinc-200 disabled:opacity-20 select-none cursor-pointer"
           >
-            <Send size={12} /> Lock Strategic Solution Node
+            {isSubmitting ? (
+              <>
+                <Loader2 size={12} className="animate-spin" /> Verifying Matrix Channels...
+              </>
+            ) : (
+              <>
+                <Send size={12} /> Lock Strategic Solution Node
+              </>
+            )}
           </button>
         </form>
 

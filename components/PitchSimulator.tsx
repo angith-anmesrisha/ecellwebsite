@@ -67,94 +67,92 @@ export default function PitchSimulator() {
     setHasSimulated(false);
     setIsViolationBlock(false);
 
-    try {
-      const verifyPayload = await fetch("/api/moderate-pitch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: startupTitle,
-          problem: problemStatement,
-          sector: selectedSector
-        })
-      });
+    // 1. Smooth artificial timeout loop to allow the UI sandbox loader grids to render beautifully
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const auditLog = await verifyPayload.json();
+    const problemTextClean = problemStatement.trim().toLowerCase();
+    const wordCount = problemTextClean.split(/\s+/).length;
 
-      if (auditLog.isFlagged) {
-        setViabilityIndex(0);
-        setIsViolationBlock(true);
-        if (auditLog.categoryReason === "ETHICAL_COMPLIANCE_VIOLATION") {
-          setAdvisoryAssessment(
-            "CRITICAL COMPLIANCE REFUSAL: This concept triggers automatic regulatory filters. The E-Cell algorithmic sandbox completely blocks architectures promoting illegal frameworks, human rights violations, or unethical business models."
-          );
-        } else {
-          setAdvisoryAssessment(
-            "SIMULATION ERROR: Problem statement is too brief or insubstantial. Please write a descriptive paragraph outlining an authentic target market scenario to generate logical advisory metrics."
-          );
-        }
-        setHasSimulated(true);
-        setIsLoading(false);
-        return;
-      }
+    // 2. Free, Local Core Compliance Filtering Guardrails
+    const complianceBlockTerms = ["scam", "exploit", "illegal", "hack", "bypass", "fraud"];
+    const hasComplianceViolation = complianceBlockTerms.some(term => problemTextClean.includes(term));
 
-      // --- BUSINESS INTELLIGENCE EQUATION CORE ---
-      let computedScore = 55;
-
-      switch (selectedSector) {
-        case "Artificial Intelligence":
-        case "Cybersecurity Nodes":
-          computedScore += 15;
-          break;
-        case "FinTech Nodes":
-        case "B2B SaaS Ecosystems":
-          computedScore += 12;
-          break;
-        case "Sustainable Supply Chains":
-        case "Autonomous Mobility":
-          computedScore += 10;
-          break;
-        case "AgriTech Ecosystems":
-        case "EdTech Systems":
-        case "Web3 & Tokenomics":
-          computedScore += 7;
-          break;
-        case "Direct Consumer Retail":
-          computedScore += 5;
-          break;
-        default:
-          computedScore += 8;
-      }
-
-      if (selectedModel === "SaaS Subscription") computedScore += 10;
-      if (selectedModel === "B2B Enterprise Contracts") computedScore += 12;
-
-      if (selectedPricing === "Premium Pricing") computedScore += 8;
-      if (selectedPricing === "Value-Based Tiering") computedScore += 10;
-
-      const operationalVariance = Math.floor(Math.random() * 7) - 3;
-      const finalizedIndex = Math.min(98, Math.max(15, computedScore + operationalVariance));
-
-      let assessmentBrief = `High-velocity ${selectedSector} framework layout confirmed. Incorporating a ${selectedModel} model paired with ${selectedPricing} establishes robust initial cash generation thresholds. Ensure your pilot sprints focus heavily on tracking explicit client acquisition conversion parameters to offset infrastructure overheads.`;
-      
-      if (selectedSector === "Artificial Intelligence" && selectedPricing === "Premium Pricing") {
-        assessmentBrief += " Moving toward premium pricing tiers will properly protect your operational margins against fluctuating API data processing costs.";
-      }
-
-      setViabilityIndex(finalizedIndex);
-      setAdvisoryAssessment(assessmentBrief);
+    if (hasComplianceViolation) {
+      setViabilityIndex(0);
+      setIsViolationBlock(true);
+      setAdvisoryAssessment(
+        "CRITICAL COMPLIANCE REFUSAL: This concept triggers automatic regulatory filters. The E-Cell algorithmic sandbox completely blocks architectures promoting illegal frameworks, human rights violations, or unethical business models."
+      );
       setHasSimulated(true);
-
-    } catch (err) {
-      console.error("Handshake loop with compliance layer broken:", err);
-      setViabilityIndex(25);
-      setAdvisoryAssessment("SYSTEM CORRUPTION: Communication channel with the validation array timed out.");
-      setHasSimulated(true);
-    } finally {
       setIsLoading(false);
+      return;
     }
+
+    if (wordCount < 5) {
+      setViabilityIndex(0);
+      setIsViolationBlock(true);
+      setAdvisoryAssessment(
+        "SIMULATION ERROR: Problem statement is too brief or insubstantial. Please write a descriptive paragraph outlining an authentic target market scenario to generate logical advisory metrics."
+      );
+      setHasSimulated(true);
+      setIsLoading(false);
+      return;
+    }
+
+    // 3. Free Local Business Intelligence Evaluation Equation Core
+    let computedScore = 55;
+
+    switch (selectedSector) {
+      case "Artificial Intelligence":
+      case "Cybersecurity Nodes":
+        computedScore += 15;
+        break;
+      case "FinTech Nodes":
+      case "B2B SaaS Ecosystems":
+        computedScore += 12;
+        break;
+      case "Sustainable Supply Chains":
+      case "Autonomous Mobility":
+        computedScore += 10;
+        break;
+      case "AgriTech Ecosystems":
+      case "EdTech Systems":
+      case "Web3 & Tokenomics":
+        computedScore += 7;
+        break;
+      case "Direct Consumer Retail":
+        computedScore += 5;
+        break;
+      default:
+        computedScore += 8;
+    }
+
+    if (selectedModel === "SaaS Subscription") computedScore += 10;
+    if (selectedModel === "B2B Enterprise Contracts") computedScore += 12;
+
+    if (selectedPricing === "Premium Pricing") computedScore += 8;
+    if (selectedPricing === "Value-Based Tiering") computedScore += 10;
+
+    // Local deterministic pseudo-random variance engine based on string characteristics
+    const textLengthVariance = (problemStatement.length % 7) - 3;
+    const finalizedIndex = Math.min(98, Math.max(15, computedScore + textLengthVariance));
+
+    // 4. Generate Dynamic, Strategic Sandbox Text Output Layout Frames
+    let assessmentBrief = `High-velocity ${selectedSector} framework layout confirmed. Incorporating a ${selectedModel} model paired with ${selectedPricing} establishes robust initial cash generation thresholds. Ensure your pilot sprints focus heavily on tracking explicit client acquisition conversion parameters to offset infrastructure overheads.`;
+    
+    if (selectedSector === "Artificial Intelligence" && selectedPricing === "Premium Pricing") {
+      assessmentBrief += " Moving toward premium pricing tiers will properly protect your operational margins against fluctuating API data processing costs.";
+    }
+
+    // 5. Update state directly in browser memory to trigger instant rendering loops (No API endpoints required!)
+    setViabilityIndex(finalizedIndex);
+    setAdvisoryAssessment(assessmentBrief);
+    setHasSimulated(true);
+    setIsLoading(false);
   };
 
   // --- THE ISOLATED WINDOW PRINT SANDBOX FUNCTION ---
+  // --- THE EXPANDED HIGH-PROFESSIONAL PRINT ROADMAP FUNCTION ---
   const handlePrintIsolatedDocument = () => {
     const currentInsights = getStrategicInsights();
     const printWindow = window.open("", "_blank");
@@ -163,88 +161,214 @@ export default function PitchSimulator() {
       return;
     }
 
+    // Dynamic, professional intelligence mapping engine based on sector selection
+    const getDetailedIndustryMatrix = (sector: string) => {
+      const matrices: Record<string, { overview: string; tailwinds: string; vulnerabilities: string[] }> = {
+        "Artificial Intelligence": {
+          overview: "The artificial intelligence and LLMOps domain is experiencing a structural shift from centralized foundational models to localized, highly optimized domain-specific pipelines. System design efficiency and data sovereignty serve as primary competitive moats.",
+          tailwinds: "Decreasing token costs, widespread availability of high-performance open-source model branches, and surging enterprise demand for contextual workflow automation layers.",
+          vulnerabilities: [
+            "Fluctuating inference and compute overhead run-rates threatening gross margins.",
+            "Semantic context drift, regression vulnerabilities, and data governance non-compliance risks."
+          ]
+        },
+        "B2B SaaS Ecosystems": {
+          overview: "B2B SaaS architectures are shifting toward hyper-focused workflow verticalization. Modern enterprises demand deep out-of-the-box integration layers, exceptional data compliance, and verifiable data-driven ROI maps before allocating seat budgets.",
+          tailwinds: "Corporate consolidation of fragmented legacy software and high system stickiness once integrated into core operational systems.",
+          vulnerabilities: [
+            "Elongated enterprise procurement cycles and high initial friction paths for pilot conversions.",
+            "Elevated initial customer churn risk if onboarding workflows are unoptimized."
+          ]
+        },
+        "Autonomous Mobility": {
+          overview: "Autonomous mobility, robotics, and physical tech systems demand deep coordination between spatial compute middleware and embedded hardware infrastructure loops.",
+          tailwinds: "Rapid advancements in localized edge-computing architectures and institutional support for supply chain automation models.",
+          vulnerabilities: [
+            "High research and development capital intensive burn-rates prior to unit validation.",
+            "Complex hardware supply chain constraints and localized regulatory compliance friction paths."
+          ]
+        },
+        "Cybersecurity Nodes": {
+          overview: "The threat landscape is scaling exponentially, turning security frameworks from defensive perimeters into zero-trust, continuous cryptographic validation systems.",
+          tailwinds: "Surging executive-level focus on systemic security liabilities and strict regulatory mandates for real-time intrusion monitoring.",
+          vulnerabilities: [
+            "High systemic liability margins in the event of zero-day exploits.",
+            "Continuous technical debt accumulation due to evolving attack vectors."
+          ]
+        },
+        "FinTech Nodes": {
+          overview: "Financial technology, modern core-banking systems, and decentralized rails require absolute transaction integrity, zero-latency processing pools, and ironclad regulatory compliance structures.",
+          tailwinds: "Widespread infrastructure democratization via open banking protocols and high margin capture opportunities in niche cross-border settlement channels.",
+          vulnerabilities: [
+            "Severe banking compliance audit deadlocks and state financial license procurement friction.",
+            "Systemic payment gateway fraud risks and third-party ledger synchronization dependencies."
+          ]
+        },
+        "Web3 & Tokenomics": {
+          overview: "Web3 networks are moving toward decentralized identities, self-sovereign data layers, and modular gas-optimized protocol tracks.",
+          tailwinds: "Maturing consensus layers and enterprise validation of asset tokenization frameworks.",
+          vulnerabilities: [
+            "Highly volatile token-economic balance layers and shifting global macro-regulatory classifications.",
+            "Smart contract exploit vectors and UX adoption barriers for non-technical user cohorts."
+          ]
+        },
+        "Sustainable Supply Chains": {
+          overview: "Global logistics networks are undergoing a massive transformation, transitioning to data-driven green transit tracking, automated inventory systems, and transparent carbon-accounting chains.",
+          tailwinds: "Surging multi-national corporate emphasis on carbon tracking mandates and green energy operational efficiencies.",
+          vulnerabilities: [
+            "Fragmented data reporting loops across multi-tier third-party transit stakeholders.",
+            "Elevated initial hardware integration expenses for real-time warehouse logging systems."
+          ]
+        },
+        "CleanTech & Renewable Energy": {
+          overview: "The energy sector requires distributed micro-grid management models, efficient grid load balancing, and advanced chemical/physical battery storage tracking configurations.",
+          tailwinds: "Substantial institutional green grants, tax relief policies, and long-term macro-utility cost advantages.",
+          vulnerabilities: [
+            "Extensive capital expenditure deployment horizons before achieving operational yield parity.",
+            "Intermittent generation resource dependencies and grid-interconnect regulatory friction."
+          ]
+        },
+        "AgriTech Ecosystems": {
+          overview: "Precision agricultural frameworks leverage spatial IoT arrays, automated controlled environments, and soil telemetry datasets to optimize farm yield metrics.",
+          tailwinds: "Macro food security tailwinds and predictable, climate-insulated harvesting predictability matrices.",
+          vulnerabilities: [
+            "High primary sensor hardware staging overhead costs across geographically distributed networks.",
+            "Relatively low tech-adoption rates inside conservative traditional industry distribution cells."
+          ]
+        },
+        "Direct Consumer Retail": {
+          overview: "Modern direct-to-consumer digital commerce requires meticulous optimization of customer acquisition channels, reliable delivery loops, and high lifetime value metrics.",
+          tailwinds: "Direct end-user interaction feedback loops and immediate margin capture potentials.",
+          vulnerabilities: [
+            "Extremely high competitive noise ratios and volatile paid-ad customer acquisition cost patterns.",
+            "Inventory working capital deadlocks and reverse logistics processing margins."
+          ]
+        },
+        "HealthTech & Telemedicine": {
+          overview: "Digital medicine networks require end-to-end medical record data insulation, zero-fault diagnostics processing, and frictionless provider-to-patient channels.",
+          tailwinds: "Institutional healthcare operational deficits pushing for distributed preventative monitoring models.",
+          vulnerabilities: [
+            "Stringent healthcare data privacy regulations and severe diagnostic system liabilities.",
+            "Friction in clinician onboarding and medical verification gate compliance."
+          ]
+        },
+        "EdTech Systems": {
+          overview: "Continuous education portals are shifting from passive media video libraries to hyper-personalized, active continuous learning sandboxes.",
+          tailwinds: "Rapid shifts in enterprise workforce re-skilling trends and expanding remote-first professional demands.",
+          vulnerabilities: [
+            "Historically low student course completion ratios and high platform fatigue curves.",
+            "Saturated business environments leading to aggressive b2b pricing constraints."
+          ]
+        }
+      };
+
+      return matrices[sector] || {
+        overview: "The targeted market space presents clear structural optimization opportunities. Successful execution demands strict capital constraint management and distinct product insulation matrices.",
+        tailwinds: "General sector modernization tracks and expanding digital transformation adoption parameters across corporate client segments.",
+        vulnerabilities: [
+          "Unoptimized go-to-market cost metrics.",
+          "Shifting customer retention dynamics within competitive business landscapes."
+        ]
+      };
+    };
+
+    const sectorMeta = getDetailedIndustryMatrix(selectedSector);
+
     const htmlOutput = `
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Strategic Roadmap - ${startupTitle}</title>
+          <title>Strategic Analysis Report - ${startupTitle}</title>
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #000; background: #fff; margin: 0; padding: 2rem; box-sizing: border-box; }
-            .header-row { border-bottom: 2px solid #000; padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end; }
-            .title-main { font-size: 1.5rem; font-weight: 900; text-transform: uppercase; letter-spacing: -0.025em; margin: 0; }
-            .subtitle { font-size: 10px; font-family: monospace; color: #555; text-transform: uppercase; margin: 2px 0 0 0; }
-            .meta-box { text-align: right; font-family: monospace; font-size: 11px; }
-            .section-title { font-size: 11px; font-family: monospace; text-transform: uppercase; letter-spacing: 0.1em; color: #777; font-weight: bold; margin: 1.5rem 0 0.5rem 0; }
-            .grid-profile { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; font-family: monospace; font-size: 11px; border: 1px solid #e5e7eb; padding: 0.75rem; border-radius: 0.5rem; background: #f9fafb; }
-            .metric-label { color: #9ca3af; display: block; text-transform: uppercase; font-size: 9px; }
-            .p-italic { font-size: 12px; line-height: 1.6; font-family: Georgia, serif; color: #1f2937; background: #f9fafb; padding: 1rem; border-radius: 0.5rem; border: 1px solid #f3f4f6; font-style: italic; margin: 0; }
-            .assessment-text { font-size: 12px; line-height: 1.6; color: #000; font-weight: 500; border-left: 3px solid #000; padding-left: 0.75rem; margin: 0; }
-            .card-step { border: 1px solid #e5e7eb; padding: 1rem; border-radius: 0.5rem; background: #f9fafb; margin-bottom: 0.75rem; page-break-inside: avoid; }
-            .step-title { margin: 0 0 0.25rem 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #2563eb; font-family: monospace; }
-            .step-desc { margin: 0; font-size: 11px; line-height: 1.5; color: #374151; }
-            .grid-hurdle { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; border: 1px solid #fee2e2; padding: 1rem; border-radius: 0.5rem; background: #fffdfd; margin-bottom: 0.75rem; page-break-inside: avoid; }
-            .red-title { font-size: 9px; text-transform: uppercase; font-family: monospace; color: #ef4444; font-weight: bold; display: block; }
-            .green-title { font-size: 9px; text-transform: uppercase; font-family: monospace; color: #10b981; font-weight: bold; display: block; }
-            .bold-black { margin: 2px 0 0 0; font-size: 11px; font-weight: bold; color: #000; }
-            .desc-gray { margin: 2px 0 0 0; font-size: 11px; color: #374151; line-height: 1.5; }
-            .footer-sig { margin-top: 3rem; border-top: 1px solid #e5e7eb; padding-top: 1rem; text-align: center; font-family: monospace; font-size: 8px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.1em; }
-            @page { size: portrait; margin: 1.5cm; }
-            .page-break-before { page-break-before: always; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0d0e12; background: #fff; margin: 0; padding: 2.5rem; box-sizing: border-box; line-height: 1.5; }
+            .header-container { border-bottom: 3px solid #0f172a; padding-bottom: 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; }
+            .branding-title { font-size: 1.6rem; font-weight: 900; text-transform: uppercase; letter-spacing: -0.03em; margin: 0; color: #0f172a; }
+            .branding-subtitle { font-size: 10px; font-family: monospace; color: #475569; text-transform: uppercase; margin: 4px 0 0 0; letter-spacing: 0.05em; }
+            .metadata-panel { text-align: right; font-family: monospace; font-size: 11px; color: #334155; line-height: 1.4; }
+            .section-header { font-size: 11px; font-family: monospace; text-transform: uppercase; letter-spacing: 0.15em; color: #475569; font-weight: 800; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.35rem; margin: 2rem 0 0.75rem 0; page-break-after: avoid; }
+            .profile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; font-family: monospace; font-size: 11px; border: 1px solid #cbd5e1; padding: 1rem; border-radius: 0.5rem; background: #f8fafc; }
+            .metric-tag { color: #64748b; display: block; text-transform: uppercase; font-size: 9px; margin-bottom: 2px; }
+            .problem-blockquote { font-size: 12.5px; line-height: 1.6; font-family: Georgia, serif; color: #1e293b; background: #f8fafc; padding: 1.25rem; border-radius: 0.5rem; border-left: 4px solid #475569; margin: 0; font-style: italic; }
+            .assessment-box { font-size: 12px; line-height: 1.6; color: #0f172a; font-weight: 500; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1rem; border-radius: 0.5rem; margin: 0; }
+            .industry-narrative { font-size: 12px; color: #1e293b; text-align: justify; margin: 0 0 0.75rem 0; }
+            .bullet-list { margin: 0; padding-left: 1.25rem; font-size: 11.5px; color: #334155; }
+            .bullet-list li { margin-bottom: 0.5rem; }
+            .step-container { border: 1px solid #e2e8f0; padding: 1rem; border-radius: 0.5rem; background: #f8fafc; margin-bottom: 0.75rem; page-break-inside: avoid; }
+            .step-header { margin: 0 0 0.35rem 0; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #1d4ed8; font-family: monospace; }
+            .step-body { margin: 0; font-size: 11.5px; color: #334155; }
+            .risk-split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; border: 1px solid #fecdd3; padding: 1.25rem; border-radius: 0.5rem; background: #fff1f2; margin-bottom: 0.75rem; page-break-inside: avoid; }
+            .risk-label-red { font-size: 9px; text-transform: uppercase; font-family: monospace; color: #e11d48; font-weight: bold; display: block; margin-bottom: 2px; }
+            .risk-label-green { font-size: 9px; text-transform: uppercase; font-family: monospace; color: #059669; font-weight: bold; display: block; margin-bottom: 2px; }
+            .risk-title-text { margin: 0; font-size: 11.5px; font-weight: bold; color: #0f172a; }
+            .risk-desc-text { margin: 4px 0 0 0; font-size: 11px; color: #334155; line-height: 1.5; }
+            .report-footer { margin-top: 3.5rem; border-top: 1px solid #e2e8f0; padding-top: 1rem; text-align: center; font-family: monospace; font-size: 8px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.12em; }
+            @page { size: portrait; margin: 1.6cm; }
+            .force-break { page-break-before: always; }
           </style>
         </head>
         <body>
-          <div class="header-row">
+          <div class="header-container">
             <div>
-              <h1 class="title-main">BIMTECH E-CELL INCUBATION SANDBOX</h1>
-              <p class="subtitle">Venture Intelligence Strategic Roadmap Report</p>
+              <h1 class="branding-title">BIMTECH E-CELL INCUBATION CORE</h1>
+              <p class="branding-subtitle">Venture Intelligence Strategic Diagnostic Brief</p>
             </div>
-            <div class="meta-box">
-              <div>Date: ${new Date().toLocaleDateString('en-US')}</div>
-              <div>Viability Index: <strong>${viabilityIndex}%</strong></div>
+            <div class="metadata-panel">
+              <div>Document ID: TYV-${Math.random().toString(36).substring(2, 7).toUpperCase()}-2026</div>
+              <div>Date Generated: ${new Date().toLocaleDateString('en-US')}</div>
+              <div>Venture Viability Index: <strong>${viabilityIndex}%</strong></div>
             </div>
           </div>
 
-          <div class="section-title">01 // Venture Profile</div>
-          <div class="grid-profile">
-            <div><span class="metric-label">Brand Entity:</span> <strong>${startupTitle}</strong></div>
-            <div><span class="metric-label">Domain Node:</span> <strong>${selectedSector}</strong></div>
-            <div><span class="metric-label">Monetization Hub:</span> <strong>${selectedModel} // ${selectedPricing}</strong></div>
+          <div class="section-header">01 // Executive Venture Profile</div>
+          <div class="profile-grid">
+            <div><span class="metric-tag">Brand Entity Node:</span> <strong>${startupTitle}</strong></div>
+            <div><span class="metric-tag">Target Sector Track:</span> <strong>${selectedSector}</strong></div>
+            <div><span class="metric-tag">Commercial Framework:</span> <strong>${selectedModel} // ${selectedPricing}</strong></div>
           </div>
 
-          <div class="section-title">02 // Market Friction & Target Problem</div>
-          <p class="p-italic">"${problemStatement}"</p>
+          <div class="section-header">02 // Identified Market Friction</div>
+          <p class="problem-blockquote">"${problemStatement}"</p>
 
-          <div class="section-title">03 // Algorithmic Strategic Assessment</div>
-          <p class="assessment-text">${advisoryAssessment}</p>
+          <div class="section-header">03 // Industry Landscape & Market Macro Analysis</div>
+          <p class="industry-narrative">${sectorMeta.overview}</p>
+          <div style="margin-top: 0.5rem;">
+            <span style="font-size: 10px; font-family: monospace; font-weight: bold; uppercase; color: #0284c7; display: block; margin-bottom: 2px;">Key Industry Tailwinds & Drivers:</span>
+            <p style="margin: 0; font-size: 11.5px; color: #334155; text-align: justify;">${sectorMeta.tailwinds}</p>
+          </div>
 
-          <div class="section-title page-break-before">04 // Tactical Implementation Roadmap Plan</div>
+          <div class="section-header">04 // Automated Strategic Advisory Assessment</div>
+          <p class="assessment-box"><strong>Operational Feedback Consensus:</strong> ${advisoryAssessment}</p>
+
+          <div class="section-header force-break">05 // Tactical Implementation & Phased Milestones</div>
           <div style="display: flex; flex-direction: column;">
             ${currentInsights.phases.map(p => `
-              <div class="card-step">
-                <h4 class="step-title">${p.t}</h4>
-                <p class="step-desc">${p.d}</p>
+              <div class="step-container">
+                <h4 class="step-header">${p.t}</h4>
+                <p class="step-body">${p.d}</p>
               </div>
             `).join("")}
           </div>
 
-          <div class="section-title">05 // Critical Hurdles & Strategic Fallback Safeguards</div>
+          <div class="section-header">06 // Systemic Risk Audit & Strategic Fallback Protocols</div>
           <div style="display: flex; flex-direction: column;">
-            ${currentInsights.hurdles.map(h => `
-              <div class="grid-hurdle">
+            ${currentInsights.hurdles.map((h, index) => `
+              <div class="risk-split-grid">
                 <div>
-                  <span class="red-title">Anticipated Operational Hurdle:</span>
-                  <p class="bold-black">${h.h}</p>
+                  <span class="risk-label-red">Primary Operational Threat [0${index + 1}]:</span>
+                  <p class="risk-title-text">${h.h}</p>
+                  <span class="risk-label-red" style="margin-top: 8px; color: #b45309;">Sector Vulnerability Factor:</span>
+                  <p class="risk-desc-text" style="font-style: italic; color: #78350f;">"${sectorMeta.vulnerabilities[index] || "Market deployment timing imbalances."}"</p>
                 </div>
-                <div style="border-left: 1px dashed #fca5a5; padding-left: 1.5rem;">
-                  <span class="green-title">E-Cell Recommended Solution:</span>
-                  <p class="desc-gray">${h.s}</p>
+                <div style="border-left: 1px dashed #fda4af; padding-left: 1.5rem;">
+                  <span class="risk-label-green">E-Cell Recommended Safeguard:</span>
+                  <p class="risk-desc-text" style="color: #065f46; font-weight: 500;">${h.s}</p>
                 </div>
               </div>
             `).join("")}
           </div>
 
-          <div class="footer-sig">
-            Generated via BIMTECH E-Cell Venture Intelligence Sandbox Engine // Internal Incubation Records
+          <div class="report-footer">
+            CONFIDENTIAL DOCUMENT // FOR INTERNAL BIMTECH E-CELL INCUBATION ARCHIVE RECORDS ONLY
           </div>
 
           <script>
@@ -261,7 +385,6 @@ export default function PitchSimulator() {
     printWindow.document.write(htmlOutput);
     printWindow.document.close();
   };
-
   return (
     <div className="w-full bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 relative shadow-2xl">
       
@@ -327,7 +450,7 @@ export default function PitchSimulator() {
           </div>
         </div>
 
-        <button type="submit" disabled={isLoading || !startupTitle || !problemStatement} className="w-full py-3 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 disabled:opacity-20 transition">
+        <button type="submit" mercantile-attribute="true" disabled={isLoading || !startupTitle || !problemStatement} className="w-full py-3 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 disabled:opacity-20 transition cursor-pointer">
           <Sparkles size={14} className={isLoading ? "animate-spin text-blue-500" : ""} />
           <span>{isLoading ? "Running Mathematical Models..." : "Simulate Business Architecture"}</span>
         </button>
@@ -381,11 +504,11 @@ export default function PitchSimulator() {
               </div>
 
               <div className="flex gap-3 pt-2 font-mono text-xs">
-                <button type="button" onClick={() => { setHasSimulated(false); setStartupTitle(""); setProblemStatement(""); }} className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg hover:bg-white/10 transition flex items-center gap-1.5">
+                <button type="button" onClick={() => { setHasSimulated(false); setStartupTitle(""); setProblemStatement(""); }} className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg hover:bg-white/10 transition flex items-center gap-1.5 cursor-pointer">
                   <RefreshCw size={12} /> Clear Simulation
                 </button>
                 {!isViolationBlock && (
-                  <button type="button" onClick={handlePrintIsolatedDocument} className="px-4 py-2 bg-white text-black font-bold rounded-lg hover:bg-zinc-200 transition flex items-center gap-1.5">
+                  <button type="button" onClick={handlePrintIsolatedDocument} className="px-4 py-2 bg-white text-black font-bold rounded-lg hover:bg-zinc-200 transition flex items-center gap-1.5 cursor-pointer">
                     <FileText size={12} /> Export Strategic Roadmap (PDF)
                   </button>
                 )}
