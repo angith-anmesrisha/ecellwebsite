@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
-import { ArrowUpRight, Sparkles } from "lucide-react";
+import { ArrowUpRight, Sparkles, Users, Skull, Zap, Lightbulb } from "lucide-react";
 
 import RotatingBadge from '@/components/RotatingBadge';
 import AnimatedWord from '@/components/AnimatedWord';
@@ -145,16 +145,71 @@ export default function Home() {
         </main>
 
         {/* Live AI News Stories Feed Panel - ELEVATED CORE TO z-40 */}
-<section id="ai-feed" className="relative z-40 py-12 border-b border-white/5">
-  <div className="text-center mb-6">
-    <h3 className="text-xs font-mono tracking-widest uppercase text-blue-500 font-bold">Live Feed</h3>
-    <h2 className="text-2xl font-black text-white tracking-tight mt-1">Today's Intelligence Core</h2>
-  </div>
-  <AiStories />
-</section>
+        <section id="ai-feed" className="relative z-40 py-12 border-b border-white/5">
+          <div className="text-center mb-6">
+            <h3 className="text-xs font-mono tracking-widest uppercase text-blue-500 font-bold">Live Feed</h3>
+            <h2 className="text-2xl font-black text-white tracking-tight mt-1">Today's Intelligence Core</h2>
+          </div>
+          <AiStories />
+        </section>
+
+        {/* INTEGRATED ECOSYSTEM NODES SHOWCASE SECTION */}
+        <section id="ecosystem" className="relative z-10 py-24 px-6 md:px-10 max-w-7xl mx-auto border-b border-white/5">
+          <div className="mb-12 text-center md:text-left space-y-2">
+            <h3 className="text-xs font-mono tracking-widest uppercase text-blue-500 font-bold">// Institutional Capital Network</h3>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight uppercase">Ecosystem Matrix Nodes</h2>
+            <p className="text-white/60 max-w-xl text-sm md:text-base leading-relaxed">
+              Move past static architectures. Tap into real-time professional mentorship frameworks or analyze detailed failure diagnostics compiled inside our network records.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 font-mono text-xs">
+            {/* Card 1: The Alumni Directory Block */}
+            <Link href="/alumni" className="lg:col-span-7 bg-zinc-950 border border-white/10 p-6 md:p-8 rounded-2xl flex flex-col justify-between hover:border-blue-500/30 transition-all duration-300 relative overflow-hidden group shadow-xl">
+              <div className="absolute top-0 right-0 p-5 opacity-10 group-hover:opacity-30 text-blue-500 transition-all duration-300 transform group-hover:translate-x-1 group-hover:-translate-y-1">
+                <ArrowUpRight size={24} />
+              </div>
+              <div className="space-y-4">
+                <div className="p-2.5 bg-blue-500/5 border border-blue-500/20 text-blue-400 rounded-xl inline-block">
+                  <Users size={20} />
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="text-base font-black uppercase text-white group-hover:text-blue-400 transition">Alumni Mentorship Board</h3>
+                  <p className="text-[11px] text-white/40 leading-relaxed font-sans text-justify">
+                    A high-fidelity contact network matrix linking active student cohorts directly to former E-Cell builders currently managing product verticals, running venture houses, or scaling tech companies.
+                  </p>
+                </div>
+              </div>
+              <div className="pt-6 flex items-center gap-1.5 text-[10px] text-blue-400 font-bold tracking-widest uppercase mt-4">
+                <span>Query Network Directories</span> <Zap size={10} className="animate-pulse" />
+              </div>
+            </Link>
+
+            {/* Card 2: The Startup Graveyard Block */}
+            <Link href="/graveyard" className="lg:col-span-5 bg-zinc-950 border border-white/10 p-6 md:p-8 rounded-2xl flex flex-col justify-between hover:border-red-500/30 transition-all duration-300 relative overflow-hidden group shadow-xl">
+              <div className="absolute top-0 right-0 p-5 opacity-10 group-hover:opacity-30 text-red-500 transition-all duration-300 transform group-hover:translate-x-1 group-hover:-translate-y-1">
+                <ArrowUpRight size={24} />
+              </div>
+              <div className="space-y-4">
+                <div className="p-2.5 bg-red-500/5 border border-red-500/20 text-red-400 rounded-xl inline-block">
+                  <Skull size={20} />
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="text-base font-black uppercase text-white group-hover:text-red-400 transition">The Anti-Portfolio</h3>
+                  <p className="text-[11px] text-white/40 leading-relaxed font-sans text-justify">
+                    Honoring runtime execution failures as crucial milestones. A centralized sandbox log detailing post-mortem diagnostics and core structural insights from retired startup configurations.
+                  </p>
+                </div>
+              </div>
+              <div className="pt-6 flex items-center gap-1.5 text-[10px] text-red-400 font-bold tracking-widest uppercase mt-4">
+                <span>Inspect Failure Data</span> <Lightbulb size={10} />
+              </div>
+            </Link>
+          </div>
+        </section>
 
         {/* Executive Board Section */}
-        <section id="team" className="relative z-10 px-6 md:px-10 max-w-7xl mx-auto pt-52 pb-32">
+        <section id="team" className="relative z-10 px-6 md:px-10 max-w-7xl mx-auto pt-24 pb-32">
           <div className="mb-16">
             <h2 className="text-4xl md:text-5xl font-black tracking-tight">THE <span className="text-blue-500">BOARD.</span></h2>
             <p className="text-white/60 mt-4 max-w-lg">The minds behind the ecosystem. Hover over the cards to interact with the profiles.</p>

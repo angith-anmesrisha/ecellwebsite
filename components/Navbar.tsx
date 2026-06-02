@@ -3,14 +3,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ChevronDown, Users, Skull, Target } from "lucide-react";
 import Link from "next/link";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [showLinks, setShowLinks] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   
   const lastScrollY = useRef(0);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,21 +24,31 @@ export default function Navbar() {
       else if (currentScrollY < lastScrollY.current) {
         setShowLinks(false);
         setIsOpen(false);
+        setDropdownOpen(false);
       }
 
       lastScrollY.current = currentScrollY;
     };
 
+    // Close dropdown smoothly if clicking outside the node element boundaries
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    document.addEventListener("mousedown", handleClickOutside);
+    
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   return (
     <>
-      {/* CRITICAL REFACTOR: Added 'pointer-events-none' to this full-width outer div wrapper.
-        This allows mouse clicks to pass completely through the invisible empty margins 
-        of the navbar tracking grid and hit the 'Read Full Article' button smoothly!
-      */}
+      {/* OUTER WRAPPER CONTAINER: Bypasses clicks seamlessly via pointer-events-none */}
       <div className="fixed top-6 left-0 w-full flex justify-center px-6 z-[90] pointer-events-none">
         <motion.nav
           layout
@@ -44,16 +56,12 @@ export default function Navbar() {
             borderRadius: "9999px"
           }}
           transition={{ type: "spring", stiffness: 300, damping: 32 }}
-          /* RE-ACTIVATE INTERACTION: 'pointer-events-auto' explicitly allows 
-            mouse hover and clicks to function properly on your actual capsule links and button nodes!
-          */
           className="pointer-events-auto flex items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 shadow-2xl px-6 h-16 min-h-[64px]"
         >
-          {/* Inner flex layout mapping */}
           <div className="flex items-center justify-between w-full h-full gap-8"> 
             
             {/* Logo Container */}
-            <div className="relative h-12 w-40 flex items-center shrink-0">
+            <Link href="/" className="relative h-12 w-40 flex items-center shrink-0 cursor-pointer">
               <Image 
                 src="/ecell-logo.png" 
                 alt="BIMTECH E-Cell Logo"
@@ -62,9 +70,9 @@ export default function Navbar() {
                 sizes="180px"
                 className="object-contain object-center"
               />
-            </div>
+            </Link>
 
-            {/* Desktop Links */}
+            {/* Desktop Navigation Links */}
             <AnimatePresence mode="popLayout">
               {showLinks && (
                 <motion.div
@@ -72,17 +80,48 @@ export default function Navbar() {
                   animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                   exit={{ opacity: 0, x: -10, filter: "blur(4px)" }}
                   transition={{ duration: 0.2, ease: "easeInOut" }}
-                  className="hidden md:flex items-center gap-6 h-full"
+                  className="hidden md:flex items-center gap-6 h-full relative"
                 >
                   <a href="#about" className="text-sm font-medium text-white/70 hover:text-white transition flex items-center h-full">About</a>
                   <a href="#team" className="text-sm font-medium text-white/70 hover:text-white transition flex items-center h-full">Board</a>
                   <a href="#contact" className="text-sm font-medium text-white/70 hover:text-white transition flex items-center h-full">Connect</a>
                   
-                  {/* CONNECTED DIRECT DESKTOP ROUTE ROUTER: Linked the button 
-                    directly to your Next.js application path to bypass the modal error.
-                  */}
+                  {/* DYNAMIC DESKTOP HUB DROPDOWN */}
+                  <div className="relative h-full flex items-center" ref={dropdownRef}>
+                    <button 
+                      type="button"
+                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                      className="text-sm font-medium text-white/70 hover:text-white transition flex items-center gap-1 cursor-pointer focus:outline-none"
+                    >
+                      Ecosystem <ChevronDown size={14} className={`transition-transform duration-200 ${dropdownOpen ? 'rotate-180 text-blue-400' : ''}`} />
+                    </button>
+
+                    <AnimatePresence>
+                      {dropdownOpen && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute top-14 right-0 w-56 bg-zinc-950/95 backdrop-blur-xl border border-white/10 p-2 rounded-xl shadow-2xl flex flex-col font-mono text-[11px]"
+                        >
+                          <Link href="/alumni" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition">
+                            <Users size={14} className="text-blue-400" /> Mentorship Directory
+                          </Link>
+                          <Link href="/graveyard" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition">
+                            <Skull size={14} className="text-red-400" /> The Anti-Portfolio
+                          </Link>
+                          <Link href="/recruitment" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition border-t border-white/5 mt-1 pt-2">
+                            <Target size={14} className="text-emerald-400" /> Test Your Venture
+                          </Link>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  
+                  {/* CTA Join Button */}
                   <Link href="/recruitment">
-                    <button className="px-4 py-1.5 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition shadow-lg shrink-0 self-center cursor-pointer">
+                    <button className="px-4 py-1.5 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition shadow-lg shrink-0 self-center cursor-pointer font-sans">
                       Join Us
                     </button>
                   </Link>
@@ -90,14 +129,14 @@ export default function Navbar() {
               )}
             </AnimatePresence>
 
-            {/* Mobile Hamburger Toggle */}
+            {/* Mobile Hamburger Menu Trigger */}
             <AnimatePresence>
               {showLinks && (
                 <motion.button 
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
-                  className="md:hidden text-white flex items-center justify-center h-full" 
+                  className="md:hidden text-white flex items-center justify-center h-full cursor-pointer" 
                   onClick={() => setIsOpen(!isOpen)}
                 >
                   {isOpen ? <X size={18} /> : <Menu size={18} />}
@@ -109,21 +148,34 @@ export default function Navbar() {
         </motion.nav>
       </div>
 
-      {/* Mobile Dropdown Layout Menu */}
+      {/* Mobile Drawer Layout Panel Overlay */}
       <AnimatePresence>
         {isOpen && showLinks && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="fixed top-24 left-6 right-6 bg-black/90 backdrop-blur-xl border border-white/10 z-[89] md:hidden flex flex-col items-center py-6 space-y-4 rounded-2xl shadow-2xl"
+            className="fixed top-24 left-6 right-6 bg-black/90 backdrop-blur-xl border border-white/10 z-[89] md:hidden flex flex-col items-center py-6 space-y-4 rounded-2xl shadow-2xl font-mono text-xs text-center"
           >
-            <a href="#about" className="text-base font-medium text-white/80" onClick={() => setIsOpen(false)}>About</a>
-            <a href="#team" className="text-base font-medium text-white/80" onClick={() => setIsOpen(false)}>Board</a>
-            <a href="#contact" className="text-base font-medium text-white/80" onClick={() => setIsOpen(false)}>Connect</a>
-            <Link href="/recruitment" onClick={() => setIsOpen(false)}>
-              <span className="inline-block px-6 py-2 bg-white text-black text-sm font-bold rounded-full text-center cursor-pointer">
-               Join Us
+            <a href="#about" className="text-sm font-medium text-white/80 font-sans" onClick={() => setIsOpen(false)}>About</a>
+            <a href="#team" className="text-sm font-medium text-white/80 font-sans" onClick={() => setIsOpen(false)}>Board</a>
+            <a href="#contact" className="text-sm font-medium text-white/80 font-sans" onClick={() => setIsOpen(false)}>Connect</a>
+            
+            <div className="w-full border-t border-white/5 my-2 pt-4 flex flex-col items-center space-y-3">
+              <Link href="/alumni" onClick={() => setIsOpen(false)} className="text-white/60 hover:text-white flex items-center gap-1.5 py-1">
+                <Users size={12} className="text-blue-400" /> Alumni Directory
+              </Link>
+              <Link href="/graveyard" onClick={() => setIsOpen(false)} className="text-white/60 hover:text-white flex items-center gap-1.5 py-1">
+                <Skull size={12} className="text-red-400" /> Anti-Portfolio
+              </Link>
+              <Link href="/recruitment" onClick={() => setIsOpen(false)} className="text-white/60 hover:text-white flex items-center gap-1.5 py-1">
+                <Target size={12} className="text-emerald-400" /> Test Your Venture
+              </Link>
+            </div>
+
+            <Link href="/recruitment" onClick={() => setIsOpen(false)} className="pt-2 w-full px-6">
+              <span className="block w-full px-6 py-2 bg-white text-black text-xs font-bold rounded-full text-center cursor-pointer font-sans">
+                Join Us
               </span>
             </Link>
           </motion.div>
