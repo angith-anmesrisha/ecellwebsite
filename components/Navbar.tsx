@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ChevronDown, Users, Skull, Target } from "lucide-react";
+import { Menu, X, ChevronDown, Users, Skull, Target, Calendar } from "lucide-react";
 import Link from "next/link";
 
 export default function Navbar() {
@@ -30,7 +30,7 @@ export default function Navbar() {
       lastScrollY.current = currentScrollY;
     };
 
-    // Close dropdown smoothly if clicking outside the node element boundaries
+    // Close dropdown smoothly if clicking outside the menu boundaries
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setDropdownOpen(false);
@@ -86,7 +86,7 @@ export default function Navbar() {
                   <a href="#team" className="text-sm font-medium text-white/70 hover:text-white transition flex items-center h-full">Board</a>
                   <a href="#contact" className="text-sm font-medium text-white/70 hover:text-white transition flex items-center h-full">Connect</a>
                   
-                  {/* DYNAMIC DESKTOP HUB DROPDOWN */}
+                  {/* ECOSYSTEM HUB DROPDOWN */}
                   <div className="relative h-full flex items-center" ref={dropdownRef}>
                     <button 
                       type="button"
@@ -103,23 +103,29 @@ export default function Navbar() {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 10, scale: 0.95 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute top-14 right-0 w-56 bg-zinc-950/95 backdrop-blur-xl border border-white/10 p-2 rounded-xl shadow-2xl flex flex-col font-mono text-[11px]"
+                          className="absolute top-14 right-0 w-56 bg-zinc-950/95 backdrop-blur-xl border border-white/10 p-2 rounded-xl shadow-2xl flex flex-col text-xs"
                         >
                           <Link href="/alumni" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition">
-                            <Users size={14} className="text-blue-400" /> Mentorship Directory
+                            <Users size={14} className="text-blue-400" /> Alumni Directory
                           </Link>
+                          
+                          <Link href="/events" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition">
+                            <Calendar size={14} className="text-blue-400" /> Events Hub
+                          </Link>
+
                           <Link href="/graveyard" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition">
-                            <Skull size={14} className="text-red-400" /> The Anti-Portfolio
+                            <Skull size={14} className="text-red-400" /> Lessons Archive
                           </Link>
+
                           <Link href="/recruitment" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2.5 px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition border-t border-white/5 mt-1 pt-2">
-                            <Target size={14} className="text-emerald-400" /> Test Your Venture
+                            <Target size={14} className="text-emerald-400" /> Pitch Simulator
                           </Link>
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
                   
-                  {/* CTA Join Button */}
+                  {/* Join Us CTA */}
                   <Link href="/recruitment">
                     <button className="px-4 py-1.5 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-200 transition shadow-lg shrink-0 self-center cursor-pointer font-sans">
                       Join Us
@@ -129,7 +135,7 @@ export default function Navbar() {
               )}
             </AnimatePresence>
 
-            {/* Mobile Hamburger Menu Trigger */}
+            {/* Mobile Menu Trigger */}
             <AnimatePresence>
               {showLinks && (
                 <motion.button 
@@ -155,7 +161,7 @@ export default function Navbar() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="fixed top-24 left-6 right-6 bg-black/90 backdrop-blur-xl border border-white/10 z-[89] md:hidden flex flex-col items-center py-6 space-y-4 rounded-2xl shadow-2xl font-mono text-xs text-center"
+            className="fixed top-24 left-6 right-6 bg-black/90 backdrop-blur-xl border border-white/10 z-[89] md:hidden flex flex-col items-center py-6 space-y-4 rounded-2xl shadow-2xl text-xs text-center"
           >
             <a href="#about" className="text-sm font-medium text-white/80 font-sans" onClick={() => setIsOpen(false)}>About</a>
             <a href="#team" className="text-sm font-medium text-white/80 font-sans" onClick={() => setIsOpen(false)}>Board</a>
@@ -163,13 +169,16 @@ export default function Navbar() {
             
             <div className="w-full border-t border-white/5 my-2 pt-4 flex flex-col items-center space-y-3">
               <Link href="/alumni" onClick={() => setIsOpen(false)} className="text-white/60 hover:text-white flex items-center gap-1.5 py-1">
-                <Users size={12} className="text-blue-400" /> Alumni Directory
+                <Users size={14} className="text-blue-400" /> Alumni Directory
+              </Link>
+              <Link href="/events" onClick={() => setIsOpen(false)} className="text-white/60 hover:text-white flex items-center gap-1.5 py-1">
+                <Calendar size={14} className="text-blue-400" /> Events Hub
               </Link>
               <Link href="/graveyard" onClick={() => setIsOpen(false)} className="text-white/60 hover:text-white flex items-center gap-1.5 py-1">
-                <Skull size={12} className="text-red-400" /> Anti-Portfolio
+                <Skull size={14} className="text-red-400" /> Lessons Archive
               </Link>
               <Link href="/recruitment" onClick={() => setIsOpen(false)} className="text-white/60 hover:text-white flex items-center gap-1.5 py-1">
-                <Target size={12} className="text-emerald-400" /> Test Your Venture
+                <Target size={14} className="text-emerald-400" /> Pitch Simulator
               </Link>
             </div>
 

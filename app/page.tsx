@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
-import { ArrowUpRight, Sparkles, Users, Skull, Zap, Lightbulb } from "lucide-react";
+import { ArrowUpRight, Sparkles, Users, Skull, Zap, Lightbulb, Calendar } from "lucide-react";
 
 import RotatingBadge from '@/components/RotatingBadge';
 import AnimatedWord from '@/components/AnimatedWord';
@@ -156,16 +156,16 @@ export default function Home() {
         {/* INTEGRATED ECOSYSTEM NODES SHOWCASE SECTION */}
         <section id="ecosystem" className="relative z-10 py-24 px-6 md:px-10 max-w-7xl mx-auto border-b border-white/5">
           <div className="mb-12 text-center md:text-left space-y-2">
-            <h3 className="text-xs font-mono tracking-widest uppercase text-blue-500 font-bold">// Institutional Capital Network</h3>
+            <h3 className="text-xs font-mono tracking-widest uppercase text-blue-500 font-bold">// E-Cell Network</h3>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight uppercase">Ecosystem Matrix Nodes</h2>
             <p className="text-white/60 max-w-xl text-sm md:text-base leading-relaxed">
-              Move past static architectures. Tap into real-time professional mentorship frameworks or analyze detailed failure diagnostics compiled inside our network records.
+              Connect with real-world networks, register for campus events, or learn from previous case studies built right here inside our ecosystem.
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 font-mono text-xs">
             {/* Card 1: The Alumni Directory Block */}
-            <Link href="/alumni" className="lg:col-span-7 bg-zinc-950 border border-white/10 p-6 md:p-8 rounded-2xl flex flex-col justify-between hover:border-blue-500/30 transition-all duration-300 relative overflow-hidden group shadow-xl">
+            <Link href="/alumni" className="lg:col-span-6 bg-zinc-950 border border-white/10 p-6 md:p-8 rounded-2xl flex flex-col justify-between hover:border-blue-500/30 transition-all duration-300 relative overflow-hidden group shadow-xl">
               <div className="absolute top-0 right-0 p-5 opacity-10 group-hover:opacity-30 text-blue-500 transition-all duration-300 transform group-hover:translate-x-1 group-hover:-translate-y-1">
                 <ArrowUpRight size={24} />
               </div>
@@ -176,17 +176,38 @@ export default function Home() {
                 <div className="space-y-1.5">
                   <h3 className="text-base font-black uppercase text-white group-hover:text-blue-400 transition">Alumni Mentorship Board</h3>
                   <p className="text-[11px] text-white/40 leading-relaxed font-sans text-justify">
-                    A high-fidelity contact network matrix linking active student cohorts directly to former E-Cell builders currently managing product verticals, running venture houses, or scaling tech companies.
+                    Connect directly with former E-Cell members who are now building tech platforms, scaling active startups, or working across venture capital networks.
                   </p>
                 </div>
               </div>
               <div className="pt-6 flex items-center gap-1.5 text-[10px] text-blue-400 font-bold tracking-widest uppercase mt-4">
-                <span>Query Network Directories</span> <Zap size={10} className="animate-pulse" />
+                <span>View Network Directory</span> <Zap size={10} className="animate-pulse" />
               </div>
             </Link>
 
-            {/* Card 2: The Startup Graveyard Block */}
-            <Link href="/graveyard" className="lg:col-span-5 bg-zinc-950 border border-white/10 p-6 md:p-8 rounded-2xl flex flex-col justify-between hover:border-red-500/30 transition-all duration-300 relative overflow-hidden group shadow-xl">
+            {/* Card 2: The Events Hub Block */}
+            <Link href="/events" className="lg:col-span-6 bg-zinc-950 border border-white/10 p-6 md:p-8 rounded-2xl flex flex-col justify-between hover:border-blue-500/30 transition-all duration-300 relative overflow-hidden group shadow-xl">
+              <div className="absolute top-0 right-0 p-5 opacity-10 group-hover:opacity-30 text-blue-500 transition-all duration-300 transform group-hover:translate-x-1 group-hover:-translate-y-1">
+                <ArrowUpRight size={24} />
+              </div>
+              <div className="space-y-4">
+                <div className="p-2.5 bg-blue-500/5 border border-blue-500/20 text-blue-400 rounded-xl inline-block">
+                  <Calendar size={20} />
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="text-base font-black uppercase text-white group-hover:text-blue-400 transition">Events Registration Hub</h3>
+                  <p className="text-[11px] text-white/40 leading-relaxed font-sans text-justify">
+                    Explore and register directly for active campus workshops, hackathons, and guest panels using our centralized on-site sign-up forms.
+                  </p>
+                </div>
+              </div>
+              <div className="pt-6 flex items-center gap-1.5 text-[10px] text-blue-400 font-bold tracking-widest uppercase mt-4">
+                <span>Explore Live Events</span> <Calendar size={10} />
+              </div>
+            </Link>
+
+            {/* Card 3: The Startup Graveyard Block */}
+            <Link href="/graveyard" className="lg:col-span-12 bg-zinc-950 border border-white/10 p-6 md:p-8 rounded-2xl flex flex-col justify-between hover:border-red-500/30 transition-all duration-300 relative overflow-hidden group shadow-xl">
               <div className="absolute top-0 right-0 p-5 opacity-10 group-hover:opacity-30 text-red-500 transition-all duration-300 transform group-hover:translate-x-1 group-hover:-translate-y-1">
                 <ArrowUpRight size={24} />
               </div>
@@ -195,14 +216,14 @@ export default function Home() {
                   <Skull size={20} />
                 </div>
                 <div className="space-y-1.5">
-                  <h3 className="text-base font-black uppercase text-white group-hover:text-red-400 transition">The Anti-Portfolio</h3>
+                  <h3 className="text-base font-black uppercase text-white group-hover:text-red-400 transition">The Learning Archive</h3>
                   <p className="text-[11px] text-white/40 leading-relaxed font-sans text-justify">
-                    Honoring runtime execution failures as crucial milestones. A centralized sandbox log detailing post-mortem diagnostics and core structural insights from retired startup configurations.
+                    Read straight post-mortem case studies and practical operational lessons curated from previous student-led business ideas and project failures.
                   </p>
                 </div>
               </div>
               <div className="pt-6 flex items-center gap-1.5 text-[10px] text-red-400 font-bold tracking-widest uppercase mt-4">
-                <span>Inspect Failure Data</span> <Lightbulb size={10} />
+                <span>Read Archive Lessons</span> <Lightbulb size={10} />
               </div>
             </Link>
           </div>

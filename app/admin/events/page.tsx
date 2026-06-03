@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, X, BarChart2, ListFilter, Users, Upload, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Plus, X, BarChart2, ListFilter, Users, Upload, Image as ImageIcon, Loader2, Lock } from "lucide-react";
 
 interface EventItem {
   id: string;
@@ -24,6 +24,11 @@ interface RegistrationRecord {
 }
 
 export default function AdminEventsPanel() {
+  // Security Authentication States
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [securityError, setSecurityError] = useState("");
+
   const [events, setEvents] = useState<EventItem[]>([]);
   const [registrations, setRegistrations] = useState<RegistrationRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,8 +49,11 @@ export default function AdminEventsPanel() {
   const [selectedEventFilter, setSelectedEventFilter] = useState("all");
 
   useEffect(() => {
-    fetchAdminData();
-  }, []);
+    // Only query database rows if the security key check passes successfully
+    if (isAuthenticated) {
+      fetchAdminData();
+    }
+  }, [isAuthenticated]);
 
   const fetchAdminData = async () => {
     try {
@@ -65,7 +73,19 @@ export default function AdminEventsPanel() {
     }
   };
 
-  // NATIVE FILE UPLOAD ROUTINE
+  // SECURITY KEY HANDLER
+  const handleSecurityCheck = (e: React.FormEvent) => {
+    e.preventDefault();
+    const globalMasterKey = process.env.NEXT_PUBLIC_ADMIN_MASTER_KEY;
+
+    if (passwordInput === globalMasterKey) {
+      setIsAuthenticated(true);
+      setSecurityError("");
+    } else {
+      setSecurityError("Invalid master key. Access denied.");
+    }
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -78,11 +98,11 @@ export default function AdminEventsPanel() {
     try {
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-        { method: "POST" }
+        { method: "POST", body: formData }
       );
       const data = await response.json();
       if (data.secure_url) {
-        setBannerUrl(data.secure_url); // Store the hosted web link automatically
+        setBannerUrl(data.secure_url);
         alert("Banner image uploaded successfully!");
       }
     } catch (err) {
@@ -142,6 +162,46 @@ export default function AdminEventsPanel() {
     r => selectedEventFilter === "all" || r.eventId === selectedEventFilter
   );
 
+  // 🔒 GATEKEEPER CONDITION: SHOW LOGIN FORM IF UNVERIFIED
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 font-sans antialiased">
+        <div className="w-full max-w-sm bg-zinc-950 border border-white/10 rounded-2xl p-6 space-y-6 shadow-2xl text-center">
+          <div className="space-y-2">
+            <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-full inline-block mx-auto">
+              <Lock size={20} />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight">Admin Authentication</h1>
+            <p className="text-xs text-white/40">Enter the E-Cell system master key to open administrative event parameters.</p>
+          </div>
+
+          <form onSubmit={handleSecurityCheck} className="space-y-3 text-left">
+            <div className="space-y-1">
+              <label className="text-white/50 uppercase tracking-wider text-[9px] font-bold">Master Security Key</label>
+              <input 
+                required
+                type="password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-blue-500 font-mono"
+                placeholder="••••••••••••"
+              />
+            </div>
+
+            {securityError && (
+              <p className="text-[11px] text-red-400 font-medium font-mono">{securityError}</p>
+            )}
+
+            <button type="submit" className="w-full py-2 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-zinc-200 transition cursor-pointer mt-2">
+              Verify Key Axis
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔓 ACCESS GRANTED: RENDER COMPLETE MANAGEMENT SYSTEM
   return (
     <div className="min-h-screen bg-black text-white py-16 px-4 md:px-8 font-sans antialiased">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -188,7 +248,7 @@ export default function AdminEventsPanel() {
                     </div>
                   </div>
 
-                  {/* 📂 INTERACTIVE BANNER FILE UPLOAD DROPZONE */}
+                  {/* BANNER FILE UPLOAD */}
                   <div className="space-y-1">
                     <label className="text-white/50 uppercase tracking-wider text-[10px] font-bold">Event Banner Image</label>
                     <div className="border border-dashed border-white/20 rounded-xl p-4 bg-white/[0.02] flex flex-col items-center justify-center text-center hover:bg-white/[0.04] transition relative group">

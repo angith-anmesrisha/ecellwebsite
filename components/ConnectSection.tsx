@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Mail, Send } from "lucide-react";
+import Link from "next/link";
 
 export default function ConnectSection() {
   const socials = [
@@ -29,7 +30,6 @@ export default function ConnectSection() {
       url: "https://www.linkedin.com/in/e-cell-bimtech-57b2231a/",
       color: "hover:text-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]" 
     },
-    
     { 
       name: "Email", 
       icon: <Mail size={24} />, 
@@ -103,10 +103,21 @@ export default function ConnectSection() {
 
       </div>
 
-      {/* Mini Footer Copyright */}
-      <div className="mt-24 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/40">
+      {/* Mini Footer Copyright & Centralized Admin Link */}
+      <div className="mt-24 pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center text-xs text-white/40 gap-4">
         <p>© {new Date().getFullYear()} BIMTECH E-Cell. All rights reserved.</p>
-        <p className="tracking-wide">Built for Entrepreneurs</p>
+        
+        {/* DISCRETE ADMINISTRATIVE GATEWAY */}
+        <div className="flex items-center gap-4 font-mono text-[11px]">
+          <Link 
+            href="/admin" 
+            className="hover:text-blue-500 hover:underline transition-all duration-200"
+          >
+            Console Login
+          </Link>
+          <span className="text-white/10">•</span>
+          <span className="text-white/20 select-none">Built for Entrepreneurs</span>
+        </div>
       </div>
     </section>
   );
