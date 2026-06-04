@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css"; 
 import GlowCursor from "@/components/GlowCursor";
 import GlobalBackButton from "@/components/GlobalBackButton";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "BIMTECH E-Cell | Where Aspiration Meets Opportunity",
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {children}
         
+        <SpeedInsights />
       </body>
     </html>
   );
