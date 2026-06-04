@@ -49,3 +49,5 @@ next-env.d.ts
 .next/
 out/
 build/
+.vercel
+.env*

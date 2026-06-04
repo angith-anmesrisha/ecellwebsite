@@ -12,6 +12,7 @@ import TeamCard from '@/components/TeamCard';
 import ConnectSection from '@/components/ConnectSection';
 import PitchSimulator from "@/components/PitchSimulator";
 import AiStories from "@/components/AiStories";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 // Curated aesthetic quotes list
 const STARTUP_QUOTES = [
