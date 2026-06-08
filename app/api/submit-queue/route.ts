@@ -1,10 +1,62 @@
 import { NextResponse } from "next/server";
 
+// 📊 1. SECURE GET ROUTE: FORWARDS HUB QUERIES FROM THE MONITOR TERMINAL TO THE SHEET
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get("action");
+
+    if (!action) {
+      return NextResponse.json({ error: "Missing action route parameter." }, { status: 400 });
+    }
+
+    const targetUrl = process.env.SHEET_WEBHOOK_URL;
+    if (!targetUrl) {
+      return NextResponse.json({ error: "Database backend key not configured." }, { status: 500 });
+    }
+
+    // Ping your Apps Script Webhook directly on the server side
+    const res = await fetch(`${targetUrl}?action=${action}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      // Bypass caching so our background polling loop always gets fresh cell metrics
+      cache: "no-store" 
+    });
+
+    if (!res.ok) throw new Error("Google Sheets network drop.");
+    
+    const data = await res.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Admin API Read Error:", error);
+    return NextResponse.json({ success: false, error: "Database link synchronization failure." }, { status: 500 });
+  }
+}
+
+// ⚡ 2. POST ROUTE: HANDLES BOTH STUDENT VENTURES AND ADMIN GRADE INSULTS
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { type, payload } = body;
+    const targetUrl = process.env.SHEET_WEBHOOK_URL;
+    
+    if (!targetUrl) {
+      return NextResponse.json({ error: "Sheets webhook token target not defined." }, { status: 500 });
+    }
 
+    // 🎯 A. ADMIN FLOW: CO-EVALUATION MARKS OR FINAL SELECTION SHORTLIST UPDATES
+    if (body.action === "update-shortlist" || body.action === "submit-peer-review") {
+      const res = await fetch(targetUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) throw new Error("Spreadsheet row write failure.");
+      return NextResponse.json({ success: true, message: "Admin updates saved to spreadsheet cells." });
+    }
+
+    // 👥 B. STUDENT FLOW: PITCH SIMULATOR SUBMISSIONS (YOUR ORIGINAL LOGIC)
+    const { type, payload } = body;
     if (!type || !payload) {
       return NextResponse.json({ error: "Staging package fields missing parameters." }, { status: 400 });
     }
@@ -13,7 +65,7 @@ export async function POST(request: Request) {
     const problemTextClean = (problemStatement || "").trim().toLowerCase();
     const titleTextClean = (startupTitle || "").trim().toLowerCase();
 
-    // 🔒 1. CORE COMPLIANCE & SAFETY FILTER
+    // 🔒 CORE COMPLIANCE & SAFETY FILTER
     const complianceBlockTerms = ["scam", "exploit", "illegal", "hack", "bypass", "fraud", "slavery", "slave"];
     const hasComplianceViolation = complianceBlockTerms.some(
       term => problemTextClean.includes(term) || titleTextClean.includes(term)
@@ -27,13 +79,7 @@ export async function POST(request: Request) {
       }, { status: 403 });
     }
 
-    // 📊 2. BACKGROUND DATA STAGING: SAVE TO GOOGLE SHEETS FIRST
-    const targetUrl = process.env.SHEET_WEBHOOK_URL;
-    if (!targetUrl) {
-      return NextResponse.json({ error: "Sheets webhook token target not defined." }, { status: 500 });
-    }
-
-    // Fire-and-forget or await the Google Sheets log insertion 
+    // BACKGROUND DATA STAGING: SAVE TO GOOGLE SHEETS FIRST
     try {
       await fetch(targetUrl, {
         method: "POST",
@@ -46,10 +92,9 @@ export async function POST(request: Request) {
       });
     } catch (sheetError) {
       console.error("Sheets Ledger Sync Warning:", sheetError);
-      // We continue processing even if sheets fails so the user still gets their AI analysis
     }
 
-    // ⚡ 3. LIVE INFERENCE ENGINE: CALL GROQ API FOR FREE LLM INTELLIGENCE
+    // LIVE INFERENCE ENGINE: CALL GROQ API FOR FREE LLM INTELLIGENCE
     if (!process.env.GROQ_API_KEY) {
       return NextResponse.json({ error: "Groq API system token configuration missing." }, { status: 500 });
     }
@@ -61,7 +106,7 @@ export async function POST(request: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant", // Fast, free-tier model optimized for layout json objects
+        model: "llama-3.1-8b-instant", 
         response_format: { type: "json_object" }, 
         temperature: 0.3,
         messages: [
@@ -69,10 +114,8 @@ export async function POST(request: Request) {
             role: "system",
             content: `You are an elite venture capitalist and incubation analyst at BIMTECH E-Cell.
             Analyze the user's venture parameters and return a strict JSON response.
-            
             Provide deep, hyper-specific, non-generic business roadmap items tailored directly to their sector and problem statement.
-            
-            Return ONLY a raw JSON object with this exact structure (no markdown code blocks, backticks, or prose outside the object):
+            Return ONLY a raw JSON object with this exact structure:
             {
               "viabilityScore": number (15 to 98),
               "marketFit": number (15 to 98),
@@ -104,12 +147,10 @@ export async function POST(request: Request) {
     });
 
     const groqData = await groqResponse.json();
-    
     if (!groqResponse.ok) {
       return NextResponse.json({ success: false, error: groqData.error?.message || "Groq Inference Failure" }, { status: groqResponse.status });
     }
 
-    // Parse the live output string from Llama 3 cleanly back into json tokens
     const rawContent = groqData.choices[0].message.content.trim();
     const aiAnalysis = JSON.parse(rawContent);
 
