@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 
-// 📊 1. SECURE GET ROUTE: FORWARDS HUB QUERIES FROM THE MONITOR TERMINAL TO THE SHEET
+// 📊 1. SECURE GET ROUTE: FORWARDS HUB QUERIES & HANDLES LIVE VISITOR RESULTS QUERIES
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
+    const email = searchParams.get("email");
 
     if (!action) {
       return NextResponse.json({ error: "Missing action route parameter." }, { status: 400 });
@@ -15,11 +16,41 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Database backend key not configured." }, { status: 500 });
     }
 
-    // Ping your Apps Script Webhook directly on the server side
+    // 🎓 STUDENT ADMISSIONS RESULTS LOOKUP MATRIX
+    if (action === "check-student-result") {
+      if (!email) {
+        return NextResponse.json({ error: "Email query parameter missing." }, { status: 400 });
+      }
+      
+      // Pull all active registrations securely from the spreadsheet pipeline
+      const res = await fetch(`${targetUrl}?action=get-all-registrations`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store"
+      });
+      const candidateJson = await res.json();
+      
+      if (candidateJson.success && candidateJson.data) {
+        const match = candidateJson.data.find(
+          (row: any) => row.email?.toLowerCase() === email.trim().toLowerCase()
+        );
+        
+        if (match) {
+          return NextResponse.json({
+            success: true,
+            name: match.name,
+            status: match.status ? match.status.toString().toUpperCase() : "PENDING",
+            score: parseInt(match.rollNumber) || 0
+          });
+        }
+      }
+      return NextResponse.json({ success: false, error: "Profile node credentials not found in registry." });
+    }
+
+    // 🛠️ STANDARD ADMIN TERMINAL / DATA STUDIO QUERIES
     const res = await fetch(`${targetUrl}?action=${action}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-      // Bypass caching so our background polling loop always gets fresh cell metrics
       cache: "no-store" 
     });
 
@@ -33,7 +64,7 @@ export async function GET(request: Request) {
   }
 }
 
-// ⚡ 2. POST ROUTE: HANDLES BOTH STUDENT VENTURES AND ADMIN GRADE INSULTS
+// ⚡ 2. POST ROUTE: EXPERTLY BRANCHES ADMIN CONFIGURATIONS AND STUDENT SUBMISSIONS
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -43,8 +74,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Sheets webhook token target not defined." }, { status: 500 });
     }
 
-    // 🎯 A. ADMIN FLOW: CO-EVALUATION MARKS OR FINAL SELECTION SHORTLIST UPDATES
-    if (body.action === "update-shortlist" || body.action === "submit-peer-review") {
+    // 🎯 A. ADMIN FLOW: CO-EVALUATION, TIMELINE MODIFICATIONS, & LIFECYCLE OVERRIDES
+    if (
+      body.action === "update-shortlist" || 
+      body.action === "submit-peer-review" ||
+      body.action === "bulk-waitlist" ||
+      body.action === "transfer-track" ||
+      body.action === "append-quick-note"
+    ) {
       const res = await fetch(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,7 +92,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, message: "Admin updates saved to spreadsheet cells." });
     }
 
-    // 👥 B. STUDENT FLOW: PITCH SIMULATOR SUBMISSIONS (YOUR ORIGINAL LOGIC)
+    // 👥 B. STUDENT FLOW: PITCH SIMULATOR SUBMISSIONS (ORIGINAL INFRASTRUCTURE LOGIC)
     const { type, payload } = body;
     if (!type || !payload) {
       return NextResponse.json({ error: "Staging package fields missing parameters." }, { status: 400 });

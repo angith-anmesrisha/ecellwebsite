@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, ChevronDown, Users, Skull, Target, Calendar } from "lucide-react";
+import { Menu, X, ChevronDown, Users, Skull, Target, Calendar, Award } from "lucide-react";
 import Link from "next/link";
 
 export default function Navbar() {
@@ -30,7 +30,6 @@ export default function Navbar() {
       lastScrollY.current = currentScrollY;
     };
 
-    // Close dropdown smoothly if clicking outside the menu boundaries
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setDropdownOpen(false);
@@ -48,13 +47,10 @@ export default function Navbar() {
 
   return (
     <>
-      {/* OUTER WRAPPER CONTAINER: Bypasses clicks seamlessly via pointer-events-none */}
       <div className="fixed top-6 left-0 w-full flex justify-center px-6 z-[90] pointer-events-none">
         <motion.nav
           layout
-          animate={{
-            borderRadius: "9999px"
-          }}
+          animate={{ borderRadius: "9999px" }}
           transition={{ type: "spring", stiffness: 300, damping: 32 }}
           className="pointer-events-auto flex items-center justify-center bg-black/60 backdrop-blur-md border border-white/10 shadow-2xl px-6 h-16 min-h-[64px]"
         >
@@ -86,6 +82,15 @@ export default function Navbar() {
                   <a href="#team" className="text-sm font-medium text-white/70 hover:text-white transition flex items-center h-full">Board</a>
                   <a href="#contact" className="text-sm font-medium text-white/70 hover:text-white transition flex items-center h-full">Connect</a>
                   
+                  {/* LIVE SELECTION RESULTS DIRECT ROUTE LINK NODE */}
+                  <Link href="/results" className="text-sm font-bold text-blue-400 hover:text-blue-300 transition flex items-center h-full relative group">
+                    Results
+                    <span className="absolute -top-1 -right-4 flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500"></span>
+                    </span>
+                  </Link>
+
                   {/* ECOSYSTEM HUB DROPDOWN */}
                   <div className="relative h-full flex items-center" ref={dropdownRef}>
                     <button 
@@ -154,7 +159,7 @@ export default function Navbar() {
         </motion.nav>
       </div>
 
-      {/* Mobile Drawer Layout Panel Overlay */}
+      {/* Mobile Drawer Layout panel Overlay */}
       <AnimatePresence>
         {isOpen && showLinks && (
           <motion.div
@@ -168,6 +173,10 @@ export default function Navbar() {
             <a href="#contact" className="text-sm font-medium text-white/80 font-sans" onClick={() => setIsOpen(false)}>Connect</a>
             
             <div className="w-full border-t border-white/5 my-2 pt-4 flex flex-col items-center space-y-3">
+              {/* MOBILE RESULTS DIRECTION ENTRY LINK */}
+              <Link href="/results" onClick={() => setIsOpen(false)} className="text-blue-400 font-bold flex items-center gap-1.5 py-1">
+                <Award size={14} className="text-blue-400 animate-pulse" /> Cohort Selection Results
+              </Link>
               <Link href="/alumni" onClick={() => setIsOpen(false)} className="text-white/60 hover:text-white flex items-center gap-1.5 py-1">
                 <Users size={14} className="text-blue-400" /> Alumni Directory
               </Link>
