@@ -218,22 +218,53 @@ export default function AdvancedAdminHub() {
   };
 
   const triggerStatusOverrideGUI = async (candidateId: string, statusTarget: string) => {
-    setIsSubmitting(true);
-    logTerminalMsg(`Updating candidate status to [${statusTarget}]...`, "exec");
-    try {
-      await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "update-shortlist", candidateId, score: parseInt(interviewScore) || 80, status: statusTarget })
-      });
-      logTerminalMsg(`Status successfully updated for: ${candidateId}`, "success");
+  setIsSubmitting(true);
+  logTerminalMsg(`Updating candidate status to [${statusTarget}]...`, "exec");
+  
+  try {
+    // Step 1: Update the candidate's status in the Google Sheet database
+    const dbResponse = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update-shortlist", candidateId, score: parseInt(interviewScore) || 80, status: statusTarget })
+    });
+    
+    const dbResult = await dbResponse.json();
+
+    if (dbResult.success) {
+      logTerminalMsg(`Status successfully updated to ${statusTarget} for: ${candidateId}`, "success");
+      
+      // Find the candidate's details in local memory cache to extract their email and name
+      const candidateMatch = candidates.find(c => c.id === candidateId);
+      
+      if (candidateMatch) {
+        logTerminalMsg(`Automatically dispatching notification email to: ${candidateMatch.email}...`, "exec");
+        
+        // Step 2: Automatically trigger the email dispatch route using the fresh status update
+        await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "dispatch-email-notice",
+            email: candidateMatch.email,
+            name: candidateMatch.name,
+            status: statusTarget,
+            score: parseInt(interviewScore) || 80
+          })
+        });
+        
+        logTerminalMsg(`Notification email successfully sent from ecell@bimtech.ac.in!`, "success");
+      }
+      
+      // Refresh your dashboard metrics display smoothly
       await runBackgroundDatabaseCheck(false, false);
-    } catch (e) {
-      logTerminalMsg("Failed to update applicant status row.", "warn");
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  } catch (e) {
+    logTerminalMsg("Failed to complete automated pipeline status and email operations.", "warn");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const triggerAppendQuickNoteGUI = async (e: React.FormEvent) => {
     e.preventDefault();
