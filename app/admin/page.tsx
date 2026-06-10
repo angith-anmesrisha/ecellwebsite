@@ -12,6 +12,7 @@ interface Candidate {
   choices: string;
   status: string;
   peerReviews: any[];
+  resumeUrl?: string;
 }
 
 interface DistributionItem {
@@ -145,7 +146,8 @@ export default function AdvancedAdminHub() {
           score: parseInt(row.rollNumber) || 0, 
           choices: row.customAnswers || "No responses submitted.",
           status: row.status ? row.status.toString().toUpperCase() : "PENDING",
-          peerReviews: row.peerReviews || []
+          peerReviews: row.peerReviews || [],
+          resumeUrl: row.resumeUrl || ""
         }));
 
         if (isInitialFetch) {
@@ -165,8 +167,7 @@ export default function AdvancedAdminHub() {
       setIsDataLoading(false);
     }
   };
-
-  useEffect(() => {
+useEffect(() => {
     if (isAuthenticated) {
       setAllTerminalLogs([]);
       
@@ -183,19 +184,55 @@ export default function AdvancedAdminHub() {
       logTerminalMsg("System online.", "success");
       logTerminalMsg("CLI Core Interface engine activated cleanly.", "info");
       
-      const savedPhase = localStorage.getItem("ecell_recruitment_phase") || "LOCKED";
-      setRecruitmentPhase(savedPhase);
+      // FIXED: Pull the master running state straight from the API layer instead of a stale browser cache key
+      const synchronizeMasterPhaseState = async () => {
+        try {
+          const res = await fetch("/api/recruitment/admin");
+          const data = await res.json();
+          if (data.success) {
+            setRecruitmentPhase(data.phase);
+            localStorage.setItem("ecell_recruitment_phase", data.phase);
+            logTerminalMsg(`Synchronized admin panel UI state with global server phase: [${data.phase}]`, "success");
+          }
+        } catch (err) {
+          // Fall back to storage safely if offline
+          const savedPhase = localStorage.getItem("ecell_recruitment_phase") || "LOCKED";
+          setRecruitmentPhase(savedPhase);
+        }
+      };
       
+      synchronizeMasterPhaseState();
       runBackgroundDatabaseCheck(true, false);
     }
   }, [isAuthenticated]);
 
-  const handlePhaseChangeGUI = (newPhase: string) => {
+ // FIXED: Synchronize local state with the global Vercel server memory engine instantly
+  const handlePhaseChangeGUI = async (newPhase: string) => {
     setRecruitmentPhase(newPhase);
     localStorage.setItem("ecell_recruitment_phase", newPhase);
-    logTerminalMsg(`Public recruitment timeline phase changed to: [${newPhase}]`, "success");
+    logTerminalMsg(`Broadcasting phase mutation sequence [${newPhase}] to server cache...`, "exec");
+    
+    try {
+      const serverSync = await fetch("/api/recruitment/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          action: "update-global-phase", 
+          phase: newPhase 
+        })
+      });
+      
+      const syncResult = await serverSync.json();
+      
+      if (syncResult.success) {
+        logTerminalMsg(`Global portal phase completely locked to: [${newPhase}] across all student views.`, "success");
+      } else {
+        logTerminalMsg("Server rejected phase state propagation parameter mapping.", "warn");
+      }
+    } catch (err) {
+      logTerminalMsg("Failed to broadcast phase transition down the network pipeline.", "warn");
+    }
   };
-
   const triggerBulkWaitlistGUI = async () => {
     if (!confirm("Are you sure you want to shift all candidate records to WAITLISTED status?")) return;
     setIsSubmitting(true);
@@ -879,11 +916,28 @@ export default function AdvancedAdminHub() {
                       <button onClick={() => setRecruitmentSubTab("peer")} className={`flex-1 py-1 rounded-lg font-bold tracking-wide uppercase text-[9px] transition ${recruitmentSubTab === "peer" ? "bg-emerald-500 text-black font-black" : "text-emerald-500/40 hover:text-emerald-300"}`}>Panel Reviews ({selectedCandidate.peerReviews?.length || 0})</button>
                     </div>
 
-                    {/* DUAL WORKSPACE TAB 1: GRAPHICAL PIPELINE FORM OVERRIDES */}
+               {/* DUAL WORKSPACE TAB 1: GRAPHICAL PIPELINE FORM OVERRIDES */}
                     {recruitmentSubTab === "gui_controls" && (
                       <div className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-6 shadow-2xl animate-fadeIn">
                         <div className="border-b border-emerald-500/10 pb-3 flex justify-between items-start">
-                          <div><span className="text-[8px] text-emerald-400 font-bold tracking-widest bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">{selectedCandidate.id}</span><h2 className="text-base font-black uppercase text-white tracking-tight mt-1.5">{selectedCandidate.name}</h2></div>
+                          <div>
+                            <span className="text-[8px] text-emerald-400 font-bold tracking-widest bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">{selectedCandidate.id}</span>
+                            <h2 className="text-base font-black uppercase text-white tracking-tight mt-1.5">{selectedCandidate.name}</h2>
+                            
+                            {/* 🌟 LIVE RESUME ACCELERATOR ACCESSIBLE DIRECTLY IN THE UI LAYOUT 🌟 */}
+                            {selectedCandidate.resumeUrl ? (
+                              <a 
+                                href={selectedCandidate.resumeUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="inline-flex items-center gap-1 text-[10px] text-cyan-400 hover:text-cyan-300 hover:underline mt-2 font-mono transition-colors"
+                              >
+                                <FileSpreadsheet size={12} /> View Attached Resume (Google Drive) →
+                              </a>
+                            ) : (
+                              <p className="text-[10px] text-zinc-500 mt-2 font-mono italic">// No Resume Document Uploaded //</p>
+                            )}
+                          </div>
                           <div className="text-right"><span className="text-[9px] uppercase block text-emerald-500/40">Current Pipeline Status</span><strong className="text-white bg-black border border-emerald-500/10 px-3 py-1 rounded-md block mt-1 tracking-widest text-xs">{selectedCandidate.status || "PENDING"}</strong></div>
                         </div>
 

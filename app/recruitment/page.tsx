@@ -41,6 +41,9 @@ export default function RecruitmentPortal() {
   const [userR2Submission, setUserR2Submission] = useState("");
   const [r2Completed, setR2Completed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // PDF Resume Staging Hooks
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [base64String, setBase64String] = useState<string>("");
 
   const quizQuestions = [
     {
@@ -134,29 +137,37 @@ export default function RecruitmentPortal() {
   useEffect(() => {
     setHasMounted(true);
 
-    const checkLockStatus = () => {
-      // 1. Check if an administrator enabled the local command bypass
-      const isManualBypass = localStorage.getItem("ecell_admin_override_unlocked") === "true";
-      if (isManualBypass || isBypassed) {
+    const checkLockStatus = async () => {
+      // If the admin has already bypassed it locally via the passkey input, let them in
+      if (isBypassed) {
         setPortalPhase("REGISTRATION_OPEN");
         return;
       }
 
-      // 2. Read the current status flag controlled by the admin panel
-      // Valid phase choices: "LOCKED" (Show Countdown), "OPEN" (Show Quiz Form), "COMPLETED" (Show Results Link)
-      const currentConfigPhase = localStorage.getItem("ecell_recruitment_phase") || "LOCKED";
-      
-      if (currentConfigPhase === "OPEN") {
-        setPortalPhase("REGISTRATION_OPEN");
-        return;
-      }
-      
-      if (currentConfigPhase === "COMPLETED") {
-        setPortalPhase("COMPLETED");
-        return;
+      let serverPhase = "LOCKED";
+
+      try {
+        // Fetch the true configuration phase safely from the server side
+        const res = await fetch("/api/recruitment/admin");
+        const data = await res.json();
+        
+        if (data.success) {
+          serverPhase = data.phase;
+          
+          if (serverPhase === "OPEN" || serverPhase === "REGISTRATION_OPEN") {
+            setPortalPhase("REGISTRATION_OPEN");
+            return;
+          }
+          if (serverPhase === "COMPLETED") {
+            setPortalPhase("COMPLETED");
+            return;
+          }
+        }
+      } catch (err) {
+        // Fallback gracefully if network drops momentarily
       }
 
-      // 3. Fallback: Run standard countdown timer if explicitly locked
+      // If the server explicitly says LOCKED, calculate countdown mechanics
       setPortalPhase("LOCKED");
       const targetLaunchRaw = localStorage.getItem("ecell_recruitment_launch_date") || "2026-07-15T00:00:00";
       const targetTime = new Date(targetLaunchRaw).getTime();
@@ -164,7 +175,16 @@ export default function RecruitmentPortal() {
       const difference = targetTime - currentTime;
 
       if (difference <= 0) {
-        setPortalPhase("REGISTRATION_OPEN");
+        // Only open automatically if the server wasn't explicitly set to LOCKED by an admin
+        if (serverPhase !== "LOCKED") {
+          setPortalPhase("REGISTRATION_OPEN");
+        } else {
+          // If the admin forced a LOCKED state, keep the UI locked and zero out timer variables
+          setDaysRemaining("00");
+          setHoursRemaining("00");
+          setMinutesRemaining("00");
+          setSecondsRemaining("00");
+        }
       } else {
         const d = Math.floor(difference / (1000 * 60 * 60 * 24));
         const h = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -177,7 +197,6 @@ export default function RecruitmentPortal() {
         setSecondsRemaining(s < 10 ? `0${s}` : `${s}`);
       }
     };
-
     checkLockStatus();
     const intervalNode = setInterval(checkLockStatus, 1000);
 
@@ -185,6 +204,14 @@ export default function RecruitmentPortal() {
     if (cachedUserRaw) {
       const parsedCandidate = JSON.parse(cachedUserRaw) as Candidate;
       setActiveCandidate(parsedCandidate);
+
+      // FIXED: Safely restore active mid-quiz question indexes and answer choices
+      const savedQuizIndex = localStorage.getItem(`ecell_quiz_index_${parsedCandidate.id}`);
+      const savedQuizChoices = localStorage.getItem(`ecell_quiz_choices_${parsedCandidate.id}`);
+      if (savedQuizIndex && savedQuizChoices && !localStorage.getItem(`ecell_progress_${parsedCandidate.id}`)) {
+        setCurrentQuestionIdx(parseInt(savedQuizIndex));
+        setSelectedIndices(JSON.parse(savedQuizChoices));
+      }
 
       const progressCache = localStorage.getItem(`ecell_progress_${parsedCandidate.id}`);
       if (progressCache) {
@@ -229,38 +256,134 @@ export default function RecruitmentPortal() {
   if (!hasMounted) return <div className="min-h-screen bg-black" />;
   const currentWords = userR2Submission.trim() === "" ? 0 : userR2Submission.trim().split(/\s+/).length;
 
-  const handleBypassCheck = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBypassCheck = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setBypassInput(val);
-    if (val === "ecelladmin2026") {
-      setIsBypassed(true);
-      setPortalPhase("REGISTRATION_OPEN");
+    
+    // Evaluate strings when typing threshold crosses a standard length limit
+    if (val.length >= 4) {
+      try {
+        const res = await fetch("/api/recruitment/admin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ passkey: val })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          setIsBypassed(true);
+          setPortalPhase("REGISTRATION_OPEN");
+        }
+      } catch (err) {
+        // Suppress mid-keystroke intermediate network logs gracefully
+      }
+    }
+  };
+const handleFileAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      if (file.type !== "application/pdf") {
+        alert("Invalid file format. Please attach a formal document copy formatted exclusively as a PDF.");
+        e.target.value = "";
+        return;
+      }
+      
+      if (file.size > 4 * 1024 * 1024) { // 4MB Size limit safeguard
+        alert("File size bounds exceeded. Please compress your resume document sheet below 4MB.");
+        e.target.value = "";
+        return;
+      }
+
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const rawResult = reader.result as string;
+        // Strip out metadata header data padding block prefix string seamlessly
+        const cleanBase64 = rawResult.split(",")[1];
+        setBase64String(cleanBase64);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleRegisterCandidate = (e: React.FormEvent) => {
+const handleRegisterCandidate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName || !regEmail) return;
+    setIsSubmitting(true);
 
-    const newCandidate: Candidate = {
-      id: "cand_" + Math.random().toString(36).substring(2, 11),
-      name: regName,
-      email: regEmail,
-      dept: regDept
-    };
+    try {
+      // Handshake with the backend to verify historical entry states before starting
+      const res = await fetch("/api/recruitment/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          action: "check-initial-eligibility", 
+          email: regEmail.trim().toLowerCase() 
+        })
+      });
 
-    localStorage.setItem("ecell_active_candidate_session", JSON.stringify(newCandidate));
-    setActiveCandidate(newCandidate);
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Registration blocked by the safety firewall.");
+        return;
+      }
+
+      if (data.success) {
+        if (data.isExistingSession) {
+          // Seamlessly restore their progress if they passed Round 1 historically
+          const restoredCandidate: Candidate = {
+            id: data.candidate.regId,
+            name: data.candidate.name,
+            email: data.candidate.email,
+            dept: regDept // Map to their currently selected department node dynamically
+          };
+
+          localStorage.setItem("ecell_active_candidate_session", JSON.stringify(restoredCandidate));
+          localStorage.setItem(`ecell_progress_${restoredCandidate.id}`, JSON.stringify(data.progress));
+          
+          setActiveCandidate(restoredCandidate);
+          setRunningScore(data.progress.score);
+          setQuizFinished(true);
+          setRound1Passed(true);
+          setCurrentRound(2);
+          
+          alert(`Welcome back, ${data.candidate.name}. Your verified score (${data.progress.score}/100) has been pulled from the server database. Proceeding to Case Stage.`);
+        } else {
+          // Standard execution path for an actual fresh applicant
+          const newCandidate: Candidate = {
+            id: "cand_" + Math.random().toString(36).substring(2, 11),
+            name: regName.trim(),
+            email: regEmail.trim().toLowerCase(),
+            dept: regDept
+          };
+
+          localStorage.setItem("ecell_active_candidate_session", JSON.stringify(newCandidate));
+          setActiveCandidate(newCandidate);
+        }
+      }
+    } catch (err) {
+      alert("Network dropped during system verification. Please check your connection and retry.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleAnswerSelection = async (selectedOptionIdx: number) => {
+    if (!activeCandidate) return;
+
     const updatedIndices = [...selectedIndices, selectedOptionIdx];
     setSelectedIndices(updatedIndices);
 
     if (currentQuestionIdx + 1 < quizQuestions.length) {
-      setCurrentQuestionIdx(currentQuestionIdx + 1);
+      const nextIdx = currentQuestionIdx + 1;
+      setCurrentQuestionIdx(nextIdx);
+      // FIXED: Save state to cache immediately to secure current progression against reload exploits
+      localStorage.setItem(`ecell_quiz_index_${activeCandidate.id}`, nextIdx.toString());
+      localStorage.setItem(`ecell_quiz_choices_${activeCandidate.id}`, JSON.stringify(updatedIndices));
     } else {
-      if (!activeCandidate) return;
       setIsSubmitting(true);
 
       try {
@@ -271,7 +394,9 @@ export default function RecruitmentPortal() {
             name: activeCandidate.name,
             email: activeCandidate.email,
             dept: activeCandidate.dept,
-            round1Choices: updatedIndices
+            round1Choices: updatedIndices,
+            resumeFileBase64: base64String, // Passes the file stream securely
+            resumeFileName: selectedFile ? `${activeCandidate.name.replace(/\s+/g, '_')}_Resume.pdf` : "Candidate_Resume.pdf"
           })
         });
 
@@ -285,6 +410,10 @@ export default function RecruitmentPortal() {
             score: auditData.score,
             passed: auditData.passedRound1
           }));
+
+          // FIXED: Clear runtime quiz tracking parameters cleanly on submission completion
+          localStorage.removeItem(`ecell_quiz_index_${activeCandidate.id}`);
+          localStorage.removeItem(`ecell_quiz_choices_${activeCandidate.id}`);
 
           const localLogTree = JSON.parse(localStorage.getItem("ecell_submissions_backup_tree") || "[]");
           localLogTree.push({
@@ -383,15 +512,24 @@ export default function RecruitmentPortal() {
               </div>
             ))}
           </div>
+          
+          {/* 🌟 THIS IS THE FIXED INPUT BLOCK TO RESTORE ON YOUR SCREEN 🌟 */}
           <div className="pt-4 max-w-xs mx-auto">
-            <input type="password" placeholder="Admin Passkey Override" value={bypassInput} onChange={handleBypassCheck} className="w-full text-center bg-transparent border-none text-xs font-mono tracking-widest text-white/10 placeholder-white/5 focus:outline-none focus:text-blue-500 transition-colors" autoComplete="off" />
+            <input 
+              type="password" 
+              placeholder="Admin Passkey Override" 
+              value={bypassInput} 
+              onChange={handleBypassCheck} 
+              className="w-full text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-mono tracking-widest text-white placeholder-white/20 focus:outline-none focus:border-blue-500 transition-colors" 
+              autoComplete="off" 
+            />
           </div>
+          
         </div>
       </div>
     );
   }
 
-  // PHASE 2 VIEWPORT DEPLOYMENT: PROFESSIONAL SELECTION ROUTER DIRECTORY
   if (portalPhase === "COMPLETED") {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col justify-center items-center px-4 select-none antialiased">
@@ -423,7 +561,6 @@ export default function RecruitmentPortal() {
     );
   }
 
-  // PHASE 3 VIEWPORT DEPLOYMENT: STUDENT SYSTEM REGISTRATION & ACTIVE CASE FORMS
   return (
     <div className="min-h-screen bg-black text-white py-16 px-4 font-sans antialiased selection:bg-blue-500/30">
       <div className="max-w-3xl mx-auto space-y-8">
@@ -450,6 +587,16 @@ export default function RecruitmentPortal() {
               <div className="space-y-1">
                 <label className="text-[10px] uppercase font-mono text-white/40 tracking-wider">Email Address</label>
                 <input required type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="name@domain.com" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-mono text-white/40 tracking-wider">Attach Professional Resume / Curriculum Vitae (PDF Only)</label>
+                <input 
+                  required 
+                  type="file" 
+                  accept=".pdf" 
+                  onChange={handleFileAttachmentChange} 
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-mono text-white/60 file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-mono file:bg-blue-500/20 file:text-blue-400 file:cursor-pointer cursor-pointer hover:file:bg-blue-500/30 transition" 
+                />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] uppercase font-mono text-white/40 tracking-wider">Select Department Track</label>
