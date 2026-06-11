@@ -3,17 +3,23 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue } from "framer-motion";
 import Link from "next/link";
-import { ArrowUpRight, Sparkles, Users, Skull, Calendar, LineChart } from "lucide-react";
+import { ArrowUpRight, Sparkles, Users, Skull, Calendar } from "lucide-react";
 
 import RotatingBadge from '@/components/RotatingBadge';
 import AnimatedWord from '@/components/AnimatedWord';
 import Navbar from '@/components/Navbar';
-import TeamCard from '@/components/TeamCard';
 import ConnectSection from '@/components/ConnectSection';
 import PitchSimulator from "@/components/PitchSimulator";
 import AiStories from "@/components/AiStories";
 import HeroCanvas3D from '@/components/HeroCanvas3D';
 import KineticTextReveal from '@/components/KineticTextReveal';
+import TeamCarousel3D from '@/components/TeamCarousel3D';
+import CrystallineParticleMatrix from '@/components/CrystallineParticleMatrix';
+import FluidGridRipple from '@/components/FluidGridRipple';
+import FracturedTextButton from '@/components/FracturedTextButton';
+import InertialSkewText from '@/components/InertialSkewText';
+import CustomCursor from '@/components/CustomCursor';
+import KineticGlitchReveal from '@/components/KineticGlitchReveal';
 
 const STARTUP_QUOTES = [
   { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
@@ -33,19 +39,6 @@ interface ModuleNode {
   link: string;
   cta: string;
   glowColor: string;
-}
-
-function ScrollReveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 40, filter: "blur(4px)" }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      viewport={{ once: true, margin: "-15% 0px" }}
-      transition={{ type: "spring", stiffness: 80, damping: 15, delay }}
-    >
-      {children}
-    </motion.div>
-  );
 }
 
 function KineticMarquee({ baseText }: { baseText: string }) {
@@ -153,10 +146,6 @@ export default function Home() {
   const [activeQuote, setActiveQuote] = useState({ text: "", author: "" });
   const containerRef = useRef(null);
 
-  const { scrollYProgress } = useScroll();
-  const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "15%"]);
-  const smoothBackgroundY = useSpring(backgroundY, { stiffness: 100, damping: 20 });
-
   useEffect(() => {
     const randomIndex = Math.floor(Math.random() * STARTUP_QUOTES.length);
     setActiveQuote(STARTUP_QUOTES[randomIndex]);
@@ -170,6 +159,9 @@ export default function Home() {
 
   return (
     <>
+      <CustomCursor />
+
+      {/* Intro Gateway Loader */}
       <AnimatePresence mode="wait">
         {isLoading && (
           <motion.div
@@ -222,20 +214,17 @@ export default function Home() {
 
       <div ref={containerRef} className="relative min-h-[200vh] text-white overflow-hidden bg-transparent w-full">
         
-        <motion.div style={{ y: smoothBackgroundY }} className="absolute inset-0 max-w-7xl mx-auto w-full h-full pointer-events-none px-6 md:px-10 z-0">
-          <div className="w-full h-full relative border-x border-white/[0.04]">
-            <AnimatedGridLine orientation="vertical" className="left-1/3 hidden lg:block" />
-            <AnimatedGridLine orientation="vertical" className="left-2/3 hidden lg:block" />
-          </div>
-        </motion.div>
+        <CrystallineParticleMatrix />
+        <FluidGridRipple />
 
         <Navbar />
 
+        {/* Hero Section */}
         <main className="relative z-10 flex flex-col pt-44 sm:pt-48 pb-32 overflow-visible">
           <HeroCanvas3D />
           
-          <div className="flex-1 flex flex-col lg:flex-row items-center justify-between px-6 md:px-10 max-w-7xl mx-auto w-full gap-16 relative z-10">
-            <div className="flex-1 space-y-8 text-center lg:text-left z-20 w-full">
+          <div className="flex-1 flex flex-col lg:flex-row items-center justify-between px-6 md:px-10 max-w-7xl mx-auto w-full gap-16 relative z-10 pointer-events-none">
+            <div className="flex-1 space-y-8 text-center lg:text-left z-20 w-full pointer-events-auto">
               <motion.p 
                 initial={{ opacity: 0, x: -25 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -248,8 +237,8 @@ export default function Home() {
               
               <MasterMagnet radius={300} pull={0.4}>
                 <h1 className="text-6xl sm:text-8xl md:text-9xl font-black tracking-tighter leading-[0.85] block text-left uppercase pointer-events-none overflow-visible w-full select-none">
-                  <span className="text-white block relative z-10" style={{ textShadow: "0 10px 30px rgba(0,0,0,0.7)" }}>
-                    WE HELP YOU
+                  <span className="text-white block relative z-10 pointer-events-auto" style={{ textShadow: "0 10px 30px rgba(0,0,0,0.7)" }}>
+                    <InertialSkewText text="WE HELP YOU" />
                   </span>
                   <AnimatedWord />
                 </h1>
@@ -269,7 +258,7 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.9, rotate: -5 }}
               animate={{ opacity: 1, scale: 1, rotate: 0 }}
               transition={{ type: "spring", stiffness: 60, damping: 15, delay: 0.2 }}
-              className="flex-1 flex justify-center items-center scale-75 md:scale-100 z-20 lg:border-l border-white/[0.04] py-8 lg:py-16 w-full"
+              className="flex-1 flex justify-center items-center scale-75 md:scale-100 z-20 lg:border-l border-white/[0.04] py-8 lg:py-16 w-full pointer-events-auto"
             >
               <RotatingBadge />
             </motion.div>
@@ -277,33 +266,36 @@ export default function Home() {
           <AnimatedGridLine orientation="horizontal" className="bottom-0" />
         </main>
 
-        <section id="ai-feed" className="relative z-40 py-28 bg-black/20 backdrop-blur-md">
-          <ScrollReveal>
-            <div className="text-center mb-16">
+        {/* Global Trends Loop Section */}
+        <section id="ai-feed" data-cursor="view" data-cursor-text="view" className="relative z-40 py-28 bg-transparent w-full overflow-hidden">
+          {/* 🌟 REPLACED WITH HIGH-FREQUENCY GLITCH REVEAL */}
+          <KineticGlitchReveal>
+            <div className="text-center mb-16 relative z-10 pointer-events-auto">
               <KineticTextReveal 
                 text="// Global Trends Loop" 
                 className="text-xs font-mono tracking-widest uppercase text-purple-500 font-bold"
                 delay={0.1}
               />
               <MasterMagnet radius={150} pull={0.25}>
-                <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mt-1 uppercase pointer-events-none">
-                  What's Happening in Innovation Today
+                <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mt-1 uppercase pointer-events-auto">
+                  <InertialSkewText text="WHAT'S HAPPENING IN INNOVATION TODAY" />
                 </h2>
               </MasterMagnet>
             </div>
-            <div className="max-w-7xl mx-auto px-6 md:px-10">
+            <div className="max-w-7xl mx-auto px-6 md:px-10 relative z-20 pointer-events-auto">
               <AiStories />
             </div>
-          </ScrollReveal>
+          </KineticGlitchReveal>
           <AnimatedGridLine orientation="horizontal" className="bottom-0" />
         </section>
 
         <KineticMarquee baseText="BIMTECH ECELL HUB" />
 
+        {/* Ecosystem Network Section */}
         <section id="ecosystem" className="relative z-30 py-32 max-w-7xl mx-auto space-y-16 px-6 md:px-10">
-          <ScrollReveal>
+          <KineticGlitchReveal>
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pb-6 relative">
-              <div className="space-y-3">
+              <div className="space-y-3 pointer-events-auto">
                 <KineticTextReveal 
                   text="// E-Cell Network" 
                   className="text-xs font-mono tracking-widest uppercase text-purple-500 font-bold"
@@ -311,8 +303,10 @@ export default function Home() {
                 />
                 <MasterMagnet radius={180} pull={0.25}>
                   <h2 className="text-4xl md:text-5xl font-black tracking-tight uppercase pointer-events-none">
-                    <span>Explore Our </span>
-                    <span className="text-purple-500">Ecosystem</span>
+                    <span className="text-white block">
+                      <InertialSkewText text="EXPLORE OUR" />
+                    </span>
+                    <span className="text-purple-500 block mt-1">ECOSYSTEM</span>
                   </h2>
                 </MasterMagnet>
                 <p className="text-white/50 max-w-xl text-sm md:text-base leading-relaxed font-sans">
@@ -325,7 +319,7 @@ export default function Home() {
                 <span>CAMPUS INITIATIVE ARCHITECTURE</span>
               </div>
             </div>
-          </ScrollReveal>
+          </KineticGlitchReveal>
 
           <div className="w-full perspective-1000 preserve-3d">
             <div className="grid grid-cols-1 md:grid-cols-3 border border-white/10 rounded-2xl overflow-hidden bg-zinc-950/10 backdrop-blur-2xs relative preserve-3d">
@@ -371,9 +365,10 @@ export default function Home() {
 
         <KineticMarquee baseText="ENTREPRENEURSHIP MATRIX" />
 
-        <section id="team" className="relative z-10 py-32 max-w-7xl mx-auto px-6 md:px-10">
-          <ScrollReveal>
-            <div className="mb-20">
+        {/* 3D Board Ribbon Section */}
+        <section id="team" data-cursor="drag" data-cursor-text="drag" className="relative z-10 py-32 max-w-7xl mx-auto px-6 md:px-10 overflow-visible">
+          <KineticGlitchReveal>
+            <div className="mb-12 pointer-events-auto">
               <KineticTextReveal 
                 text="// System Architects" 
                 className="text-xs font-mono tracking-widest uppercase text-purple-500 font-bold"
@@ -381,32 +376,29 @@ export default function Home() {
               />
               <MasterMagnet radius={150} pull={0.25}>
                 <h2 className="text-4xl md:text-5xl font-black tracking-tight uppercase pointer-events-none mt-1">
-                  <span>THE </span>
-                  <span className="text-purple-500">BOARD.</span>
+                  <span className="text-white block">THE</span>
+                  <span className="text-purple-500 block mt-1">
+                    <InertialSkewText text="BOARD." />
+                  </span>
                 </h2>
               </MasterMagnet>
-              <p className="text-white/50 max-w-md font-sans text-sm md:text-base leading-relaxed mt-3">The minds behind the ecosystem. Hover over the cards to interact with the profiles.</p>
+              <p className="text-white/50 max-w-md font-sans text-sm md:text-base leading-relaxed mt-3">
+                The minds behind the ecosystem. Use the navigation vectors to cycle through the active board.
+              </p>
             </div>
-          </ScrollReveal>
+          </KineticGlitchReveal>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 perspective-1000">
-            <ScrollReveal delay={0.05}>
-              <TeamCard name="Don Joe" role="Technical Head" imagePath="/team/a.jpg" />
-            </ScrollReveal>
-            <ScrollReveal delay={0.15}>
-              <TeamCard name="Jane Doe" role="President" imagePath="/team/jane.jpg" />
-            </ScrollReveal>
-            <ScrollReveal delay={0.25}>
-              <TeamCard name="John Smith" role="Operations Head" imagePath="/team/john.jpg" />
-            </ScrollReveal>
-          </div>
+          <KineticGlitchReveal delay={0.1}>
+            <TeamCarousel3D />
+          </KineticGlitchReveal>
         </section>
         
-        <section id="simulator" className="relative z-10 py-32 bg-zinc-950/10 backdrop-blur-2xs">
+        {/* Interactive Venture Evaluation Analytics Simulator */}
+        <section id="simulator" className="relative z-10 py-32 bg-zinc-950/10 backdrop-blur-2xs overflow-hidden">
           <AnimatedGridLine orientation="horizontal" className="top-0" />
           
-          <ScrollReveal>
-            <div className="max-w-7xl mx-auto px-6 md:px-10">
+          <KineticGlitchReveal>
+            <div className="max-w-7xl mx-auto px-6 md:px-10 relative z-10 pointer-events-auto">
               <div className="mb-16 space-y-2">
                 <KineticTextReveal 
                   text="// Venture Analytics" 
@@ -415,51 +407,57 @@ export default function Home() {
                 />
                 <MasterMagnet radius={180} pull={0.25}>
                   <h2 className="text-4xl md:text-5xl font-black tracking-tight uppercase pointer-events-none">
-                    <span>TEST YOUR </span>
-                    <span className="text-purple-500">BUSINESS MODEL.</span>
+                    <span className="text-white block">
+                      <InertialSkewText text="TEST YOUR" />
+                    </span>
+                    <span className="text-purple-500 block mt-1">BUSINESS MODEL.</span>
                   </h2>
                 </MasterMagnet>
                 <p className="text-white/50 max-w-xl font-sans text-sm md:text-base leading-relaxed mt-2">
                   Run your startup's core strategy, financial targets, and market assumptions through our interactive evaluation model to get immediate feedback on your venture's readiness.
                 </p>
               </div>
-              <PitchSimulator />
+              
+              <div>
+                <PitchSimulator />
+              </div>
             </div>
-          </ScrollReveal>
+          </KineticGlitchReveal>
           
           <AnimatedGridLine orientation="horizontal" className="bottom-0" />
         </section>
 
+        {/* Recruitment Call-Out Section */}
         <section className="w-full max-w-7xl mx-auto px-6 md:px-10 py-32 relative z-10">
-          <ScrollReveal>
+          <KineticGlitchReveal>
             <div className="w-full bg-zinc-950/40 backdrop-blur-xs border border-white/10 rounded-2xl p-8 md:p-14 relative overflow-hidden flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 group hover:border-purple-500/20 transition-all duration-500">
               <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/5 rounded-full blur-[80px] pointer-events-none group-hover:bg-purple-500/15 transition-all duration-500" />
               
-              <div className="space-y-3 max-w-2xl">
+              <div className="space-y-3 max-w-2xl pointer-events-auto">
                 <div className="text-[10px] font-mono font-bold tracking-widest text-purple-500 uppercase flex items-center gap-1.5">
                   <Sparkles size={12} className="animate-pulse" />
                   Join the Executive Committee
                 </div>
                 <h3 className="text-2xl md:text-4xl font-black tracking-tight text-white uppercase leading-tight">
-                  Shape the Future of Campus Entrepreneurship
+                  <InertialSkewText text="SHAPE THE FUTURE OF CAMPUS" />
                 </h3>
                 <p className="text-xs md:text-sm text-white/50 leading-relaxed max-w-xl font-sans">
                   Applications for official E-Cell leadership positions open soon. Select your area of interest, complete our simple review process, and secure a spot for the final evaluation rounds.
                 </p>
               </div>
 
-              <Link href="/recruitment" className="w-full lg:w-auto shrink-0 z-20">
-                <MagneticComponent>
-                  <button className="w-full lg:w-auto px-8 py-4 bg-white text-black text-xs font-bold uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 hover:bg-purple-500 hover:text-white duration-300 shadow-2xl">
-                    <span>Enter Application Portal</span>
-                    <ArrowUpRight size={14} />
-                  </button>
-                </MagneticComponent>
-              </Link>
+              <div className="w-full lg:w-auto shrink-0 z-20">
+                <FracturedTextButton 
+                  text="Enter Application Portal" 
+                  href="/recruitment" 
+                />
+              </div>
+
             </div>
-          </ScrollReveal>
+          </KineticGlitchReveal>
         </section>
 
+        {/* Core Footer Link Node */}
         <div className="relative w-full">
           <AnimatedGridLine orientation="horizontal" className="top-0" />
           <ConnectSection />
@@ -471,6 +469,7 @@ export default function Home() {
 
 function TrackedCyberCard({ node, delay }: { node: ModuleNode; delay: number }) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
   
   const rotateX = useMotionValue(0);
   const rotateY = useMotionValue(0);
@@ -496,9 +495,12 @@ function TrackedCyberCard({ node, delay }: { node: ModuleNode; delay: number }) 
   };
 
   const handleMouseLeave = () => {
+    setIsHovered(false);
     rotateX.set(0);
     rotateY.set(0);
   };
+
+  const letters = node.cta.split("");
 
   return (
     <motion.div 
@@ -512,6 +514,7 @@ function TrackedCyberCard({ node, delay }: { node: ModuleNode; delay: number }) 
         ref={cardRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
+        onMouseEnter={() => setIsHovered(true)}
         onClick={() => window.location.href = node.link}
         style={{ 
           rotateX: springX, 
@@ -543,9 +546,41 @@ function TrackedCyberCard({ node, delay }: { node: ModuleNode; delay: number }) 
           </div>
         </div>
 
-        <div className="flex justify-between items-center text-[10px] font-bold tracking-wider uppercase pt-4 border-t border-white/5 relative z-10 translate-z-0 group-hover:translate-z-6 transition-transform duration-500 ease-[0.16,1,0.3,1] pointer-events-none">
-          <span className="text-white/40 group-hover:text-white transition-colors duration-300">
-            {node.cta}
+        <div className="flex justify-between items-center text-[10px] font-bold tracking-wider uppercase pt-4 border-t border-white/5 relative z-10 translate-z-0 group-hover:translate-z-6 transition-transform duration-500 ease-[0.16,1,0.3,1] pointer-events-none overflow-visible">
+          <span className="flex overflow-visible text-white/40 group-hover:text-white transition-colors duration-300">
+            {letters.map((char, idx) => {
+              if (char === " ") return <span key={idx} className="w-1" />;
+              
+              const midIndex = letters.length / 2;
+              const directionFactor = idx - midIndex;
+              
+              const spreadX = isHovered ? directionFactor * 4 : 0;
+              const spreadY = isHovered ? (idx % 2 === 0 ? -12 : 12) : 0;
+              const randomRotation = isHovered ? (idx % 2 === 0 ? -15 : 15) : 0;
+
+              return (
+                <motion.span
+                  key={idx}
+                  animate={{
+                    x: spreadX,
+                    y: spreadY,
+                    rotate: randomRotation,
+                    scale: isHovered ? 1.2 : 1,
+                    color: isHovered ? (idx % 2 === 0 ? "#a855f7" : "#3b82f6") : "currentColor"
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 150,
+                    damping: 10,
+                    mass: 0.2,
+                    delay: isHovered ? idx * 0.01 : (letters.length - idx) * 0.008
+                  }}
+                  className="inline-block will-change-transform font-mono"
+                >
+                  {char}
+                </motion.span>
+              );
+            })}
           </span>
           <ArrowUpRight size={12} className="text-white/20 group-hover:text-purple-400 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300" />
         </div>
