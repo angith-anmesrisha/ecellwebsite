@@ -656,37 +656,92 @@ useEffect(() => {
     setIsStressLoading(false);
   };
 
+ 
   const commitPanelReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCandidate || !interviewerName) return;
     setIsSubmitting(true);
+    
+    logTerminalMsg(`Initializing score upload pipeline for candidate: ${selectedCandidate.id}...`, "info");
+    
+    // Safety check: Prevent NaN crashes by validating scores before sending
+    const validatedTech = Math.max(0, Math.min(100, parseInt(techScore) || 0));
+    const validatedComm = Math.max(0, Math.min(100, parseInt(commScore) || 0));
+    const validatedSolve = Math.max(0, Math.min(100, parseInt(solveScore) || 0));
+    const calculatedMean = Math.round((validatedTech + validatedComm + validatedSolve) / 3);
+
     try {
-      await fetch(webhookUrl, {
+      logTerminalMsg(`Transmitting review data packet (Tech: ${validatedTech}, Comm: ${validatedComm}, Solve: ${validatedSolve}, Mean: ${calculatedMean})...`, "exec");
+      
+      const response = await fetch(webhookUrl, {
         method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "submit-peer-review", candidateId: selectedCandidate.id, interviewerName, techScore, commScore, solveScore, notes: reviewNotes })
+        headers: { "Content-Type": "application/json" }, // Clean JSON connection channel established
+        body: JSON.stringify({ 
+          action: "submit-peer-review", 
+          candidateId: selectedCandidate.id, 
+          interviewerName: interviewerName.trim(), 
+          techScore: validatedTech, 
+          commScore: validatedComm, 
+          solveScore: validatedSolve, 
+          notes: reviewNotes.trim() 
+        })
       });
-      setInterviewerName(""); setReviewNotes("");
-      await runBackgroundDatabaseCheck(false, false); 
-    } catch (err) { logTerminalMsg("Failed to log interview metrics card.", "warn"); }
-    setIsSubmitting(false);
+
+      const resData = await response.json();
+      
+      if (response.ok && resData.success) {
+        logTerminalMsg(`Panel interview scorecard successfully committed downstream for ${selectedCandidate.name}.`, "success");
+        logTerminalMsg(`Process complete. Peer reviews count updated: ${(selectedCandidate.peerReviews?.length || 0) + 1}`, "success");
+        
+        setInterviewerName(""); 
+        setReviewNotes("");
+        await runBackgroundDatabaseCheck(false, false); 
+      } else {
+        logTerminalMsg(`Server rejected scorecard transmission payload: ${resData.error || "Unknown response error."}`, "warn");
+      }
+    } catch (err) { 
+      logTerminalMsg("Critical transactional timeout: Check internet routing parameters.", "warn"); 
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+ 
   const processCandidateDecision = async (decision: "SELECTED" | "WAITLISTED") => {
     if (!selectedCandidate) return;
     setIsSubmitting(true);
+    
+    logTerminalMsg(`Broadcasting final cohort decision parameter [${decision}] for candidate: ${selectedCandidate.id}...`, "exec");
+    const targetBaseScore = parseInt(interviewScore) || 80;
+
     try {
-      await fetch(webhookUrl, {
+      const response = await fetch(webhookUrl, {
         method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "update-shortlist", candidateId: selectedCandidate.id, score: parseInt(interviewScore) || 80, status: decision })
+        headers: { "Content-Type": "application/json" }, // Clean JSON connection channel established
+        body: JSON.stringify({ 
+          action: "update-shortlist", 
+          candidateId: selectedCandidate.id, 
+          score: targetBaseScore, 
+          status: decision 
+        })
       });
-      setOutputLetter(`Decision updated successfully for ${selectedCandidate.name}.`);
-      await runBackgroundDatabaseCheck(false, false); 
-    } catch (err) { logTerminalMsg("Connection drop saving updates.", "warn"); }
-    setIsSubmitting(false);
+      
+      const resData = await response.json();
+
+      if (response.ok && resData.success) {
+        logTerminalMsg(`Admissions matrix cell updated to status state [${decision}] successfully.`, "success");
+        logTerminalMsg(`Transaction closed. Candidate ${selectedCandidate.name} assigned baseline score: ${targetBaseScore}/100.`, "success");
+        
+        setOutputLetter(`Decision updated successfully for ${selectedCandidate.name}.`);
+        await runBackgroundDatabaseCheck(false, false); 
+      } else {
+        logTerminalMsg(`Spreadsheet worker rejected status change payload: ${resData.error || "Matrix drop failure."}`, "warn");
+      }
+    } catch (err) { 
+      logTerminalMsg("Connection drop saving database structural updates.", "warn"); 
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCsvExport = () => {
