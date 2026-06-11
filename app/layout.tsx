@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css"; 
+import FluidBackground from "@/components/FluidBackground"; 
 import GlowCursor from "@/components/GlowCursor";
 import GlobalBackButton from "@/components/GlobalBackButton";
+import PageTransition from "@/components/PageTransition";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
@@ -12,15 +14,20 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className="bg-black antialiased selection:bg-blue-500/30 selection:text-white">
+      {/* 🌟 CRITICAL: Added bg-transparent here so the browser window is clear */}
+      <body className="antialiased selection:bg-blue-500/30 selection:text-white overflow-x-hidden relative min-h-screen bg-transparent">
         
-        {/* Global ambient glow layer */}
+        {/* 1. Base Layer (Must render first) */}
+        <FluidBackground />
+
+        {/* 2. Interactive Pointers */}
         <GlowCursor /> 
-        
-        {/* 🌐 THE GLOBAL BACK BUTTON SEED NODE (Top Left Corner Placement) */}
         <GlobalBackButton />
 
-        {children}
+        {/* 3. Global Route Wrappers */}
+        <PageTransition>
+          {children}
+        </PageTransition>
         
         <SpeedInsights />
       </body>
