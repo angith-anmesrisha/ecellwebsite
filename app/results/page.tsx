@@ -2,13 +2,13 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, CheckCircle2, Clock, XCircle, AlertCircle, Cpu, Mail, User, ShieldAlert, Award, Calendar, ArrowRight, Radio } from "lucide-react";
+import { Search, Clock, AlertCircle, Cpu, Mail, User, ShieldAlert, Award, Calendar, ArrowRight, Radio, ExternalLink, Video } from "lucide-react";
 
-export default function StudentResultsDashboard() {
+export default function StudentAdmissionsPortal() {
   const [emailInput, setEmailInput] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const [studentRecord, setStudentRecord] = useState<{ name: string; status: string; score: number } | null>(null);
+  const [studentRecord, setStudentRecord] = useState<{ name: string; status: string; score: number; rawNotes: string } | null>(null);
 
   const handleQuerySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,17 +18,19 @@ export default function StudentResultsDashboard() {
     setStudentRecord(null);
 
     try {
-      const res = await fetch(`/api/submit-queue?action=check-student-result&email=${encodeURIComponent(emailInput.trim())}`);
+      // FIXED: Routed straight to our unified, highly secured backend pipeline endpoint mapping
+      const res = await fetch(`/api/recruitment/submit?action=check-student-result&email=${encodeURIComponent(emailInput.trim().toLowerCase())}`);
       const data = await res.json();
       
-      if (data.success) {
+      if (res.ok && data.success) {
         setStudentRecord({
           name: data.name,
           status: data.status.toUpperCase(),
-          score: data.score
+          score: data.score,
+          rawNotes: data.choices || "" // Maps evaluation customAnswers string holding [SCHEDULED_PI] markers
         });
       } else {
-        setSearchError(data.error || "No registration profile matches that email address.");
+        setSearchError(data.error || "No registration profile matches that email coordinates.");
       }
     } catch (err) {
       setSearchError("Network configuration handshake failure. Please retry.");
@@ -36,6 +38,15 @@ export default function StudentResultsDashboard() {
       setIsSearching(false);
     }
   };
+
+  // HELPER ENGINE: Extracts the admin-allocated interview details securely out of data records
+  const extractInterviewSlot = (notesText: string) => {
+    if (!notesText) return null;
+    const matchMarker = notesText.match(/\[SCHEDULED_PI\]:\s*(.*)/i);
+    return matchMarker ? matchMarker[1].trim() : null;
+  };
+
+  const activeInterviewSchedule = studentRecord ? extractInterviewSlot(studentRecord.rawNotes) : null;
 
   return (
     <div className="min-h-screen bg-black text-white py-16 px-4 font-sans antialiased selection:bg-blue-500/30 selection:text-white">
@@ -119,10 +130,30 @@ export default function StudentResultsDashboard() {
                   <div className="p-5 bg-purple-500/5 border border-purple-500/20 rounded-xl space-y-4 font-mono text-xs">
                     <div className="flex items-center gap-2 font-black uppercase tracking-widest text-purple-400"><Calendar size={16} className="animate-pulse" /> SHORTLISTED FOR LIVE PERSONAL INTERVIEW</div>
                     <p className="leading-relaxed text-white/80 font-sans text-justify">Congratulations! Your solution parameters and portfolio evaluation profiles have successfully passed our vertical panel boundary benchmarks.</p>
-                    <div className="p-3 bg-black border border-purple-500/10 rounded-lg text-purple-300 text-[11px] leading-relaxed font-mono border-dashed">
-                      <strong>STATUS CODE:</strong> PROMOTED_TO_PI_STAGE // Panel matching algorithms have marked your profile as high-potential. Keep your main dashboard updated; interview slot details will register below momentarily.
-                    </div>
-                    <div className="flex justify-end pt-1"><div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-white/40 font-bold">Awaiting slot assignment <ArrowRight size={11} /></div></div>
+                    
+                    {/* FIXED: AUTOMATED DYNAMIC INTERVIEW LOCK SHEET SLOT DISPLAY */}
+                    {activeInterviewSchedule ? (
+                      <div className="bg-black border-2 border-purple-500/30 rounded-xl p-4 space-y-3 relative overflow-hidden animate-fadeIn">
+                        <div className="absolute top-0 right-0 p-2 text-purple-500/20"><Radio size={40} className="animate-pulse" /></div>
+                        <span className="text-[8px] font-bold uppercase bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded tracking-widest">LIVE INTERVIEW CALENDAR ASSIGNED</span>
+                        <div className="space-y-1 pt-1">
+                          <p className="text-white text-xs font-black uppercase tracking-tight flex items-center gap-1.5">
+                            <Clock size={12} className="text-purple-400" /> {activeInterviewSchedule}
+                          </p>
+                          <p className="text-[10px] text-zinc-400 font-sans">Please ensure you possess a stable internet grid and your microphone nodes are functional 10 minutes prior to your allocated block.</p>
+                        </div>
+                        <button 
+                          onClick={() => window.open("https://meet.google.com", "_blank")}
+                          className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-black font-black text-[10px] uppercase tracking-widest rounded-lg flex items-center justify-center gap-1.5 transition shadow-lg cursor-pointer"
+                        >
+                          <Video size={12} /> Launch Virtual Briefing Room <ExternalLink size={10} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-black border border-purple-500/10 rounded-lg text-purple-300 text-[11px] leading-relaxed font-mono border-dashed">
+                        <strong>STATUS CODE:</strong> PROMOTED_TO_PI_STAGE // Panel matching algorithms have marked your profile as high-potential. Keep your main dashboard updated; interview slot details will register below momentarily.
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

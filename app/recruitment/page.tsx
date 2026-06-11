@@ -442,7 +442,7 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
     }
   };
 
-  const handleSubmitRound2Case = async (e: React.FormEvent) => {
+ const handleSubmitRound2Case = async (e: React.FormEvent) => {
     e.preventDefault();
     if (currentWords < 50) {
       alert("Please write a more detailed response. Minimum requirement is 50 words.");
@@ -452,10 +452,13 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
     if (activeCandidate && confirm("Are you sure you want to lock your final answers? Submissions cannot be edited afterwards.")) {
       setIsSubmitting(true);
       try {
-        const response = await fetch("/api/recruitment/submit-case", {
+        // FIXED: Route parameters mapped to our unified endpoint layer with email notice trigger flags
+        const response = await fetch("/api/recruitment/submit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            action: "update-case",
+            name: activeCandidate.name,
             email: activeCandidate.email,
             caseAnswer: userR2Submission
           })
@@ -475,6 +478,7 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
           localStorage.setItem("ecell_submissions_backup_tree", JSON.stringify(syncedTree));
           
           setR2Completed(true);
+          alert("Your application profile and response framework have been completely locked and verified!");
         } else {
           alert(resData.error || "Failed to save your response to the server.");
         }

@@ -233,22 +233,23 @@ useEffect(() => {
       logTerminalMsg("Failed to broadcast phase transition down the network pipeline.", "warn");
     }
   };
-  const triggerBulkWaitlistGUI = async () => {
-    if (!confirm("Are you sure you want to shift all candidate records to WAITLISTED status?")) return;
+ const triggerBulkWaitlistGUI = async () => {
+    if (!confirm("Are you sure you want to shift all pending candidate records to WAITLISTED status?")) return;
     setIsSubmitting(true);
-    logTerminalMsg("Running bulk updates to transition candidates to waitlist staging...", "exec");
+    logTerminalMsg("Running centralized bulk updates to transition pending candidates to waitlist staging...", "exec");
     try {
-      const res = await fetch(webhookUrl, {
+      // FIXED: Pointed to our unified API gateway handler matrix route cleanly
+      const res = await fetch("/api/recruitment/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "bulk-waitlist", status: "WAITLISTED" })
+        body: JSON.stringify({ action: "bulk-waitlist" })
       });
       if (res.ok) {
-        logTerminalMsg("Bulk update complete. All rows updated to WAITLISTED status.", "success");
+        logTerminalMsg("Bulk processor complete. All pending row identifiers shifted to WAITLISTED status cleanly.", "success");
         await runBackgroundDatabaseCheck(false, false);
       }
     } catch (e) {
-      logTerminalMsg("Error completing bulk system operations.", "warn");
+      logTerminalMsg("Error completing bulk automated system operations.", "warn");
     } finally {
       setIsSubmitting(false);
     }
