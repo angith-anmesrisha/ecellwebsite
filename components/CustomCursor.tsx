@@ -69,12 +69,12 @@ export default function CustomCursor() {
 
   return (
     <>
-      {/* Global CSS injection to completely mask out native hardware arrow icons */}
-      <style jsx global>{`
-        body, button, a, input, textarea, [role="button"] {
+      {/* 🌟 SAFE BUILD FIX: Standard style element parsing to guarantee cross-compiler stability */}
+      <style dangerouslySetInnerHTML={{__html: `
+        body, button, a, input, textarea, [role="button"], .cursor-pointer {
           cursor: none !important;
         }
-      `}</style>
+      `}} />
 
       {/* The Fluid Tracking Ring node */}
       <motion.div
@@ -91,7 +91,6 @@ export default function CustomCursor() {
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         className="fixed top-0 left-0 rounded-full pointer-events-none z-[99999] flex items-center justify-center border border-white/0 backdrop-blur-3xs overflow-hidden"
       >
-        {/* Core typography slot displaying localized tracking notes inside the loop circle */}
         {cursorText && (
           <motion.span
             initial={{ opacity: 0, scale: 0.6 }}

@@ -187,7 +187,7 @@ export default function Home() {
                 transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
                 className="text-xl md:text-2xl font-light tracking-wide text-white/90 leading-relaxed italic font-serif"
               >
-                "{activeQuote.text}"
+                &ldquo;{activeQuote.text}&rdquo;
               </motion.p>
               <motion.p
                 initial={{ opacity: 0 }}
@@ -232,7 +232,7 @@ export default function Home() {
                 className="text-purple-500 font-mono tracking-widest uppercase text-xs md:text-sm flex items-center justify-center lg:justify-start gap-2"
               >
                 <span className="inline-block w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse" />
-                // Where Aspiration Meets Opportunity
+                {"// Where Aspiration Meets Opportunity"}
               </motion.p>
               
               <MasterMagnet radius={300} pull={0.4}>
@@ -268,7 +268,6 @@ export default function Home() {
 
         {/* Global Trends Loop Section */}
         <section id="ai-feed" data-cursor="view" data-cursor-text="view" className="relative z-40 py-28 bg-transparent w-full overflow-hidden">
-          {/* 🌟 REPLACED WITH HIGH-FREQUENCY GLITCH REVEAL */}
           <KineticGlitchReveal>
             <div className="text-center mb-16 relative z-10 pointer-events-auto">
               <KineticTextReveal 
@@ -277,8 +276,8 @@ export default function Home() {
                 delay={0.1}
               />
               <MasterMagnet radius={150} pull={0.25}>
-                <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mt-1 uppercase pointer-events-auto">
-                  <InertialSkewText text="WHAT'S HAPPENING IN INNOVATION TODAY" />
+                <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mt-1 uppercase pointer-events-none">
+                  <InertialSkewText text={"WHAT'S HAPPENING IN INNOVATION TODAY"} />
                 </h2>
               </MasterMagnet>
             </div>
@@ -397,6 +396,7 @@ export default function Home() {
         <section id="simulator" className="relative z-10 py-32 bg-zinc-950/10 backdrop-blur-2xs overflow-hidden">
           <AnimatedGridLine orientation="horizontal" className="top-0" />
           
+          {/* 🌟 FIXED THE CRASH: Swapped the duplicate closing target cleanly to KineticGlitchReveal */}
           <KineticGlitchReveal>
             <div className="max-w-7xl mx-auto px-6 md:px-10 relative z-10 pointer-events-auto">
               <div className="mb-16 space-y-2">

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView, Variants } from "framer-motion";
 
 interface Props {
   children: React.ReactNode;
@@ -10,8 +10,6 @@ interface Props {
 
 export default function KineticGlitchReveal({ children, delay = 0 }: Props) {
   const ref = React.useRef<HTMLDivElement>(null);
-  
-  // 🌟 THE REVEAL FIX: Changed once to false so it triggers every single time you scroll up or down
   const isInView = useInView(ref, { once: false, margin: "-10% 0px" });
   const [isGlitching, setIsGlitching] = useState(false);
 
@@ -23,21 +21,17 @@ export default function KineticGlitchReveal({ children, delay = 0 }: Props) {
       }, 400);
       return () => clearTimeout(timer);
     } else {
-      // Instantly clear states when scrolled out of view so it's fresh for the next crossover pass
       setIsGlitching(false);
     }
   }, [isInView]);
 
-  const glitchVariants = {
+  // 🌟 THE FIX: Explicitly typed as 'Variants' to enforce compatibility with motion.div
+  const glitchVariants: Variants = {
     hidden: { 
       opacity: 0, 
       y: 30, 
       skewX: 0,
-      x: 0,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut"
-      }
+      x: 0
     },
     visible: {
       opacity: 1,
@@ -66,7 +60,7 @@ export default function KineticGlitchReveal({ children, delay = 0 }: Props) {
       >
         {children}
 
-        {/* Dynamic framing wireframe lines overlay */}
+        {/* Dynamic wireframe line layout track simulation overlay */}
         {isGlitching && (
           <motion.div 
             initial={{ opacity: 0.5 }}
