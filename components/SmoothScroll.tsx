@@ -3,6 +3,12 @@
 import { useEffect, useRef } from "react";
 import Lenis from "lenis";
 
+declare global {
+  interface Window {
+    lenisVelocity: number;
+  }
+}
+
 export default function SmoothScroll({ children }: { children: React.ReactNode }) {
   const lenisRef = useRef<Lenis | null>(null);
 
@@ -14,11 +20,17 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: true,
-      wheelMultiplier: 1.0, // Scale factor for mouse wheel wheel clicks
+      wheelMultiplier: 1.0, // Scale factor for mouse wheel clicks
       touchMultiplier: 1.5, // Enhances trackpad kinetic dragging smoothness
     });
 
     lenisRef.current = lenis;
+    window.lenisVelocity = 0;
+
+    // 🌟 TRIONN UPGRADE: Direct stream listener writing instantaneous velocity vectors
+    lenis.on("scroll", (e) => {
+      window.lenisVelocity = e.velocity;
+    });
 
     // Connect Lenis straight to the global animation frame pipeline
     let animationFrameId: number;

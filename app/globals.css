@@ -33,3 +33,20 @@ div[class*="min-h-screen"],
 div[class*="min-h-\[200vh\]"] {
   background-color: transparent !important;
 }
+@layer utilities {
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .translate-z-0 {
+    transform: translateZ(0px);
+  }
+  .translate-z-6 {
+    transform: translateZ(24px);
+  }
+  .translate-z-10 {
+    transform: translateZ(40px);
+  }
+}

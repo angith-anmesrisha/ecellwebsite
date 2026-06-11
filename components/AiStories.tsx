@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ArrowRight, ArrowLeft, X, ExternalLink, Calendar } from "lucide-react";
+import { Sparkles, ArrowRight, X, ExternalLink, Calendar, LineChart } from "lucide-react";
 
 interface StoryItem {
   objectID: string;
@@ -17,8 +17,8 @@ export default function AiStories() {
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Automatically fetch top trending AI breakthroughs from Hacker News API
   useEffect(() => {
     const fetchAiNews = async () => {
       try {
@@ -27,7 +27,6 @@ export default function AiStories() {
         );
         const data = await res.json();
         
-        // Map and clean up titles (removing trailing domain strings if present)
         const cleanStories = data.hits.map((hit: any) => ({
           objectID: hit.objectID,
           title: hit.title,
@@ -39,7 +38,7 @@ export default function AiStories() {
         
         setStories(cleanStories);
       } catch (err) {
-        console.error("Error fetching automatic AI updates:", err);
+        console.error("Error updating story feed:", err);
       } finally {
         setLoading(false);
       }
@@ -48,166 +47,135 @@ export default function AiStories() {
     fetchAiNews();
   }, []);
 
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (activeIdx !== null && activeIdx < stories.length - 1) {
-      setActiveIdx(activeIdx + 1);
-    } else {
-      setActiveIdx(null); // Close at end
-    }
-  };
-
-  const handlePrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (activeIdx !== null && activeIdx > 0) {
-      setActiveIdx(activeIdx - 1);
-    }
-  };
-
   if (loading) return (
-    <div className="w-full flex items-center justify-center h-40 text-xs font-mono text-white/40 tracking-widest uppercase animate-pulse">
-      Syncing global neural updates...
+    <div className="w-full flex flex-col items-center justify-center h-64 font-mono text-[10px] text-purple-500/60 tracking-[0.3em] uppercase select-none">
+      <div className="w-12 h-[1px] bg-purple-500/30 mb-4 overflow-hidden relative">
+        <motion.div 
+          animate={{ left: ["-100%", "100%"] }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+          className="absolute top-0 bottom-0 w-1/2 bg-purple-500"
+        />
+      </div>
+      Gathering the latest updates...
     </div>
   );
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4">
-      {/* Horizontal List of Story Bubbles */}
-      <div className="flex flex-wrap justify-center gap-6 md:gap-8 py-4">
-        {stories.map((story, idx) => (
-          <div 
-            key={story.objectID} 
-            onClick={() => setActiveIdx(idx)}
-            className="flex flex-col items-center gap-2 cursor-pointer group"
-          >
-            {/* Pulsing Neon Story Ring */}
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full p-[2px] bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 animate-gradient-xy group-hover:scale-105 transition duration-300 shadow-lg shadow-blue-500/10">
-              <div className="w-full h-full bg-black rounded-full flex items-center justify-center border border-black p-2 text-center text-[10px] font-mono tracking-tight text-white/90 overflow-hidden line-clamp-3 leading-tight select-none">
-                {story.title.split(" ")[0]}..
+    <div ref={containerRef} className="w-full relative overflow-visible py-6 font-sans">
+      
+      {/* PREMIUM BENTO GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/10 border border-white/10 rounded-xl overflow-hidden shadow-2xl backdrop-blur-md">
+        {stories.map((story, idx) => {
+          const isLargeCard = idx === 0 || idx === 4;
+          
+          return (
+            <motion.div
+              key={story.objectID}
+              onClick={() => setActiveIdx(idx)}
+              className={`group relative bg-zinc-950 p-8 flex flex-col justify-between overflow-hidden cursor-pointer min-h-[260px] transition-all duration-500 hover:bg-zinc-900/40 ${
+                isLargeCard ? "md:col-span-2 lg:col-span-1" : ""
+              }`}
+              whileHover={{ scale: 0.995 }}
+            >
+              <div className="absolute top-0 right-0 w-8 h-8 border-r border-t border-white/[0.03] group-hover:border-purple-500/30 transition-colors duration-500" />
+              <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-purple-500/0 rounded-full blur-[60px] group-hover:bg-purple-500/5 transition-all duration-700 pointer-events-none" />
+
+              <div className="space-y-4 relative z-10">
+                <div className="flex justify-between items-center font-mono text-[9px] tracking-widest text-zinc-500 group-hover:text-purple-400 transition-colors duration-300">
+                  <span className="flex items-center gap-1.5 uppercase font-bold">
+                    <LineChart size={10} />
+                    Trending Story // 0{idx + 1}
+                  </span>
+                  <span className="uppercase">Shared by {story.author}</span>
+                </div>
+
+                <h4 className="text-lg md:text-xl font-black text-white/80 group-hover:text-white group-hover:translate-x-1 tracking-tight leading-snug transition-all duration-300 line-clamp-3 uppercase">
+                  {story.title}
+                </h4>
               </div>
-            </div>
-            <span className="text-[10px] font-semibold tracking-wider text-white/50 group-hover:text-white transition uppercase font-mono">
-              {story.author}
-            </span>
-          </div>
-        ))}
+
+              <div className="flex justify-between items-center text-[10px] font-mono tracking-wider pt-6 border-t border-white/5 mt-6 relative z-10">
+                <span className="text-zinc-500 group-hover:text-zinc-300 transition-colors duration-300 flex items-center gap-1">
+                  <Calendar size={11} />
+                  {new Date(story.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                </span>
+                <span className="text-purple-500/40 group-hover:text-purple-400 font-bold transition-colors duration-300">
+                  🔥 {story.points} Upvotes
+                </span>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
 
-     {/* IMMERSIVE FULL-SCREEN STORIES MODAL OVERLAY */}
+      {/* FULL SCREEN CLEAN MODAL OVERLAY */}
       <AnimatePresence>
         {activeIdx !== null && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-6 bg-black/95 backdrop-blur-xl">
-            {/* Modal Backdrop closer */}
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-12 bg-black/98 backdrop-blur-2xl">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.05)_0%,transparent_70%)] pointer-events-none" />
             <div className="absolute inset-0" onClick={() => setActiveIdx(null)} />
 
-            {/* Desktop Left Navigation Arrow Button */}
-            {activeIdx > 0 && (
-              <button 
-                onClick={handlePrev}
-                className="hidden md:flex absolute left-8 p-3 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition z-50"
-              >
-                <ArrowLeft size={20} />
-              </button>
-            )}
-
-            {/* Core Card Container Frame */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="relative w-full max-w-md h-[75vh] max-h-[600px] bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 flex flex-col justify-between shadow-2xl overflow-hidden z-[150]"
+              initial={{ opacity: 0, y: 50, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.98 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="relative w-full max-w-4xl bg-zinc-950 border border-white/10 rounded-2xl p-8 md:p-16 flex flex-col justify-between shadow-2xl overflow-hidden z-[150] min-h-[60vh]"
             >
-              {/* Background ambient decorative orb */}
-              <div className="absolute -top-20 -left-20 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none" />
-
-              {/* Progress Line */}
-              <div className="w-full flex gap-1.5 pointer-events-none">
-                {stories.map((_, i) => (
-                  <div key={i} className="h-[2px] bg-white/10 flex-1 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
-                      style={{
-                        width: i <= activeIdx ? "100%" : "0%"
-                      }}
-                    />
-                  </div>
-                ))}
+              <div className="absolute -bottom-10 -left-10 text-[14vw] font-black uppercase text-white/[0.01] tracking-tighter select-none pointer-events-none font-sans">
+                NEWS
               </div>
 
-              {/* Upper Header Meta Details */}
-              <div className="flex justify-between items-center mt-4">
-                <div className="flex items-center gap-2 text-[10px] font-mono text-white/40 uppercase tracking-widest">
-                  <Sparkles size={12} className="text-blue-500 animate-pulse" />
-                  <span>AI Intel Briefing</span>
+              <div className="flex justify-between items-start w-full relative z-10">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-[10px] font-mono text-purple-400 uppercase tracking-[0.3em] font-bold">
+                    <Sparkles size={12} className="animate-pulse" />
+                    <span>Global Tech Insights</span>
+                  </div>
+                  <p className="text-[11px] font-mono text-zinc-500">Community curated documentation</p>
                 </div>
+                
                 <button 
                   onClick={() => setActiveIdx(null)} 
-                  className="p-1.5 text-white/40 hover:text-white bg-white/5 border border-white/10 hover:border-white/20 rounded-lg transition"
+                  className="p-3 text-zinc-500 hover:text-white bg-white/5 border border-white/10 rounded-full transition-all duration-300 hover:rotate-90"
                 >
-                  <X size={14} />
+                  <X size={16} />
                 </button>
               </div>
 
-              {/* Main Center Story Text Node */}
-              <div className="flex-1 flex flex-col justify-center py-4">
-                <h4 className="text-xl md:text-2xl font-bold text-white tracking-tight leading-snug">
+              <div className="my-12 relative z-10 max-w-3xl">
+                <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-tight uppercase">
                   {stories[activeIdx].title}
-                </h4>
-                <div className="flex items-center gap-4 mt-4 text-xs font-mono text-white/40">
-                  <span className="flex items-center gap-1">
-                    <Calendar size={12} />
-                    {new Date(stories[activeIdx].created_at).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}
-                  </span>
-                  <span>🔥 {stories[activeIdx].points} points</span>
+                </h2>
+                
+                <div className="flex flex-wrap gap-6 items-center mt-6 text-xs font-mono text-zinc-400">
+                  <span className="uppercase">Posted by: <b className="text-white font-normal">{stories[activeIdx].author}</b></span>
+                  <span className="w-1.5 h-1.5 bg-zinc-800 rounded-full" />
+                  <span>Published: {new Date(stories[activeIdx].created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                  <span className="w-1.5 h-1.5 bg-zinc-800 rounded-full" />
+                  <span className="text-purple-400 font-bold">🔥 {stories[activeIdx].points} Community Points</span>
                 </div>
               </div>
 
-              {/* Bottom Interactive CTA Strip (Completely unobstructed, clear pointer actions) */}
-              <div className="space-y-4 mt-auto border-t border-white/5 pt-4 bg-zinc-950/50 backdrop-blur-sm">
-                <p className="text-xs text-white/50 leading-relaxed">
-                  Curated live from community tech logs. Open full tracking documentation node below.
-                </p>
-                
-                {/* Clean, high-priority hyperlink button */}
+              <div className="flex flex-col sm:flex-row gap-4 items-center pt-8 border-t border-white/10 w-full relative z-10 mt-auto">
                 <a 
                   href={stories[activeIdx].url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="w-full py-3 bg-white hover:bg-gray-200 text-black text-xs font-bold uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition cursor-pointer"
-                  style={{ pointerEvents: 'auto' }}
+                  className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-purple-500 text-black hover:text-white text-xs font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-3 transition-all duration-300"
                 >
                   <span>Read Full Article</span>
-                  <ExternalLink size={12} />
+                  <ArrowRight size={14} />
                 </a>
-
-                {/* Mobile tap navigation fallback row helper links */}
-                <div className="flex justify-between gap-4 pt-1 md:hidden">
-                  <button 
-                    disabled={activeIdx === 0}
-                    onClick={handlePrev}
-                    className="text-[10px] uppercase font-mono tracking-wider text-white/30 disabled:opacity-10"
-                  >
-                    ← Previous
-                  </button>
-                  <button 
-                    onClick={handleNext}
-                    className="text-[10px] uppercase font-mono tracking-wider text-white/30"
-                  >
-                    Next Story →
-                  </button>
-                </div>
+                
+                <button 
+                  onClick={() => setActiveIdx(null)}
+                  className="w-full sm:w-auto px-8 py-4 bg-transparent hover:bg-white/5 border border-white/10 text-zinc-400 hover:text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-300"
+                >
+                  Close Article
+                </button>
               </div>
-
             </motion.div>
-
-            {/* Desktop Right Navigation Arrow Button */}
-            <button 
-              onClick={handleNext}
-              className="hidden md:flex absolute right-8 p-3 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition z-50"
-            >
-              <ArrowRight size={20} />
-            </button>
           </div>
         )}
       </AnimatePresence>
