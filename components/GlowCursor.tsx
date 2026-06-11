@@ -26,33 +26,39 @@ export default function GlowCursor() {
 
   return (
     <>
-      {/* LAYER 1: ULTRA-TIGHT, HIGH-INTENSITY RADIAL SPOTLIGHT */}
+      {/* LAYER 1: DEEP BACKGROUND LIGHT SPOTLIGHT (Stays beneath text, doesn't invert) */}
       <div 
-        className="hidden md:block pointer-events-none fixed inset-0 z-[999998]"
+        className="hidden md:block pointer-events-none fixed inset-0 z-[10]"
         style={{
-          background: `radial-gradient(90px circle at ${mousePos.x}px ${mousePos.y}px, rgba(59, 130, 246, 0.35), transparent 80%)`
+          background: `radial-gradient(90px circle at ${mousePos.x}px ${mousePos.y}px, rgba(59, 130, 246, 0.25), transparent 80%)`
         }}
       />
 
-      {/* LAYER 2: THE HOLLOW CYBER LENS RING + PRECISION TARGET DOT */}
-      <div className="hidden md:block pointer-events-none fixed inset-0 z-[999999]">
+      {/* LAYER 2: THE HOLLOW INVERTED BLEND LENS + TARGET DOT */}
+      {/* 🌟 TRIONN UPGRADE: 
+        We set mix-blend-mode: difference and push the z-index to max. 
+        We force the ring's base color to solid white so it inverts perfectly to black over white assets!
+      */}
+      <div 
+        className="hidden md:block pointer-events-none fixed inset-0 z-[999999] mix-blend-mode-difference"
+        style={{ mixBlendMode: "difference" }}
+      >
         <motion.div
           animate={{
-            x: mousePos.x - (isHoveredInteractive ? 24 : 10),
-            y: mousePos.y - (isHoveredInteractive ? 24 : 10),
-            width: isHoveredInteractive ? "48px" : "20px",
-            height: isHoveredInteractive ? "48px" : "20px",
+            x: mousePos.x - (isHoveredInteractive ? 32 : 12),
+            y: mousePos.y - (isHoveredInteractive ? 32 : 12),
+            width: isHoveredInteractive ? "64px" : "24px",
+            height: isHoveredInteractive ? "64px" : "24px",
           }}
-          transition={{ type: "spring", stiffness: 450, damping: 30, mass: 0.12 }}
-          className={`rounded-full border flex items-center justify-center transition-colors duration-300 ${
+          transition={{ type: "spring", stiffness: 500, damping: 28, mass: 0.1 }}
+          className={`rounded-full flex items-center justify-center border transition-colors duration-200 ${
             isHoveredInteractive 
-              ? "border-blue-500 bg-blue-500/5 shadow-[0_0_20px_rgba(59,130,246,0.15)]" 
-              : "border-white/40 bg-transparent"
+              ? "border-white bg-white/10" 
+              : "border-white/80 bg-transparent"
           }`}
         >
-          <div className={`w-1 h-1 rounded-full transition-colors duration-300 ${
-            isHoveredInteractive ? "bg-blue-400" : "bg-white/60"
-          }`} />
+          {/* Central Target Dot */}
+          <div className="w-1.5 h-1.5 rounded-full bg-white" />
         </motion.div>
       </div>
     </>
