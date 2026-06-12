@@ -71,16 +71,18 @@ export default function FluidGridRipple() {
           const dy = mouse.y - p.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
           
-          // Wide global magnetic reach
-          const maxRadius = 260;
+          // 🌟 RADIUS OPTIMIZATION: Reduced from 260 down to 120 for a tight, crisp localized warp
+          const maxRadius = 180;
 
           if (distance < maxRadius) {
             const force = (maxRadius - distance) / maxRadius;
-            const distortion = force * 55; 
+            // Slightly tightened distortion scale to keep grid intersections neat
+            const distortion = force * 45; 
 
             const angle = Math.atan2(dy, dx);
-            p.vx -= Math.cos(angle) * distortion * 0.18;
-            p.vy -= Math.sin(angle) * distortion * 0.18;
+            // Adjusted multipliers for a snappy, precise response curve
+            p.vx -= Math.cos(angle) * distortion * 0.22;
+            p.vy -= Math.sin(angle) * distortion * 0.22;
           }
         }
 
@@ -94,7 +96,7 @@ export default function FluidGridRipple() {
         p.y += p.vy;
       });
 
-     ctx.strokeStyle = "rgba(147, 51, 234, 0.18)";
+      ctx.strokeStyle = "rgba(147, 51, 234, 0.18)";
       ctx.lineWidth = 1.5;
 
       // Draw horizontal lines across full canvas depth
