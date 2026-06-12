@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
@@ -19,9 +19,36 @@ const TEAM_MEMBERS: TeamMember[] = [
   { id: 5, name: "Jaqueline Fernandez", role: "Venture Lead", image: "/team/ankit.jpg" },
 ];
 
-export default function TeamCarousel3D() {
+// 🌟 UPGRADE: Define interface type to accept real-time scroll progress values
+interface TeamCarousel3DProps {
+  progress?: number;
+}
+
+export default function TeamCarousel3D({ progress }: TeamCarousel3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
+
+  // 🌟 UPGRADE: Automatically rotate cards as the user scrolls across Deck Panel 2
+  useEffect(() => {
+    if (progress === undefined) return;
+
+    // Deck Panel 2 is active between progress 0.33 and 0.66 of the master track
+    const startRange = 0.33;
+    const endRange = 0.66;
+
+    if (progress >= startRange && progress <= endRange) {
+      // Normalize progress to a clean 0-1 scale inside Panel 2
+      const normalizedProgress = (progress - startRange) / (endRange - startRange);
+      
+      // Map that clean percentage smoothly to the index count of your team array
+      const targetIndex = Math.min(
+        TEAM_MEMBERS.length - 1,
+        Math.floor(normalizedProgress * TEAM_MEMBERS.length)
+      );
+      
+      setActiveIdx(targetIndex);
+    }
+  }, [progress]);
 
   const handlePrev = () => {
     if (activeIdx > 0) setActiveIdx((prev) => prev - 1);
@@ -91,7 +118,6 @@ export default function TeamCarousel3D() {
                       className="p-2 bg-white/5 border border-white/10 rounded-full text-zinc-400 hover:text-white hover:bg-purple-500 transition-all duration-300"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {/* 🌟 SAFE FALLBACK CUSTOM VECTOR INJECTION TO PASS COMPILER EXERCISES */}
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
                         <rect x="2" y="9" width="4" height="12"></rect>

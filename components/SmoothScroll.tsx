@@ -13,26 +13,23 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
   const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
-    // Initialize Lenis with premium, organic smooth scrolling parameters
     const lenis = new Lenis({
-      duration: 1.2,       // Speed of the scroll ease animation (in seconds)
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Premium exponential deceleration curve
+      duration: 1.2,       
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), 
       orientation: "vertical",
       gestureOrientation: "vertical",
       smoothWheel: true,
-      wheelMultiplier: 1.0, // Scale factor for mouse wheel clicks
-      touchMultiplier: 1.5, // Enhances trackpad kinetic dragging smoothness
+      wheelMultiplier: 1.0, 
+      touchMultiplier: 1.5, 
     });
 
     lenisRef.current = lenis;
     window.lenisVelocity = 0;
 
-    // 🌟 TRIONN UPGRADE: Direct stream listener writing instantaneous velocity vectors
     lenis.on("scroll", (e) => {
       window.lenisVelocity = e.velocity;
     });
 
-    // Connect Lenis straight to the global animation frame pipeline
     let animationFrameId: number;
     function raf(time: number) {
       lenis.raf(time);
@@ -40,7 +37,6 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
     }
     animationFrameId = requestAnimationFrame(raf);
 
-    // Sync up with Next.js page modifications and route layout height changes
     const resizeObserver = new ResizeObserver(() => {
       lenis.resize();
     });
@@ -48,7 +44,6 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
       resizeObserver.observe(document.body);
     }
 
-    // Clean up animation loops and observers on component unmount
     return () => {
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();

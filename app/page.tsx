@@ -21,6 +21,7 @@ import CustomCursor from '@/components/CustomCursor';
 import KineticGlitchReveal from '@/components/KineticGlitchReveal';
 import DigitalStripSplitter from '@/components/DigitalStripSplitter';
 import InfiniteMarquee from '@/components/InfiniteMarquee';
+import HorizonSlideDeck from '@/components/HorizonSlideDeck';
 
 const STARTUP_QUOTES = [
   { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
@@ -325,57 +326,21 @@ export default function Home() {
 
         <InfiniteMarquee />
 
-        {/* 🌟 BALANCED INDUSTRIAL ROW DESIGN PANEL */}
-        <section className="relative z-30 border-t border-b border-white/10 bg-transparent w-full py-24 space-y-24 max-w-7xl mx-auto px-6 md:px-10">
-          
-          <div className="max-w-xl space-y-4">
-            <KineticTextReveal 
-              text="// System Architecture Matrix" 
-              className="text-xs font-mono tracking-widest uppercase text-purple-400 font-bold"
-              delay={0.1}
-            />
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight uppercase leading-none text-white">
-              LEADERSHIP <span className="text-purple-500">&amp; LABS</span>
-            </h2>
-            <p className="text-white/40 font-sans text-sm leading-relaxed pt-2">
-              Explore our core campus leadership directory or test your business modeling frameworks live inside our execution laboratory sandbox.
-            </p>
-          </div>
+        {/* 🌟 DESKTOP STICKY HORIZONTAL SYSTEM PANEL MODULARIZED */}
+        <div className="hidden lg:block bg-transparent relative z-30">
+          <HorizonSlideDeck />
+        </div>
 
-          {/* 01 // EXECUTIVE BOARD ROSTER */}
-          <div id="team" className="w-full border border-white/5 rounded-2xl bg-zinc-950/20 backdrop-blur-xs p-6 md:p-10 scroll-mt-24">
-            <div className="mb-8 border-b border-white/5 pb-4 flex items-center justify-between font-mono text-[10px] tracking-widest">
-              <span className="text-purple-400 font-bold">01 // EXECUTIVE BOARD ROSTER</span>
-              <span className="text-white/20">// INTERACTIVE 3D ARRAY</span>
-            </div>
-            <div className="w-full overflow-hidden max-h-[460px] flex items-center justify-center relative">
-              <TeamCarousel3D />
-            </div>
-          </div>
-
-          {/* 02 // VENTURE SIMULATION LAB */}
-          <div id="simulator" className="w-full border border-white/5 rounded-2xl bg-zinc-950/20 backdrop-blur-xs p-6 md:p-10 scroll-mt-24">
-            <div className="mb-8 border-b border-white/5 pb-4 flex items-center justify-between font-mono text-[10px] tracking-widest">
-              <span className="text-blue-400 font-bold">02 // VENTURE SIMULATION LAB</span>
-              <span className="text-white/20">// LIVE INFERENCE NODE</span>
-            </div>
-            <div className="w-full relative block overflow-visible">
-              <PitchSimulator />
-            </div>
-          </div>
-
-        </section>
-
-        {/* Mobile Viewport Fallback Layout Grid */}
-        <div className="block lg:hidden space-y-24 px-6 relative z-30">
-          <section id="team-mobile" className="py-16 border-t border-white/10">
+        {/* MOBILE RESPONSIVE FALLBACK LAYOUT GRID */}
+        <div className="block lg:hidden space-y-24 px-6 relative z-30 bg-transparent">
+          <section id="team" className="py-16 border-t border-white/10 scroll-mt-24">
             <div className="mb-8">
               <span className="text-[10px] font-mono font-bold tracking-widest text-purple-400 uppercase">01 // THE BOARD</span>
             </div>
             <TeamCarousel3D />
           </section>
           
-          <section id="simulator-mobile" className="py-16 border-t border-white/10">
+          <section id="simulator" className="py-16 border-t border-white/10 scroll-mt-24">
             <div className="mb-8">
               <span className="text-[10px] font-mono font-bold tracking-widest text-blue-400 uppercase">02 // VENTURE LAB</span>
             </div>
@@ -561,7 +526,7 @@ function TrackedCyberCard({ node, delay }: { node: ModuleNode; delay: number }) 
                     y: spreadY,
                     rotate: randomRotation,
                     scale: isHovered ? 1.2 : 1,
-                    color: isHovered ? (idx % 2 === 0 ? "#a855f7" : "#3b82f6") : "rgba(255,255,255,0.4)"
+                    color: isHovered ? (idx % 2 === 0 ? "#a855f7" : "#3b82f6") : "#ffffff"
                   }}
                   transition={{
                     type: "spring",

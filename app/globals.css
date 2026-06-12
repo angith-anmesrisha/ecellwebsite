@@ -50,3 +50,29 @@ div[class*="min-h-\[200vh\]"] {
     transform: translateZ(40px);
   }
 }
+@layer utilities {
+  .w-vw {
+    width: 100vw;
+  }
+}
+/* 🌟 FIX: Force Lenis and standard sticky positions to respect layout viewports */
+html.lenis, 
+body {
+  height: auto;
+}
+
+.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+/* Ensure the parent containers don't trap or break structural pinning */
+main,
+div[ref="containerRef"] {
+  transform: none !important;
+  perspective: none !important;
+}
+/* Restrict the page-level overflow rules during multi-view panel shifts */
+section relative {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
