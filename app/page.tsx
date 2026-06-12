@@ -326,26 +326,9 @@ export default function Home() {
 
         <InfiniteMarquee />
 
-        {/* 🌟 DESKTOP STICKY HORIZONTAL SYSTEM PANEL MODULARIZED */}
-        <div className="hidden lg:block bg-transparent relative z-30">
+        {/* 🌟 UPGRADED UNIVERSAL SYSTEM ARCHITECTURE DECK - RUNS ON DESKTOP & MOBILE */}
+        <div className="w-full bg-transparent relative z-30">
           <HorizonSlideDeck />
-        </div>
-
-        {/* MOBILE RESPONSIVE FALLBACK LAYOUT GRID */}
-        <div className="block lg:hidden space-y-24 px-6 relative z-30 bg-transparent">
-          <section id="team" className="py-16 border-t border-white/10 scroll-mt-24">
-            <div className="mb-8">
-              <span className="text-[10px] font-mono font-bold tracking-widest text-purple-400 uppercase">01 // THE BOARD</span>
-            </div>
-            <TeamCarousel3D />
-          </section>
-          
-          <section id="simulator" className="py-16 border-t border-white/10 scroll-mt-24">
-            <div className="mb-8">
-              <span className="text-[10px] font-mono font-bold tracking-widest text-blue-400 uppercase">02 // VENTURE LAB</span>
-            </div>
-            <PitchSimulator />
-          </section>
         </div>
 
         {/* Simplified, High-Impact Campus Operations Directory */}
