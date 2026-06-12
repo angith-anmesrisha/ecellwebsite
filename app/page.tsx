@@ -13,8 +13,6 @@ import AiStories from "@/components/AiStories";
 import HeroCanvas3D from '@/components/HeroCanvas3D';
 import KineticTextReveal from '@/components/KineticTextReveal';
 import TeamCarousel3D from '@/components/TeamCarousel3D';
-import CrystallineParticleMatrix from '@/components/CrystallineParticleMatrix';
-import FluidGridRipple from '@/components/FluidGridRipple';
 import FracturedTextButton from '@/components/FracturedTextButton';
 import InertialSkewText from '@/components/InertialSkewText';
 import CustomCursor from '@/components/CustomCursor';
@@ -72,7 +70,7 @@ function MasterMagnet({ children, radius = 300, pull = 0.4 }: { children: React.
       
       const deltaX = clientX - centerX;
       const deltaY = clientY - centerY;
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY); // 🌟 FIXED TYPO HERE
 
       if (distance < radius) {
         const intensity = (radius - distance) / radius;
@@ -176,9 +174,6 @@ export default function Home() {
 
       <div ref={containerRef} className="relative min-h-[200vh] text-white overflow-hidden bg-transparent w-full">
         
-        <CrystallineParticleMatrix />
-        <FluidGridRipple />
-
         <Navbar />
 
         {/* Hero Section */}
@@ -326,7 +321,7 @@ export default function Home() {
 
         <InfiniteMarquee />
 
-        {/* 🌟 UPGRADED UNIVERSAL SYSTEM ARCHITECTURE DECK - RUNS ON DESKTOP & MOBILE */}
+        {/* UPGRADED UNIVERSAL SYSTEM ARCHITECTURE DECK - RUNS ON DESKTOP & MOBILE */}
         <div className="w-full bg-transparent relative z-30">
           <HorizonSlideDeck />
         </div>
@@ -341,7 +336,7 @@ export default function Home() {
                 delay={0.1}
               />
               <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white uppercase mt-1">
-                STUDENT ENTREPRENEUR RESOURCES
+                STUDENT EMBYTER RESOURCES
               </h2>
             </div>
 

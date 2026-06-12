@@ -2,11 +2,18 @@
 
 import React, { useEffect, useRef } from "react";
 
+interface WaterRipple {
+  x: number;
+  y: number;
+  time: number;
+  maxRadius: number;
+  strength: number;
+}
+
 export default function CrystallineParticleMatrix() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-  // Track globally to bypass element offset rendering issues
   const mouseRef = useRef({ x: 0, y: 0, lastX: 0, lastY: 0, active: false, velocity: 0 });
+  const ripplesRef = useRef<WaterRipple[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -15,6 +22,7 @@ export default function CrystallineParticleMatrix() {
     if (!ctx) return;
 
     let animationFrameId: number;
+    let lastTime = performance.now();
     let particles: Array<{
       x: number;
       y: number;
@@ -23,7 +31,8 @@ export default function CrystallineParticleMatrix() {
       vx: number;
       vy: number;
       size: number;
-      color: string;
+      baseColor: string;
+      hue: number;
       angle: number;
       speedFactor: number;
     }> = [];
@@ -40,111 +49,142 @@ export default function CrystallineParticleMatrix() {
 
     const initParticles = () => {
       particles = [];
-      // 🌟 DRUBBED UP MAXIMUM DENSITY POOL: Bumped limit up to 900 for a deep crystal cluster look
-      const particleCount = Math.min(Math.floor((canvas.width * canvas.height) / 1800), 900);
+      const particleCount = Math.min(Math.floor((canvas.width * canvas.height) / 1600), 900);
       
       for (let i = 0; i < particleCount; i++) {
         const x = Math.random() * canvas.width;
         const y = Math.random() * canvas.height;
+        
+        const randomHue = Math.random() > 0.5 
+          ? Math.floor(Math.random() * 40) + 260 
+          : Math.floor(Math.random() * 40) + 160;
+
         particles.push({
           x,
           y,
           originX: x,
           originY: y,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          size: Math.random() * 1.6 + 0.5,
-          color: Math.random() > 0.4 ? "rgba(147, 51, 234, 0.28)" : "rgba(59, 130, 246, 0.22)",
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: (Math.random() - 0.5) * 0.4,
+          size: Math.random() * 1.5 + 0.6,
+          hue: randomHue,
+          baseColor: `hsla(${randomHue}, 85%, 65%, ${Math.random() * 0.12 + 0.15})`,
           angle: Math.random() * Math.PI * 2,
           speedFactor: Math.random() * 0.04 + 0.01
         });
       }
     };
 
-    const animate = () => {
+    const animate = (currentTime: number) => {
+      const deltaTime = (currentTime - lastTime) * 0.001;
+      lastTime = currentTime;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const mouse = mouseRef.current;
 
-      // Track exact real-time sweep speed velocities
       const mDx = mouse.x - mouse.lastX;
       const mDy = mouse.y - mouse.lastY;
       const mouseSpeed = Math.sqrt(mDx * mDx + mDy * mDy);
-      
       mouse.velocity += (mouseSpeed - mouse.velocity) * 0.15;
       mouse.velocity *= 0.93;
-
       mouse.lastX = mouse.x;
       mouse.lastY = mouse.y;
 
+      ripplesRef.current.forEach((ripple, idx) => {
+        ripple.time += deltaTime;
+        if (ripple.time > 1.5) {
+          ripplesRef.current.splice(idx, 1);
+        }
+      });
+
       for (let i = 0; i < particles.length; i++) {
-        const p1 = particles[i];
+        const p = particles[i];
 
         if (!mouse.active) {
-          // Normal elegant floating drift physics
-          p1.x += p1.vx;
-          p1.y += p1.vy;
-
-          if (p1.x < 0 || p1.x > canvas.width) p1.vx *= -1;
-          if (p1.y < 0 || p1.y > canvas.height) p1.vy *= -1;
-
-          p1.x += (p1.originX - p1.x) * 0.008;
-          p1.y += (p1.originY - p1.y) * 0.008;
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+          if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+          p.x += (p.originX - p.x) * 0.008;
+          p.y += (p.originY - p.y) * 0.008;
         } else {
-          const dx = mouse.x - p1.x;
-          const dy = mouse.y - p1.y;
+          const dx = mouse.x - p.x;
+          const dy = mouse.y - p.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          const activeRadius = 400;
+          const activeRadius = 350;
 
           if (distance < activeRadius) {
             const force = (activeRadius - distance) / activeRadius;
-            
             if (mouse.velocity > 15) {
-              // 💥 RAPID SWIPE REPULSION DETECTOR (EXPLOSION)
-              p1.x -= (dx / distance) * force * (mouse.velocity * 0.45);
-              p1.y -= (dy / distance) * force * (mouse.velocity * 0.45);
+              p.x -= (dx / distance) * force * (mouse.velocity * 0.4);
+              p.y -= (dy / distance) * force * (mouse.velocity * 0.4);
             } else {
-              // 🧲 STABLE CORE ATTRACTOR SYSTEM (IMPLOSION)
-              p1.x += (dx / distance) * force * 6.5;
-              p1.y += (dy / distance) * force * 6.5;
-              
-              // Light orbital sway to stop static text overlays
-              p1.x += Math.sin(p1.angle) * 0.6;
-              p1.y += Math.cos(p1.angle) * 0.6;
-              p1.angle += p1.speedFactor;
+              p.x += (dx / distance) * force * 5.0;
+              p.y += (dy / distance) * force * 5.0;
+              p.x += Math.sin(p.angle) * 0.4;
+              p.y += Math.cos(p.angle) * 0.4;
+              p.angle += p.speedFactor;
             }
           } else {
-            // Snap back cleanly to the anchor points
-            p1.x += (p1.originX - p1.x) * 0.025;
-            p1.y += (p1.originY - p1.y) * 0.025;
+            p.x += (p.originX - p.x) * 0.02;
+            p.y += (p.originY - p.y) * 0.02;
           }
         }
 
-        // Draw individual crystal vertices
+        let renderX = p.x;
+        let renderY = p.y;
+        let finalColor = p.baseColor;
+
+        ripplesRef.current.forEach((ripple) => {
+          const rDx = p.x - ripple.x;
+          const rDy = p.y - ripple.y;
+          const rDistance = Math.sqrt(rDx * rDx + rDy * rDy);
+          
+          const waveSpeed = 240; 
+          const currentWaveFront = ripple.time * waveSpeed;
+          
+          if (rDistance < ripple.maxRadius && rDistance < currentWaveFront) {
+            const waveFrequency = 0.09; 
+            const waveWidth = 40; 
+            const distFromFront = Math.abs(rDistance - currentWaveFront);
+            
+            if (distFromFront < waveWidth) {
+              const waveMath = Math.sin((rDistance - currentWaveFront) * waveFrequency);
+              const falloff = (1.0 - distFromFront / waveWidth) * (1.0 - rDistance / ripple.maxRadius);
+              const timeDecay = Math.max(0, 1.0 - ripple.time / 1.5);
+              
+              const pushScale = waveMath * 16 * ripple.strength * falloff * timeDecay;
+              
+              if (rDistance > 0) {
+                renderX += (rDx / rDistance) * pushScale;
+                renderY += (rDy / rDistance) * pushScale;
+              }
+              
+              if (waveMath > 0.3) {
+                finalColor = `hsla(${p.hue}, 100%, 80%, ${0.5 * falloff * timeDecay})`;
+              }
+            }
+          }
+        });
+
         ctx.beginPath();
-        ctx.arc(p1.x, p1.y, p1.size, 0, Math.PI * 2);
-        ctx.fillStyle = mouse.active && mouse.velocity > 15 && Math.abs(mouse.x - p1.x) < 250
-          ? "rgba(244, 63, 94, 0.55)" // Flash red on flick bursts
-          : mouse.active && Math.abs(mouse.x - p1.x) < 400
-            ? "rgba(168, 85, 247, 0.45)" 
-            : p1.color;
+        ctx.arc(renderX, renderY, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = finalColor;
         ctx.fill();
 
-        // High-Performance Indexed Proximity Loop: Limits heavy connecting overheads
-        // Skip web rendering if scrolling fast to keep UI smooth
-        if (mouse.velocity < 22) {
-          for (let j = i + 1; j < particles.length; j += 3) { 
+        if (mouse.velocity < 20) {
+          for (let j = i + 1; j < particles.length; j += 4) { 
             const p2 = particles[j];
-            const distx = p1.x - p2.x;
-            const disty = p1.y - p2.y;
+            const distx = renderX - p2.x;
+            const disty = renderY - p2.y;
             const linkDist = Math.sqrt(distx * distx + disty * disty);
 
-            if (linkDist < 115) {
+            if (linkDist < 100) {
               ctx.beginPath();
-              ctx.moveTo(p1.x, p1.y);
+              ctx.moveTo(renderX, renderY);
               ctx.lineTo(p2.x, p2.y);
-              ctx.strokeStyle = `rgba(139, 92, 246, ${0.06 * (1 - linkDist / 115)})`;
-              ctx.lineWidth = 0.5;
+              ctx.strokeStyle = `rgba(139, 92, 246, ${0.04 * (1 - linkDist / 100)})`;
+              ctx.lineWidth = 0.4;
               ctx.stroke();
             }
           }
@@ -156,19 +196,53 @@ export default function CrystallineParticleMatrix() {
 
     resizeCanvas();
     
-    // 🌟 THE FIX: Track cursor positioning directly through the window's master layer
+    const triggerRipple = (clientX: number, clientY: number, strength: number) => {
+      ripplesRef.current.push({
+        x: clientX + window.scrollX,
+        y: clientY + window.scrollY,
+        time: 0,
+        maxRadius: 240, 
+        strength: strength
+      });
+      if (ripplesRef.current.length > 8) ripplesRef.current.shift();
+    };
+
+    const handleGlobalClick = (e: MouseEvent) => {
+      triggerRipple(e.clientX, e.clientY, 1.5);
+    };
+
     const handleGlobalMouseMove = (e: MouseEvent) => {
       mouseRef.current.x = e.clientX + window.scrollX;
       mouseRef.current.y = e.clientY + window.scrollY;
       mouseRef.current.active = true;
+
+      const dx = mouseRef.current.x - mouseRef.current.lastX;
+      const dy = mouseRef.current.y - mouseRef.current.lastY;
+      const moveSpeed = Math.sqrt(dx * dx + dy * dy);
+
+      if (moveSpeed > 35) {
+        triggerRipple(e.clientX, e.clientY, Math.min(0.7, moveSpeed * 0.008));
+      }
     };
 
     const handleGlobalMouseLeave = () => {
       mouseRef.current.active = false;
     };
 
+    const handleGlobalScroll = () => {
+      if (Math.random() > 0.75) {
+        triggerRipple(
+          window.innerWidth / 2 + (Math.random() - 0.5) * 300, 
+          window.innerHeight / 2 + (Math.random() - 0.5) * 300, 
+          0.8
+        );
+      }
+    };
+
     window.addEventListener("resize", resizeCanvas);
     window.addEventListener("mousemove", handleGlobalMouseMove);
+    window.addEventListener("click", handleGlobalClick);
+    window.addEventListener("scroll", handleGlobalScroll, { passive: true });
     document.addEventListener("mouseleave", handleGlobalMouseLeave);
 
     animationFrameId = requestAnimationFrame(animate);
@@ -176,11 +250,18 @@ export default function CrystallineParticleMatrix() {
     return () => {
       window.removeEventListener("resize", resizeCanvas);
       window.removeEventListener("mousemove", handleGlobalMouseMove);
+      window.removeEventListener("click", handleGlobalClick);
+      window.removeEventListener("scroll", handleGlobalScroll);
       document.removeEventListener("mouseleave", handleGlobalMouseLeave);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
 
-  // Return a completely clean background layer with mouse events disabled to let cards click cleanly
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block pointer-events-none z-0 opacity-70" />;
+  return (
+    <canvas 
+      ref={canvasRef} 
+      className="absolute inset-0 w-full h-full block pointer-events-none mix-blend-screen" 
+      style={{ zIndex: 50 }} // 🌟 LAYER CORRECTION: Sits on top of layouts so it is 100% visible
+    />
+  );
 }

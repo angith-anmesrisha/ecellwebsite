@@ -1,24 +1,57 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
 interface Props {
   text: string;
   tag?: string;
-  href: string; // 🌟 Added required href tracking
+  href: string; 
 }
 
 export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", href }: Props) {
   const [isHovered, setIsHovered] = useState(false);
+  const elementRef = useRef<HTMLDivElement>(null);
+
+  // 🌟 TRIONN UPGRADE: Broadcast exact coordinates on hover to snap background grid lines
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (!elementRef.current) return;
+
+    const rect = elementRef.current.getBoundingClientRect();
+    window.dispatchEvent(
+      new CustomEvent("gridSnapActive", {
+        detail: {
+          top: rect.top + window.scrollY,
+          bottom: rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          right: rect.right + window.scrollX,
+        },
+      })
+    );
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    window.dispatchEvent(new CustomEvent("gridSnapInactive"));
+  };
+
+  // 🌟 TRIONN UPGRADE: Capture absolute cursor click coordinates to center the expansion inversion wave
+  const handleClick = (e: React.MouseEvent) => {
+    window.dispatchEvent(
+      new CustomEvent("canvasInversionTrigger", {
+        detail: { x: e.pageX, y: e.pageY },
+      })
+    );
+  };
 
   return (
-    // 🌟 Wrapped in Next.js Link for native router navigation execution
-    <Link href={href} className="block w-full">
+    <Link href={href} className="block w-full" onClick={handleClick}>
       <div
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        ref={elementRef}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         className="relative block w-full border-b border-white/5 py-6 cursor-pointer select-none overflow-hidden group"
       >
         <div className="relative overflow-hidden flex items-center justify-between pointer-events-none">

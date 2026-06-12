@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 🌟 FORCE THE ROOT CORE SYSTEM LAYER TO USE THE SHADER BASE COLOR INSTEAD OF BLANK SOLID BLACK */
+/* Restores the premium deep space aesthetic dark tone uniform background */
 html,
 body {
   background-color: #05050a !important;
@@ -11,68 +11,13 @@ body {
   padding: 0;
 }
 
-/* Ensure no default Tailwind utility gradients layer over your text containers */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #05050a;
-    --foreground: #ffffff;
-  }
-}
-
 #root, 
 next-route-announcer,
 main,
-.relative.min-h-\[200vh\] {
+div[template],
+#___next,
+.page-transition-wrapper {
   background-color: transparent !important;
-}
-
-/* Ultimate fail-safe override to guarantee no nested container forces a background mask block */
-main, 
-section, 
-div[class*="min-h-screen"],
-div[class*="min-h-\[200vh\]"] {
-  background-color: transparent !important;
-}
-@layer utilities {
-  .preserve-3d {
-    transform-style: preserve-3d;
-  }
-  .perspective-1000 {
-    perspective: 1000px;
-  }
-  .translate-z-0 {
-    transform: translateZ(0px);
-  }
-  .translate-z-6 {
-    transform: translateZ(24px);
-  }
-  .translate-z-10 {
-    transform: translateZ(40px);
-  }
-}
-@layer utilities {
-  .w-vw {
-    width: 100vw;
-  }
-}
-/* 🌟 FIX: Force Lenis and standard sticky positions to respect layout viewports */
-html.lenis, 
-body {
-  height: auto;
-}
-
-.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-
-/* Ensure the parent containers don't trap or break structural pinning */
-main,
-div[ref="containerRef"] {
-  transform: none !important;
-  perspective: none !important;
-}
-/* Restrict the page-level overflow rules during multi-view panel shifts */
-section relative {
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
+  background-image: none !important;
+  filter: none !important; /* Strips any legacy SVG filters cleanly */
 }
