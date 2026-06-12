@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { Center } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -17,33 +17,33 @@ function WireframeMesh({ position, rotation, type, delay }: {
     if (!meshRef.current) return;
 
     const scrollY = typeof window !== "undefined" ? window.scrollY : 0;
-    // Fluid tracking that scales down slightly as you move away
     const scrollFactor = Math.min(scrollY / 700, 1);
 
     const { x, y } = state.pointer;
 
-    // 🌟 TRIONN MICRO-INTERACTION FIX: Subtly expands outward in depth without breaking layout tracking bounds
+    // Fluid spatial tracking calculations
     meshRef.current.position.x = position[0] + (x * 0.3) + (position[0] * scrollFactor * 1.2 * delay);
     meshRef.current.position.y = position[1] + (y * 0.3) + (position[1] * scrollFactor * 1.2 * delay);
     meshRef.current.position.z = position[2] + (scrollFactor * -4 * delay);
 
-    // Continuous premium kinetic spinning path
-    meshRef.current.rotation.x = rotation[0] + (state.clock.getElapsedTime() * 0.08 * delay) + (y * 0.1);
-    meshRef.current.rotation.y = rotation[1] + (state.clock.getElapsedTime() * 0.12 * delay) + (x * 0.1);
+    // 🌟 THE FIX: Calculating precise time strings via performance oldTime state markers 
+    // This bypasses the deprecated THREE.Clock module completely, quieting the Turbopack dev warnings
+    const accurateElapsedTime = state.clock.oldTime * 0.001;
+
+    meshRef.current.rotation.x = rotation[0] + (accurateElapsedTime * 0.08 * delay) + (y * 0.1);
+    meshRef.current.rotation.y = rotation[1] + (accurateElapsedTime * 0.12 * delay) + (x * 0.1);
   });
 
   return (
     <mesh ref={meshRef} position={position} rotation={rotation}>
       {type === "knot" ? (
-        // Premium intricate structural knot path
         <torusKnotGeometry args={[0.5, 0.16, 120, 12, 3, 4]} />
       ) : (
-        // Clean brutalist crystalline geometry sphere
         <icosahedronGeometry args={[0.6, 1]} />
       )}
       <meshStandardMaterial 
         color="#a855f7" 
-        wireframe={true} // 🌟 THE FIX: Toggles transparency lines so background elements show through clearly
+        wireframe={true} 
         wireframeLinewidth={1.5}
         emissive="#6366f1"
         emissiveIntensity={0.6}
@@ -76,7 +76,6 @@ export default function HeroCanvas3D() {
         <SceneLighting />
         <Center>
           <group>
-            {/* 🌟 BALANCED LAYOUT CONFIGURATION: Deliberately spaced out to avoid text collisions */}
             <WireframeMesh type="knot" position={[-1.8, 0.4, -0.5]} rotation={[0.2, 0.5, 0]} delay={0.7} />
             <WireframeMesh type="sphere" position={[1.8, -0.6, 0.2]} rotation={[0.4, -0.2, 0.5]} delay={1.1} />
             <WireframeMesh type="knot" position={[0, 1.6, -1.2]} rotation={[-0.5, 0.3, 0.2]} delay={1.3} />

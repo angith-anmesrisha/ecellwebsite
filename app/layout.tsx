@@ -4,7 +4,7 @@ import FluidBackground from "@/components/FluidBackground";
 import GlowCursor from "@/components/GlowCursor";
 import GlobalBackButton from "@/components/GlobalBackButton";
 import PageTransition from "@/components/PageTransition";
-import SmoothScroll from "@/components/SmoothScroll"; // 🌟 IMPORT THE NEW LENIS WRAPPER
+import SmoothScroll from "@/components/SmoothScroll"; 
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
@@ -17,15 +17,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="scroll-smooth">
       <body className="antialiased selection:bg-blue-500/30 selection:text-white overflow-x-hidden relative min-h-screen bg-transparent">
         
-        {/* 1. Base Layer (Must render first) */}
+        {/* 1. Base Background Grid Layer */}
         <FluidBackground />
 
-        {/* 2. Interactive Pointers */}
+        {/* 2. Interactive Premium Pointers */}
         <GlowCursor /> 
         <GlobalBackButton />
 
-        {/* 3. Global Route & Smooth Scrolling Wrappers */}
-        {/* 🌟 ENCAPSULATE CONTENT IN THE INERTIAL SCROLL TUNER */}
+        {/* 3. Smooth Single Page Architecture Rollout */}
         <SmoothScroll>
           <PageTransition>
             {children}

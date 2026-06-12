@@ -46,10 +46,10 @@ export default function ConnectSection() {
         <div className="space-y-6 flex flex-col justify-between">
           <div className="space-y-4">
             <h2 className="text-4xl md:text-5xl font-black tracking-tight">
-              LET'S <span className="text-blue-500">CONNECT.</span>
+              LET&apos;S <span className="text-blue-500">CONNECT.</span>
             </h2>
             <p className="text-white/60 max-w-md text-base md:text-lg">
-              Have questions, startup ideas, or want to collaborate with BIMTECH E-CELL? Reach out and let's build the ecosystem together.
+              Have questions, startup ideas, or want to collaborate with BIMTECH E-CELL? Reach out and let&apos;s build the ecosystem together.
             </p>
           </div>
 
@@ -94,9 +94,11 @@ export default function ConnectSection() {
               placeholder="Your Message or Idea..." 
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-blue-500 transition text-sm resize-none"
             ></textarea>
-            <button className="w-full py-3 bg-white text-black font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-gray-200 transition group text-sm">
+            
+            {/* 🌟 FIXED: Removed native text transitions on color configurations and explicitly locked down the vector stroke color */}
+            <button className="w-full py-3 bg-white text-zinc-950 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-200 transition-transform text-sm">
               <span>Send Message</span>
-              <Send size={16} className="transform group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+              <Send size={16} color="rgb(9, 9, 11)" className="transform group-hover:translate-x-1 group-hover:-translate-y-1" />
             </button>
           </form>
         </div>

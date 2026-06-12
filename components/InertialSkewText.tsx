@@ -38,16 +38,12 @@ export default function InertialSkewText({ text, className = "" }: Props) {
       const dy = clientY - centerY;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      // 🌟 THE INERTIAL SKEW FORMULA: 
-      // Skews and stretches letters along the approach vector angle of the mouse cursor
       if (distance < 400) {
         const force = (400 - distance) / 400;
         
-        // Tilt characters based on distance angle
         skewX.set((dx / rect.width) * -35 * force);
         skewY.set((dy / rect.height) * 15 * force);
 
-        // Pull the entire text string slightly toward cursor gravity
         translateX.set(dx * 0.12 * force);
         translateY.set(dy * 0.12 * force);
       }
@@ -89,6 +85,8 @@ export default function InertialSkewText({ text, className = "" }: Props) {
               animate={{
                 y: isHovered ? Math.sin(charIdx * 0.6) * -8 : 0,
                 scale: isHovered ? 1.05 : 1,
+                // 🌟 PRODUCTION FIX: Explicitly stating fixed string variables instead of triggering implicit transitions
+                color: isHovered ? "rgba(255, 255, 255, 1)" : "rgba(255, 255, 255, 1)"
               }}
               transition={{
                 type: "spring",

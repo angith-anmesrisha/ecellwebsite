@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ArrowRight, X, ExternalLink, Calendar, LineChart } from "lucide-react";
+import { Sparkles, ArrowRight, X, Calendar, LineChart } from "lucide-react";
+import FluidHoverTile from "./FluidHoverTile";
 
 interface StoryItem {
   objectID: string;
@@ -63,52 +64,48 @@ export default function AiStories() {
   return (
     <div ref={containerRef} className="w-full relative overflow-visible py-6 font-sans">
       
-      {/* PREMIUM BENTO GRID */}
+      {/* 🌟 UPGRADED FLUID SPOTLIGHT BENTO MATRIX */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/10 border border-white/10 rounded-xl overflow-hidden shadow-2xl backdrop-blur-md">
         {stories.map((story, idx) => {
           const isLargeCard = idx === 0 || idx === 4;
           
           return (
-            <motion.div
+            <FluidHoverTile
               key={story.objectID}
               onClick={() => setActiveIdx(idx)}
-              className={`group relative bg-zinc-950 p-8 flex flex-col justify-between overflow-hidden cursor-pointer min-h-[260px] transition-all duration-500 hover:bg-zinc-900/40 ${
-                isLargeCard ? "md:col-span-2 lg:col-span-1" : ""
-              }`}
-              whileHover={{ scale: 0.995 }}
+              className={isLargeCard ? "md:col-span-2 lg:col-span-1" : ""}
             >
-              <div className="absolute top-0 right-0 w-8 h-8 border-r border-t border-white/[0.03] group-hover:border-purple-500/30 transition-colors duration-500" />
-              <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-purple-500/0 rounded-full blur-[60px] group-hover:bg-purple-500/5 transition-all duration-700 pointer-events-none" />
-
-              <div className="space-y-4 relative z-10">
-                <div className="flex justify-between items-center font-mono text-[9px] tracking-widest text-zinc-500 group-hover:text-purple-400 transition-colors duration-300">
-                  <span className="flex items-center gap-1.5 uppercase font-bold">
+              {/* Top Meta Headers Block */}
+              <div className="space-y-4 w-full">
+                <div className="flex justify-between items-center font-mono text-[9px] tracking-widest text-zinc-500">
+                  <span className="flex items-center gap-1.5 uppercase font-bold text-purple-400">
                     <LineChart size={10} />
                     Trending Story // 0{idx + 1}
                   </span>
-                  <span className="uppercase">Shared by {story.author}</span>
+                  <span className="uppercase">By {story.author}</span>
                 </div>
 
-                <h4 className="text-lg md:text-xl font-black text-white/80 group-hover:text-white group-hover:translate-x-1 tracking-tight leading-snug transition-all duration-300 line-clamp-3 uppercase">
+                <h4 className="text-lg md:text-xl font-black text-white/80 group-hover:text-white tracking-tight leading-snug transition-colors duration-300 line-clamp-3 uppercase">
                   {story.title}
                 </h4>
               </div>
 
-              <div className="flex justify-between items-center text-[10px] font-mono tracking-wider pt-6 border-t border-white/5 mt-6 relative z-10">
+              {/* Bottom Info Metrics Row */}
+              <div className="flex justify-between items-center text-[10px] font-mono tracking-wider pt-6 border-t border-white/5 w-full mt-6">
                 <span className="text-zinc-500 group-hover:text-zinc-300 transition-colors duration-300 flex items-center gap-1">
                   <Calendar size={11} />
                   {new Date(story.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                 </span>
-                <span className="text-purple-500/40 group-hover:text-purple-400 font-bold transition-colors duration-300">
+                <span className="text-purple-500/60 group-hover:text-purple-400 font-bold transition-colors duration-300">
                   🔥 {story.points} Upvotes
                 </span>
               </div>
-            </motion.div>
+            </FluidHoverTile>
           );
         })}
       </div>
 
-      {/* FULL SCREEN CLEAN MODAL OVERLAY */}
+      {/* FULL SCREEN COMPREHENSIVE OVERLAY MODAL */}
       <AnimatePresence>
         {activeIdx !== null && (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-12 bg-black/98 backdrop-blur-2xl">
