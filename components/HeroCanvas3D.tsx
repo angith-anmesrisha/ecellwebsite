@@ -61,7 +61,7 @@ function LocalGlbModel() {
 
   return (
     <group ref={groupRef} dispose={null}>
-      <primitive object={clone} scale={2.2} />
+      <primitive object={clone} scale={1.8} />
     </group>
   );
 }
