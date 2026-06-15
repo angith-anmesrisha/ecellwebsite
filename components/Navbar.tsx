@@ -39,20 +39,39 @@ function MagneticNavLink({ href, label, tagline }: NavLinkProps) {
     y.set(0);
   };
 
+  // 🌟 THE FIX: Smoothly scrolls and forces the URL state to stay entirely hash-free
+  const handleClick = (e: React.MouseEvent) => {
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      const targetId = href.replace("#", "");
+      const targetElement = document.getElementById(targetId);
+      
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: "smooth" });
+        
+        // Overwrites the address bar state with the base clean pathname, stripping out the hash entirely
+        if (window.history.pushState) {
+          window.history.pushState(null, "", window.location.pathname);
+        }
+      }
+    }
+  };
+
   return (
     <motion.div
       ref={linkRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onMouseEnter={() => setIsHovered(true)}
+      onClick={handleClick}
       style={{ x: springX, y: springY }}
       className="relative px-5 py-3 cursor-pointer group flex items-center justify-center overflow-visible"
     >
       <span className="absolute inset-0 scale-75 bg-white/[0.03] rounded-full opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 ease-out" />
       
-      <Link href={href} className="relative z-10 text-xs font-mono font-medium tracking-widest uppercase flex items-center justify-center overflow-visible">
+      <span className="relative z-10 text-xs font-mono font-medium tracking-widest uppercase flex items-center justify-center overflow-visible">
         <FractionalTextSplitter text={label} subText={tagline} isHovered={isHovered} />
-      </Link>
+      </span>
     </motion.div>
   );
 }
@@ -76,7 +95,6 @@ export default function Navbar() {
               priority
             />
           </div>
-          {/* 🌟 PRODUCTION FIX: Removed group-hover:text-purple-400 and transition-colors */}
           <span className="font-mono text-xs font-black tracking-[0.3em] uppercase text-white">
             E-Cell
           </span>
@@ -98,7 +116,6 @@ export default function Navbar() {
               onMouseLeave={() => setBtnHover(false)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              /* 🌟 PRODUCTION FIX: Removed hover:border-purple-500/40 and hover:bg-purple-500/10 to clear native color animations */
               className="px-6 py-3 border border-white/10 bg-zinc-950/40 rounded-full font-mono text-[10px] tracking-widest uppercase text-white transition-all duration-300 shadow-xl flex items-center justify-center overflow-visible min-w-[130px]"
             >
               <FractionalTextSplitter text="Apply Portal" subText="enter//sys" isHovered={btnHover} />
