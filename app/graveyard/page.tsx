@@ -1,8 +1,6 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import { AlertOctagon, History, User, Lightbulb, Target, Plus, X, Loader2 } from "lucide-react";
-
 interface FallenVenture {
   id: string;
   name: string;
@@ -12,12 +10,9 @@ interface FallenVenture {
   reason: string;
   lesson: string;
 }
-
 export default function StartupGraveyard() {
   const [failures, setFailures] = useState<FallenVenture[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Archive Form States
   const [showGraveForm, setShowGraveForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [graveData, setGraveData] = useState({
@@ -28,14 +23,12 @@ export default function StartupGraveyard() {
     reason: "",
     lesson: ""
   });
-
   useEffect(() => {
     const fetchLiveGraveyardLog = async () => {
       try {
         setIsLoading(true);
         const response = await fetch("/api/graveyard");
         const resData = await response.json();
-        
         if (resData.success && resData.failures) {
           setFailures(resData.failures);
         }
@@ -45,10 +38,8 @@ export default function StartupGraveyard() {
         setIsLoading(false);
       }
     };
-
     fetchLiveGraveyardLog();
   }, []);
-
   const handleSubmitPostMortem = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -56,9 +47,9 @@ export default function StartupGraveyard() {
       const res = await fetch("/api/submit-queue", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          type: "GRAVEYARD_SUBMISSION", 
-          payload: graveData 
+        body: JSON.stringify({
+          type: "GRAVEYARD_SUBMISSION",
+          payload: graveData
         })
       });
       const data = await res.json();
@@ -76,12 +67,10 @@ export default function StartupGraveyard() {
       setIsSubmitting(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-black text-white py-16 px-4 md:px-8 font-sans antialiased">
       <div className="max-w-4xl mx-auto space-y-8">
-        
-        {/* HEADER BLOCK */}
+        {}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-white/10 pb-6">
           <div className="space-y-2">
             <div className="text-[10px] font-mono tracking-widest bg-red-500/10 border border-red-500/20 text-red-400 px-3 py-1 rounded-full inline-block font-black uppercase">
@@ -92,16 +81,15 @@ export default function StartupGraveyard() {
               We look at failure as a key stepping stone. Read real case studies from retired student projects to learn what goes into launching a sustainable business.
             </p>
           </div>
-          <button 
-            onClick={() => setShowGraveForm(!showGraveForm)} 
+          <button
+            onClick={() => setShowGraveForm(!showGraveForm)}
             className="px-4 py-2 bg-red-950/40 hover:bg-red-900/40 border border-red-500/30 text-red-400 font-sans text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-lg"
           >
             {showGraveForm ? <X size={14} /> : <Plus size={14} />}
             {showGraveForm ? "Close Form" : "Log a Retired Project"}
           </button>
         </div>
-
-        {/* SUBMISSION FORM PANEL */}
+        {}
         {showGraveForm && (
           <div className="bg-zinc-950 border border-red-500/20 p-6 rounded-2xl space-y-4 text-xs">
             <div className="border-b border-white/5 pb-2">
@@ -147,8 +135,7 @@ export default function StartupGraveyard() {
             </form>
           </div>
         )}
-
-        {/* LOADING & ARCHIVE CARDS */}
+        {}
         {isLoading ? (
           <div className="text-center py-24 font-sans text-sm text-white/40 animate-pulse tracking-wide">
             Loading project case studies...
@@ -158,7 +145,6 @@ export default function StartupGraveyard() {
             {failures.map(item => (
               <div key={item.id} className="bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden shadow-xl relative group">
                 <div className="absolute top-0 bottom-0 left-0 w-[3px] bg-red-500/50 group-hover:bg-red-500 transition-all" />
-                
                 <div className="p-6 space-y-4">
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 border-b border-white/5 pb-3">
                     <div>
@@ -175,7 +161,6 @@ export default function StartupGraveyard() {
                       <History size={12} /> Active: {item.runtime}
                     </span>
                   </div>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                     <div className="bg-red-500/[0.02] border border-red-500/10 p-4 rounded-xl space-y-1.5">
                       <span className="text-[10px] uppercase font-bold text-red-400 tracking-wider flex items-center gap-1">
@@ -185,7 +170,6 @@ export default function StartupGraveyard() {
                         "{item.reason}"
                       </p>
                     </div>
-                    
                     <div className="bg-emerald-500/[0.02] border border-emerald-500/10 p-4 rounded-xl space-y-1.5">
                       <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider flex items-center gap-1">
                         <Lightbulb size={14} /> Strategic Lesson
@@ -198,7 +182,6 @@ export default function StartupGraveyard() {
                 </div>
               </div>
             ))}
-
             {failures.length === 0 && (
               <div className="text-center py-12 text-sm text-white/30">
                 No case studies logged in the archive yet.
@@ -206,7 +189,6 @@ export default function StartupGraveyard() {
             )}
           </div>
         )}
-
       </div>
     </div>
   );

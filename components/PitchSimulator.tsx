@@ -1,26 +1,21 @@
 "use client";
-
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, RefreshCw, FileText, CheckCircle, ShieldAlert, Cpu, Layers, TrendingUp, Gauge } from "lucide-react";
-
 interface RoadmapStep {
   t: string;
   d: string;
 }
-
 interface HurdleStep {
   h: string;
   s: string;
 }
-
 export default function PitchSimulator() {
   const [startupTitle, setStartupTitle] = useState("");
   const [problemStatement, setProblemStatement] = useState("");
   const [selectedSector, setSelectedSector] = useState("Artificial Intelligence");
   const [selectedModel, setSelectedModel] = useState("SaaS Subscription");
   const [selectedPricing, setSelectedPricing] = useState("Premium Pricing");
-
   const [isLoading, setIsLoading] = useState(false);
   const [hasSimulated, setHasSimulated] = useState(false);
   const [viabilityIndex, setViabilityIndex] = useState(50);
@@ -29,19 +24,14 @@ export default function PitchSimulator() {
   const [riskIndex, setRiskIndex] = useState(50);
   const [advisoryAssessment, setAdvisoryAssessment] = useState("");
   const [isViolationBlock, setIsViolationBlock] = useState(false);
-
-  // Dynamic state stores fetched straight from Llama 3
   const [dynamicPhases, setDynamicPhases] = useState<RoadmapStep[]>([]);
   const [dynamicHurdles, setDynamicHurdles] = useState<HurdleStep[]>([]);
-
   const handleSimulateArchitecture = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!startupTitle || !problemStatement) return;
-
     setIsLoading(true);
     setHasSimulated(false);
     setIsViolationBlock(false);
-
     try {
       const response = await fetch("/api/submit-queue", {
         method: "POST",
@@ -51,9 +41,7 @@ export default function PitchSimulator() {
           payload: { startupTitle, problemStatement, selectedSector, selectedModel, selectedPricing }
         })
       });
-
       const resData = await response.json();
-
       if (!response.ok || resData.isViolation) {
         setViabilityIndex(0);
         setMarketFitIndex(0);
@@ -65,10 +53,7 @@ export default function PitchSimulator() {
         setIsLoading(false);
         return;
       }
-
-      // Read values cleanly from the live Llama 3 analysis
       const analysis = resData.aiAnalysis;
-      
       setViabilityIndex(analysis.viabilityScore);
       setMarketFitIndex(analysis.marketFit);
       setComplexityIndex(analysis.executionComplexity);
@@ -76,23 +61,19 @@ export default function PitchSimulator() {
       setAdvisoryAssessment(analysis.assessmentBrief);
       setDynamicPhases(analysis.roadmapPhases || []);
       setDynamicHurdles(analysis.hurdles || []);
-      
       setHasSimulated(true);
-
     } catch (err) {
       alert("Analytical node handshake failure. Check your Groq API key.");
     } finally {
       setIsLoading(false);
     }
   };
-
   const handlePrintIsolatedDocument = () => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
       alert("Please allow popups to export your strategic roadmap PDF.");
       return;
     }
-
     const htmlOutput = `
       <!DOCTYPE html>
       <html>
@@ -121,20 +102,16 @@ export default function PitchSimulator() {
               <div>Venture Viability Index: <strong>${viabilityIndex}%</strong></div>
             </div>
           </div>
-
           <div class="section-header">01 // Executive Venture Profile</div>
           <div class="profile-grid">
             <div>Entity: <strong>${startupTitle}</strong></div>
             <div>Sector: <strong>${selectedSector}</strong></div>
             <div>Commercials: <strong>${selectedModel} // ${selectedPricing}</strong></div>
           </div>
-
           <div class="section-header">02 // Identified Market Friction</div>
           <p class="problem-blockquote">"${problemStatement}"</p>
-
           <div class="section-header">03 // AI Advisory Assessment</div>
           <p class="assessment-box">${advisoryAssessment}</p>
-
           <div class="section-header">04 // Tactical Implementation</div>
           <div>
             ${dynamicPhases.map(p => `
@@ -144,7 +121,6 @@ export default function PitchSimulator() {
               </div>
             `).join("")}
           </div>
-
           <div class="section-header">05 // Systemic Risk Audit & Safeguards</div>
           <div>
             ${dynamicHurdles.map((h, i) => `
@@ -159,7 +135,6 @@ export default function PitchSimulator() {
               </div>
             `).join("")}
           </div>
-
           <div class="report-footer">CONFIDENTIAL RECORDS // BIMTECH E-CELL ARCHIVE // POWERED BY LLAMA3</div>
           <script>
             window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 500); };
@@ -167,33 +142,27 @@ export default function PitchSimulator() {
         </body>
       </html>
     `;
-
     printWindow.document.open();
     printWindow.document.write(htmlOutput);
     printWindow.document.close();
   };
-
   return (
     <div className="w-full bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12 relative shadow-2xl text-xs text-white">
-      
-      {/* LEFT HALF: EXTENDED INPUT FORM MATRIX */}
+      {}
       <form onSubmit={handleSimulateArchitecture} className="lg:col-span-5 p-6 md:p-8 border-b lg:border-b-0 lg:border-r border-white/10 space-y-5 bg-black/30">
         <div className="space-y-1">
           <label className="text-[10px] font-mono font-bold uppercase tracking-widest text-blue-500">Venture Architecture</label>
           <h3 className="text-lg font-bold text-white tracking-tight">Concept Simulator Input</h3>
         </div>
-
         <div className="space-y-3">
           <div className="space-y-1">
             <label className="text-[10px] uppercase font-mono tracking-wider text-white/40">Startup Brand Name</label>
             <input required type="text" value={startupTitle} onChange={(e) => setStartupTitle(e.target.value)} placeholder="e.g., Nexis Core" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-white/10 focus:outline-none focus:border-blue-500 font-mono" />
           </div>
-
           <div className="space-y-1">
             <label className="text-[10px] uppercase font-mono tracking-wider text-white/40">Target Problem Statement</label>
             <textarea required rows={3} value={problemStatement} onChange={(e) => setProblemStatement(e.target.value)} placeholder="Describe the explicit operational bottleneck or market friction layout..." className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white placeholder-white/10 focus:outline-none focus:border-blue-500 font-mono resize-none" />
           </div>
-
           <div className="space-y-1">
             <label className="text-[10px] uppercase font-mono tracking-wider text-white/40">Domain Sector Node</label>
             <select value={selectedSector} onChange={(e) => setSelectedSector(e.target.value)} className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono">
@@ -215,7 +184,6 @@ export default function PitchSimulator() {
               <option value="EdTech Systems">EdTech & Continuous Learning Sandbox</option>
             </select>
           </div>
-
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-[10px] uppercase font-mono tracking-wider text-white/40">Monetization Engine</label>
@@ -237,14 +205,12 @@ export default function PitchSimulator() {
             </div>
           </div>
         </div>
-
         <button type="submit" disabled={isLoading || !startupTitle || !problemStatement} className="w-full py-3 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 disabled:opacity-20 transition cursor-pointer">
           <Sparkles size={14} className={isLoading ? "animate-spin text-blue-500" : ""} />
           <span>{isLoading ? "Staging & Analyzing..." : "Simulate Business Architecture"}</span>
         </button>
       </form>
-
-      {/* RIGHT HALF: LIVE LLM MONITOR SCREEN */}
+      {}
       <div className="lg:col-span-7 p-6 md:p-8 flex flex-col justify-center bg-zinc-950/40 relative max-h-[600px] overflow-y-auto">
         <AnimatePresence mode="wait">
           {!hasSimulated && !isLoading ? (
@@ -264,14 +230,12 @@ export default function PitchSimulator() {
             </motion.div>
           ) : (
             <motion.div key="results-prompt" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-              
-              {/* PERFORMANCE METRICS */}
+              {}
               <div className="border border-white/5 bg-white/[0.01] p-4 rounded-xl space-y-3">
                 <div className="flex justify-between items-center font-mono text-[9px] uppercase tracking-wider text-white/40">
                   <span className="flex items-center gap-1"><Layers size={10} /> Data Ledger Confirmed</span>
                   <span className="font-bold text-white">Llama 3 Balanced</span>
                 </div>
-                
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-center">
                   <div className="bg-white/5 p-2 rounded-lg border border-white/10">
                     <span className="text-[8px] text-white/40 uppercase block">Viability</span>
@@ -291,8 +255,7 @@ export default function PitchSimulator() {
                   </div>
                 </div>
               </div>
-
-              {/* FEEDBACK ASSESSMENT */}
+              {}
               <div className={`p-4 rounded-xl border flex gap-3 items-start ${isViolationBlock ? 'bg-red-500/5 border-red-500/20 text-red-200' : 'bg-blue-500/5 border-blue-500/10 text-white/90'}`}>
                 {isViolationBlock ? <ShieldAlert size={16} className="text-red-500 shrink-0 mt-0.5" /> : <CheckCircle size={16} className="text-blue-500 shrink-0 mt-0.5" />}
                 <div className="space-y-0.5">
@@ -302,8 +265,7 @@ export default function PitchSimulator() {
                   <p className="text-xs font-mono leading-relaxed select-none text-justify">{advisoryAssessment}</p>
                 </div>
               </div>
-
-              {/* 📅 DYNAMIC EXECUTION ROADMAP FROM LLM */}
+              {}
               {!isViolationBlock && (
                 <div className="space-y-2 border-t border-white/5 pt-3">
                   <h4 className="text-[10px] font-mono tracking-widest text-white/40 uppercase flex items-center gap-1.5 pb-1">
@@ -319,8 +281,7 @@ export default function PitchSimulator() {
                   </div>
                 </div>
               )}
-
-              {/* ACTION BUTTONS */}
+              {}
               <div className="flex gap-3 pt-2 font-mono text-[11px]">
                 <button type="button" onClick={() => { setHasSimulated(false); setStartupTitle(""); setProblemStatement(""); }} className="px-3 py-1.5 bg-white/5 border border-white/10 text-white rounded-lg hover:bg-white/10 transition flex items-center gap-1.5 cursor-pointer">
                   <RefreshCw size={11} /> Clear Simulation
@@ -331,12 +292,10 @@ export default function PitchSimulator() {
                   </button>
                 )}
               </div>
-
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-
     </div>
   );
 }

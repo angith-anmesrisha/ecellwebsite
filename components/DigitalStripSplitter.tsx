@@ -1,24 +1,18 @@
 "use client";
-
 import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-
 interface Props {
   text: string;
   tag?: string;
-  href: string; 
+  href: string;
 }
-
 export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", href }: Props) {
   const [isHovered, setIsHovered] = useState(false);
   const elementRef = useRef<HTMLDivElement>(null);
-
-  // 🌟 TRIONN UPGRADE: Broadcast exact coordinates on hover to snap background grid lines
   const handleMouseEnter = () => {
     setIsHovered(true);
     if (!elementRef.current) return;
-
     const rect = elementRef.current.getBoundingClientRect();
     window.dispatchEvent(
       new CustomEvent("gridSnapActive", {
@@ -31,13 +25,10 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
       })
     );
   };
-
   const handleMouseLeave = () => {
     setIsHovered(false);
     window.dispatchEvent(new CustomEvent("gridSnapInactive"));
   };
-
-  // 🌟 TRIONN UPGRADE: Capture absolute cursor click coordinates to center the expansion inversion wave
   const handleClick = (e: React.MouseEvent) => {
     window.dispatchEvent(
       new CustomEvent("canvasInversionTrigger", {
@@ -45,7 +36,6 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
       })
     );
   };
-
   return (
     <Link href={href} className="block w-full" onClick={handleClick}>
       <div
@@ -55,11 +45,9 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
         className="relative block w-full border-b border-white/5 py-6 cursor-pointer select-none overflow-hidden group"
       >
         <div className="relative overflow-hidden flex items-center justify-between pointer-events-none">
-          
           <div className="relative text-3xl md:text-5xl font-black uppercase tracking-tight font-mono overflow-visible h-14 w-auto">
             <span className="opacity-0 block">{text}</span>
-
-            {/* Top Mask Fragment Layer */}
+            {}
             <motion.span
               animate={{
                 y: isHovered ? -8 : 0,
@@ -72,8 +60,7 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
             >
               {text}
             </motion.span>
-
-            {/* Bottom Mask Fragment Layer */}
+            {}
             <motion.span
               animate={{
                 y: isHovered ? 8 : 0,
@@ -86,8 +73,7 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
             >
               {text}
             </motion.span>
-
-            {/* Center Fragment Tag */}
+            {}
             <motion.span
               initial={{ opacity: 0, scaleY: 0 }}
               animate={{
@@ -100,8 +86,7 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
               {tag}
             </motion.span>
           </div>
-
-          {/* Right Side Arrow */}
+          {}
           <motion.div
             animate={{
               x: isHovered ? 0 : 20,
@@ -111,12 +96,10 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
             transition={{ type: "spring", stiffness: 180, damping: 12 }}
             className="text-white/30 group-hover:text-purple-400 font-mono text-sm pr-4 shrink-0"
           >
-            // →
           </motion.div>
         </div>
-
-        {/* Hover accent rail lines */}
-        <motion.div 
+        {}
+        <motion.div
           initial={{ scaleX: 0 }}
           animate={{ scaleX: isHovered ? 1 : 0 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}

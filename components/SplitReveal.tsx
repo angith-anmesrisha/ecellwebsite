@@ -1,16 +1,12 @@
 "use client";
-
 import React from "react";
 import { motion } from "framer-motion";
-
 interface SplitRevealProps {
   text: string;
   delay?: number;
 }
-
 export default function SplitReveal({ text, delay = 0 }: SplitRevealProps) {
   const letters = Array.from(text);
-  
   return (
     <motion.span
       className="inline-block"
@@ -35,9 +31,9 @@ export default function SplitReveal({ text, delay = 0 }: SplitRevealProps) {
             className="inline-block whitespace-pre font-black"
             variants={{
               hidden: { opacity: 0, y: "110%", rotateX: 40 },
-              visible: { 
-                opacity: 1, 
-                y: "0%", 
+              visible: {
+                opacity: 1,
+                y: "0%",
                 rotateX: 0,
                 transition: { type: "spring", damping: 14, stiffness: 110 }
               }

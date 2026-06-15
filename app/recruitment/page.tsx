@@ -1,20 +1,15 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, Clock, Send, ArrowRight, Lock, UserPlus, CheckCircle2, Cpu } from "lucide-react";
-
 interface Candidate {
   id: string;
   name: string;
   email: string;
   dept: "ops" | "media" | "spons";
 }
-
 export default function RecruitmentPortal() {
   const [hasMounted, setHasMounted] = useState(false);
-  
-  // Recruitment Phase Management States
   const [portalPhase, setPortalPhase] = useState<"LOCKED" | "REGISTRATION_OPEN" | "COMPLETED">("LOCKED");
   const [daysRemaining, setDaysRemaining] = useState("00");
   const [hoursRemaining, setHoursRemaining] = useState("00");
@@ -22,29 +17,22 @@ export default function RecruitmentPortal() {
   const [secondsRemaining, setSecondsRemaining] = useState("00");
   const [bypassInput, setBypassInput] = useState("");
   const [isBypassed, setIsBypassed] = useState(false);
-
-  // Registration Form States
   const [activeCandidate, setActiveCandidate] = useState<Candidate | null>(null);
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regDept, setRegDept] = useState<"ops" | "media" | "spons">("ops");
-  
-  // Assessment Progress States
   const [currentRound, setCurrentRound] = useState<1 | 2>(1);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [runningScore, setRunningScore] = useState<number | null>(null);
   const [quizFinished, setQuizFinished] = useState(false);
   const [round1Passed, setRound1Passed] = useState(false);
-  
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [assembledScenario, setAssembledScenario] = useState("");
   const [userR2Submission, setUserR2Submission] = useState("");
   const [r2Completed, setR2Completed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // PDF Resume Staging Hooks
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [base64String, setBase64String] = useState<string>("");
-
   const quizQuestions = [
     {
       q: "A high-priority cross-functional team is lagging because two senior vertical managers disagree sharply on resource allocation. What is your intervention framework?",
@@ -79,7 +67,6 @@ export default function RecruitmentPortal() {
       ]
     }
   ];
-
   const scenarioPool = {
     ops: {
       triggers: [
@@ -133,27 +120,19 @@ export default function RecruitmentPortal() {
       ]
     }
   };
-
   useEffect(() => {
     setHasMounted(true);
-
     const checkLockStatus = async () => {
-      // If the admin has already bypassed it locally via the passkey input, let them in
       if (isBypassed) {
         setPortalPhase("REGISTRATION_OPEN");
         return;
       }
-
       let serverPhase = "LOCKED";
-
       try {
-        // Fetch the true configuration phase safely from the server side
         const res = await fetch("/api/recruitment/admin");
         const data = await res.json();
-        
         if (data.success) {
           serverPhase = data.phase;
-          
           if (serverPhase === "OPEN" || serverPhase === "REGISTRATION_OPEN") {
             setPortalPhase("REGISTRATION_OPEN");
             return;
@@ -164,22 +143,16 @@ export default function RecruitmentPortal() {
           }
         }
       } catch (err) {
-        // Fallback gracefully if network drops momentarily
       }
-
-      // If the server explicitly says LOCKED, calculate countdown mechanics
       setPortalPhase("LOCKED");
       const targetLaunchRaw = localStorage.getItem("ecell_recruitment_launch_date") || "2026-07-15T00:00:00";
       const targetTime = new Date(targetLaunchRaw).getTime();
       const currentTime = new Date().getTime();
       const difference = targetTime - currentTime;
-
       if (difference <= 0) {
-        // Only open automatically if the server wasn't explicitly set to LOCKED by an admin
         if (serverPhase !== "LOCKED") {
           setPortalPhase("REGISTRATION_OPEN");
         } else {
-          // If the admin forced a LOCKED state, keep the UI locked and zero out timer variables
           setDaysRemaining("00");
           setHoursRemaining("00");
           setMinutesRemaining("00");
@@ -190,7 +163,6 @@ export default function RecruitmentPortal() {
         const h = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const m = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
         const s = Math.floor((difference % (1000 * 60)) / 1000);
-        
         setDaysRemaining(d < 10 ? `0${d}` : `${d}`);
         setHoursRemaining(h < 10 ? `0${h}` : `${h}`);
         setMinutesRemaining(m < 10 ? `0${m}` : `${m}`);
@@ -199,20 +171,16 @@ export default function RecruitmentPortal() {
     };
     checkLockStatus();
     const intervalNode = setInterval(checkLockStatus, 1000);
-
     const cachedUserRaw = localStorage.getItem("ecell_active_candidate_session");
     if (cachedUserRaw) {
       const parsedCandidate = JSON.parse(cachedUserRaw) as Candidate;
       setActiveCandidate(parsedCandidate);
-
-      // FIXED: Safely restore active mid-quiz question indexes and answer choices
       const savedQuizIndex = localStorage.getItem(`ecell_quiz_index_${parsedCandidate.id}`);
       const savedQuizChoices = localStorage.getItem(`ecell_quiz_choices_${parsedCandidate.id}`);
       if (savedQuizIndex && savedQuizChoices && !localStorage.getItem(`ecell_progress_${parsedCandidate.id}`)) {
         setCurrentQuestionIdx(parseInt(savedQuizIndex));
         setSelectedIndices(JSON.parse(savedQuizChoices));
       }
-
       const progressCache = localStorage.getItem(`ecell_progress_${parsedCandidate.id}`);
       if (progressCache) {
         const parsedProgress = JSON.parse(progressCache);
@@ -223,17 +191,14 @@ export default function RecruitmentPortal() {
           setCurrentRound(2);
         }
       }
-
       const existingR2Log = localStorage.getItem(`ecell_r2_submission_${parsedCandidate.id}`);
       if (existingR2Log) {
         setUserR2Submission(existingR2Log);
         setR2Completed(true);
       }
     }
-
     return () => clearInterval(intervalNode);
   }, [currentRound, isBypassed]);
-
   useEffect(() => {
     if (activeCandidate && round1Passed) {
       const generateDeterministicIndex = (str: string, poolSize: number) => {
@@ -243,24 +208,18 @@ export default function RecruitmentPortal() {
         }
         return Math.abs(hash) % poolSize;
       };
-
       const pools = scenarioPool[activeCandidate.dept];
       const tIdx = generateDeterministicIndex(activeCandidate.id + "t", pools.triggers.length);
       const eIdx = generateDeterministicIndex(activeCandidate.email + "e", pools.escalations.length);
       const cIdx = generateDeterministicIndex(activeCandidate.id + activeCandidate.email, pools.constraints.length);
-
       setAssembledScenario(`CRITICAL INCIDENT: ${pools.triggers[tIdx]}, ${pools.escalations[eIdx]}. \n\nSTRATEGIC INSTRUCTION: ${pools.constraints[cIdx]}`);
     }
   }, [activeCandidate, round1Passed]);
-
   if (!hasMounted) return <div className="min-h-screen bg-black" />;
   const currentWords = userR2Submission.trim() === "" ? 0 : userR2Submission.trim().split(/\s+/).length;
-
   const handleBypassCheck = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setBypassInput(val);
-    
-    // Evaluate strings when typing threshold crosses a standard length limit
     if (val.length >= 4) {
       try {
         const res = await fetch("/api/recruitment/admin", {
@@ -268,98 +227,79 @@ export default function RecruitmentPortal() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ passkey: val })
         });
-        
         const data = await res.json();
-        
         if (data.success) {
           setIsBypassed(true);
           setPortalPhase("REGISTRATION_OPEN");
         }
       } catch (err) {
-        // Suppress mid-keystroke intermediate network logs gracefully
       }
     }
   };
 const handleFileAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
       if (file.type !== "application/pdf") {
         alert("Invalid file format. Please attach a formal document copy formatted exclusively as a PDF.");
         e.target.value = "";
         return;
       }
-      
-      if (file.size > 4 * 1024 * 1024) { // 4MB Size limit safeguard
+      if (file.size > 4 * 1024 * 1024) {
         alert("File size bounds exceeded. Please compress your resume document sheet below 4MB.");
         e.target.value = "";
         return;
       }
-
       setSelectedFile(file);
       const reader = new FileReader();
       reader.onload = () => {
         const rawResult = reader.result as string;
-        // Strip out metadata header data padding block prefix string seamlessly
         const cleanBase64 = rawResult.split(",")[1];
         setBase64String(cleanBase64);
       };
       reader.readAsDataURL(file);
     }
   };
-
 const handleRegisterCandidate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName || !regEmail) return;
     setIsSubmitting(true);
-
     try {
-      // Handshake with the backend to verify historical entry states before starting
       const res = await fetch("/api/recruitment/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          action: "check-initial-eligibility", 
-          email: regEmail.trim().toLowerCase() 
+        body: JSON.stringify({
+          action: "check-initial-eligibility",
+          email: regEmail.trim().toLowerCase()
         })
       });
-
       const data = await res.json();
-
       if (!res.ok) {
         alert(data.error || "Registration blocked by the safety firewall.");
         return;
       }
-
       if (data.success) {
         if (data.isExistingSession) {
-          // Seamlessly restore their progress if they passed Round 1 historically
           const restoredCandidate: Candidate = {
             id: data.candidate.regId,
             name: data.candidate.name,
             email: data.candidate.email,
-            dept: regDept // Map to their currently selected department node dynamically
+            dept: regDept
           };
-
           localStorage.setItem("ecell_active_candidate_session", JSON.stringify(restoredCandidate));
           localStorage.setItem(`ecell_progress_${restoredCandidate.id}`, JSON.stringify(data.progress));
-          
           setActiveCandidate(restoredCandidate);
           setRunningScore(data.progress.score);
           setQuizFinished(true);
           setRound1Passed(true);
           setCurrentRound(2);
-          
           alert(`Welcome back, ${data.candidate.name}. Your verified score (${data.progress.score}/100) has been pulled from the server database. Proceeding to Case Stage.`);
         } else {
-          // Standard execution path for an actual fresh applicant
           const newCandidate: Candidate = {
             id: "cand_" + Math.random().toString(36).substring(2, 11),
             name: regName.trim(),
             email: regEmail.trim().toLowerCase(),
             dept: regDept
           };
-
           localStorage.setItem("ecell_active_candidate_session", JSON.stringify(newCandidate));
           setActiveCandidate(newCandidate);
         }
@@ -370,22 +310,17 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
       setIsSubmitting(false);
     }
   };
-
   const handleAnswerSelection = async (selectedOptionIdx: number) => {
     if (!activeCandidate) return;
-
     const updatedIndices = [...selectedIndices, selectedOptionIdx];
     setSelectedIndices(updatedIndices);
-
     if (currentQuestionIdx + 1 < quizQuestions.length) {
       const nextIdx = currentQuestionIdx + 1;
       setCurrentQuestionIdx(nextIdx);
-      // FIXED: Save state to cache immediately to secure current progression against reload exploits
       localStorage.setItem(`ecell_quiz_index_${activeCandidate.id}`, nextIdx.toString());
       localStorage.setItem(`ecell_quiz_choices_${activeCandidate.id}`, JSON.stringify(updatedIndices));
     } else {
       setIsSubmitting(true);
-
       try {
         const response = await fetch("/api/recruitment/submit", {
           method: "POST",
@@ -395,26 +330,20 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
             email: activeCandidate.email,
             dept: activeCandidate.dept,
             round1Choices: updatedIndices,
-            resumeFileBase64: base64String, // Passes the file stream securely
+            resumeFileBase64: base64String,
             resumeFileName: selectedFile ? `${activeCandidate.name.replace(/\s+/g, '_')}_Resume.pdf` : "Candidate_Resume.pdf"
           })
         });
-
         const auditData = await response.json();
-
         if (auditData.success) {
           setRunningScore(auditData.score);
           setQuizFinished(true);
-
           localStorage.setItem(`ecell_progress_${activeCandidate.id}`, JSON.stringify({
             score: auditData.score,
             passed: auditData.passedRound1
           }));
-
-          // FIXED: Clear runtime quiz tracking parameters cleanly on submission completion
           localStorage.removeItem(`ecell_quiz_index_${activeCandidate.id}`);
           localStorage.removeItem(`ecell_quiz_choices_${activeCandidate.id}`);
-
           const localLogTree = JSON.parse(localStorage.getItem("ecell_submissions_backup_tree") || "[]");
           localLogTree.push({
             id: activeCandidate.id,
@@ -426,7 +355,6 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
             caseAnswer: ""
           });
           localStorage.setItem("ecell_submissions_backup_tree", JSON.stringify(localLogTree));
-
           if (auditData.passedRound1) {
             setRound1Passed(true);
             setCurrentRound(2);
@@ -441,18 +369,15 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
       }
     }
   };
-
  const handleSubmitRound2Case = async (e: React.FormEvent) => {
     e.preventDefault();
     if (currentWords < 50) {
       alert("Please write a more detailed response. Minimum requirement is 50 words.");
       return;
     }
-
     if (activeCandidate && confirm("Are you sure you want to lock your final answers? Submissions cannot be edited afterwards.")) {
       setIsSubmitting(true);
       try {
-        // FIXED: Route parameters mapped to our unified endpoint layer with email notice trigger flags
         const response = await fetch("/api/recruitment/submit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -463,11 +388,9 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
             caseAnswer: userR2Submission
           })
         });
-
         const resData = await response.json();
         if (resData.success) {
           localStorage.setItem(`ecell_r2_submission_${activeCandidate.id}`, userR2Submission);
-          
           const localLogTree = JSON.parse(localStorage.getItem("ecell_submissions_backup_tree") || "[]");
           const syncedTree = localLogTree.map((item: any) => {
             if (item.email.toLowerCase() === activeCandidate.email.toLowerCase()) {
@@ -476,7 +399,6 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
             return item;
           });
           localStorage.setItem("ecell_submissions_backup_tree", JSON.stringify(syncedTree));
-          
           setR2Completed(true);
           alert("Your application profile and response framework have been completely locked and verified!");
         } else {
@@ -489,8 +411,6 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
       }
     }
   };
-
-  // PHASE 1 VIEWPORT DEPLOYMENT: COUNTDOWN TIMER BARRICADE
   if (portalPhase === "LOCKED") {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col justify-center items-center px-4 select-none antialiased">
@@ -516,24 +436,21 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
               </div>
             ))}
           </div>
-          
-          {/* 🌟 THIS IS THE FIXED INPUT BLOCK TO RESTORE ON YOUR SCREEN 🌟 */}
+          {}
           <div className="pt-4 max-w-xs mx-auto">
-            <input 
-              type="password" 
-              placeholder="Admin Passkey Override" 
-              value={bypassInput} 
-              onChange={handleBypassCheck} 
-              className="w-full text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-mono tracking-widest text-white placeholder-white/20 focus:outline-none focus:border-blue-500 transition-colors" 
-              autoComplete="off" 
+            <input
+              type="password"
+              placeholder="Admin Passkey Override"
+              value={bypassInput}
+              onChange={handleBypassCheck}
+              className="w-full text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-mono tracking-widest text-white placeholder-white/20 focus:outline-none focus:border-blue-500 transition-colors"
+              autoComplete="off"
             />
           </div>
-          
         </div>
       </div>
     );
   }
-
   if (portalPhase === "COMPLETED") {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col justify-center items-center px-4 select-none antialiased">
@@ -551,9 +468,9 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
               The E-Cell recruitment panel has finalized performance scores across all domains.
             </p>
             <div className="pt-4">
-              <button 
+              <button
                 type="button"
-                onClick={() => window.location.href = "/results"} 
+                onClick={() => window.location.href = "/results"}
                 className="px-6 py-3.5 bg-white text-black font-mono font-black uppercase text-xs tracking-widest rounded-xl hover:bg-zinc-200 transition duration-300 shadow-xl cursor-pointer"
               >
                 Check Selection Status →
@@ -564,18 +481,15 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-black text-white py-16 px-4 font-sans antialiased selection:bg-blue-500/30">
       <div className="max-w-3xl mx-auto space-y-8">
-        
         <div className="text-center space-y-2">
           <div className="text-[10px] uppercase font-mono tracking-widest bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20 inline-block font-black">
-            BIMTECH E-CELL OFFICIAL RECRUITMENT ASSESSMENT {isBypassed && <span className="text-red-400 ml-1">// BYPASS ACTIVE</span>}
+            BIMTECH E-CELL OFFICIAL RECRUITMENT ASSESSMENT {isBypassed && <span className="text-red-400 ml-1">
           </div>
           <h1 className="text-3xl font-black uppercase tracking-tight">Recruitment Entrance Dashboard</h1>
         </div>
-
         {!activeCandidate ? (
           <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 max-w-md mx-auto space-y-6 shadow-2xl">
             <div className="space-y-1 text-center font-mono">
@@ -594,12 +508,12 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] uppercase font-mono text-white/40 tracking-wider">Attach Professional Resume / Curriculum Vitae (PDF Only)</label>
-                <input 
-                  required 
-                  type="file" 
-                  accept=".pdf" 
-                  onChange={handleFileAttachmentChange} 
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-mono text-white/60 file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-mono file:bg-blue-500/20 file:text-blue-400 file:cursor-pointer cursor-pointer hover:file:bg-blue-500/30 transition" 
+                <input
+                  required
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileAttachmentChange}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-mono text-white/60 file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-mono file:bg-blue-500/20 file:text-blue-400 file:cursor-pointer cursor-pointer hover:file:bg-blue-500/30 transition"
                 />
               </div>
               <div className="space-y-1">
@@ -627,7 +541,6 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
                 {!round1Passed && <Lock size={10} className="text-white/20 ml-0.5" />}
               </div>
             </div>
-
             <AnimatePresence mode="wait">
               {currentRound === 1 && !quizFinished ? (
                 <motion.div key="round1-quiz" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
@@ -660,13 +573,11 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
                     </div>
                     <div className="text-[10px] font-mono uppercase bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded">Track: {activeCandidate.dept.toUpperCase()} Vertical</div>
                   </div>
-
                   <div className="p-6 space-y-5">
                     <div className="bg-amber-500/5 border border-amber-500/10 p-4 rounded-xl space-y-2">
                       <div className="flex items-center gap-1.5 font-mono text-[10px] font-black tracking-widest uppercase text-amber-400"><Clock size={12} /> Assigned Simulation Challenge Prompts:</div>
                       <p className="text-xs text-white/90 leading-relaxed font-mono whitespace-pre-line">{assembledScenario}</p>
                     </div>
-
                     {!r2Completed ? (
                       <form onSubmit={handleSubmitRound2Case} className="space-y-3">
                         <div className="space-y-1">
@@ -691,11 +602,9 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
             </AnimatePresence>
           </>
         )}
-
         <div className="pt-8 text-center font-mono text-[9px] text-white/5 hover:text-white/20 transition-colors select-none">
-          <button type="button" onClick={() => window.location.href = "/admin"} className="hover:underline cursor-pointer">// Open Executive Admin Portal Link //</button>
+          <button type="button" onClick={() => window.location.href = "/admin"} className="hover:underline cursor-pointer">
         </div>
-
       </div>
     </div>
   );

@@ -1,8 +1,6 @@
 "use client";
-
 import React, { useState, useEffect, useRef } from "react";
 import { Lock, Cpu, BarChart3, Users, Download, ShieldAlert, CheckCircle, Clock, ArrowRight, Check, FileCheck, RefreshCw, Sparkles, MessageSquare, Plus, Award, Activity, Radio, Binary, Orbit, Search, Sliders, Mail, FileSpreadsheet, ClipboardList } from "lucide-react";
-
 interface Candidate {
   id: string;
   name: string;
@@ -14,72 +12,54 @@ interface Candidate {
   peerReviews: any[];
   resumeUrl?: string;
 }
-
 interface DistributionItem {
   sector: string;
   count: number;
 }
-
 interface FunnelItem {
   stage: string;
   value: number;
 }
-
 interface LogEntry {
   text: string;
   type: "info" | "exec" | "warn" | "success" | "cli";
 }
-
 export default function AdvancedAdminHub() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [securityError, setSecurityError] = useState("");
   const [activeTab, setActiveTab] = useState<"hub" | "analytics" | "recruitment">("hub");
   const [recruitmentSubTab, setRecruitmentSubTab] = useState<"gui_controls" | "audit" | "peer">("gui_controls");
-
-  // Database Management States
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [interviewScore, setInterviewScore] = useState("80");
   const [outputLetter, setOutputLetter] = useState("");
   const [sectorData, setSectorData] = useState<DistributionItem[]>([]);
   const [funnelData, setFunnelData] = useState<FunnelItem[]>([]);
-
-  // Interview Panel Evaluation Variables
   const [interviewerName, setInterviewerName] = useState("");
   const [techScore, setTechScore] = useState("80");
   const [commScore, setCommScore] = useState("80");
   const [solveScore, setSolveScore] = useState("80");
   const [reviewNotes, setReviewNotes] = useState("");
-
-  // Graphical UI Filtering & Action States
   const [recruitmentPhase, setRecruitmentPhase] = useState("LOCKED");
   const [guiSearchQuery, setGuiSearchQuery] = useState("");
   const [guiTrackFilter, setGuiTrackFilter] = useState("ALL");
   const [quickNoteText, setQuickNoteText] = useState("");
   const [transferTrackTarget, setTransferTrackTarget] = useState("ops");
   const [manualScheduleString, setManualScheduleString] = useState("");
-
-  // Stress Simulator State Trackers
   const [stressScenario, setStressScenario] = useState("");
   const [isStressLoading, setIsStressLoading] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Console Log States Structured as Objects for Exact Independent Colors
   const [allTerminalLogs, setAllTerminalLogs] = useState<LogEntry[]>([]);
   const [visibleLogs, setVisibleLogs] = useState<LogEntry[]>([]);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [cliInput, setCliInput] = useState("");
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const totalRowsCountRef = useRef<number>(0);
-  
-  // Instrumentation Performance Trackers
   const sessionStartTimeRef = useRef<number>(Date.now());
   const lastFetchLatencyRef = useRef<number>(0);
-
   const webhookUrl = "/api/submit-queue";
-
   const logTerminalMsg = (msg: string, type: "info" | "exec" | "warn" | "success" | "cli" = "info") => {
     const time = new Date().toLocaleTimeString();
     let prefix = `[${time}] :: `;
@@ -88,11 +68,9 @@ export default function AdvancedAdminHub() {
     if (type === "success") prefix += "[SUCCESS] >> ";
     if (type === "info") prefix += "[API UPDATE] >> ";
     if (type === "cli") prefix += "[USER@E-CELL] $ ";
-    
     const formattedLine = `${prefix}${msg}`;
     setAllTerminalLogs((prev) => [...prev, { text: formattedLine, type }]);
   };
-
   useEffect(() => {
     if (!activeFilter) {
       setVisibleLogs(allTerminalLogs);
@@ -100,62 +78,52 @@ export default function AdvancedAdminHub() {
       setVisibleLogs(allTerminalLogs.filter(log => log.type === activeFilter.toLowerCase()));
     }
   }, [allTerminalLogs, activeFilter]);
-
   useEffect(() => {
     if (terminalEndRef.current) {
       terminalEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [visibleLogs]);
-
   const handleSecurityCheck = (e: React.FormEvent) => {
     e.preventDefault();
     const masterKeyEnvValue = process.env.NEXT_PUBLIC_ADMIN_MASTER_KEY;
-    
     if (
-      passwordInput === masterKeyEnvValue || 
-      passwordInput === "1234" || 
+      passwordInput === masterKeyEnvValue ||
+      passwordInput === "1234" ||
       passwordInput === "ecelladmin2026"
     ) {
       setIsAuthenticated(true);
       setSecurityError("");
-    } else { 
-      setSecurityError("Access Denied: Incorrect password code configuration."); 
+    } else {
+      setSecurityError("Access Denied: Incorrect password code configuration.");
     }
   };
-
   const runBackgroundDatabaseCheck = async (isInitialFetch = false, isCliForced = false) => {
     if (!webhookUrl) return;
     setIsDataLoading(true);
     const startTimestamp = Date.now();
-
     try {
       const analyticsRes = await fetch(`${webhookUrl}?action=get-dashboard-analytics`);
       const analyticsJson = await analyticsRes.json();
-      
       const candidateRes = await fetch(`${webhookUrl}?action=get-all-registrations`);
       const candidateJson = await candidateRes.json();
-
       lastFetchLatencyRef.current = Date.now() - startTimestamp;
-
       if (analyticsJson.success && candidateJson.success && candidateJson.data) {
         const structuralMapping = candidateJson.data.map((row: any) => ({
           id: row.regId,
           name: row.name,
           email: row.email,
           domain: row.eventTitle || "General Node",
-          score: parseInt(row.rollNumber) || 0, 
+          score: parseInt(row.rollNumber) || 0,
           choices: row.customAnswers || "No responses submitted.",
           status: row.status ? row.status.toString().toUpperCase() : "PENDING",
           peerReviews: row.peerReviews || [],
           resumeUrl: row.resumeUrl || ""
         }));
-
         if (isInitialFetch) {
           logTerminalMsg(`Database connection established. Loaded ${structuralMapping.length} candidate entries.`, "success");
         } else if (isCliForced) {
           logTerminalMsg(`CLI manual sync complete in ${lastFetchLatencyRef.current}ms. Found ${structuralMapping.length} records.`, "success");
         }
-
         setSectorData(analyticsJson.sectorDistribution || []);
         setFunnelData(analyticsJson.funnelMetrics || []);
         setCandidates(structuralMapping);
@@ -170,21 +138,17 @@ export default function AdvancedAdminHub() {
 useEffect(() => {
     if (isAuthenticated) {
       setAllTerminalLogs([]);
-      
       logTerminalMsg("\n" +
         " ████████╗     ██████╗███████╗██╗     ██╗     \n" +
         " ██╔═════╝    ██╔════╝██╔════╝██║     ██║     \n" +
         " ███████╗     ██║     █████╗  ██║     ██║     \n" +
         " ██╔════╝     ██║     ██╔══╝  ██║     ██║     \n" +
         " ████████╗    ╚██████╗███████╗███████╗███████╗\n" +
-        " ╚═══════╝     ╚═════╝╚══════╝╚══════╝╚══════╝ v1.0.0\n", 
+        " ╚═══════╝     ╚═════╝╚══════╝╚══════╝╚══════╝ v1.0.0\n",
         "success"
       );
-
       logTerminalMsg("System online.", "success");
       logTerminalMsg("CLI Core Interface engine activated cleanly.", "info");
-      
-      // FIXED: Pull the master running state straight from the API layer instead of a stale browser cache key
       const synchronizeMasterPhaseState = async () => {
         try {
           const res = await fetch("/api/recruitment/admin");
@@ -195,35 +159,28 @@ useEffect(() => {
             logTerminalMsg(`Synchronized admin panel UI state with global server phase: [${data.phase}]`, "success");
           }
         } catch (err) {
-          // Fall back to storage safely if offline
           const savedPhase = localStorage.getItem("ecell_recruitment_phase") || "LOCKED";
           setRecruitmentPhase(savedPhase);
         }
       };
-      
       synchronizeMasterPhaseState();
       runBackgroundDatabaseCheck(true, false);
     }
   }, [isAuthenticated]);
-
- // FIXED: Synchronize local state with the global Vercel server memory engine instantly
   const handlePhaseChangeGUI = async (newPhase: string) => {
     setRecruitmentPhase(newPhase);
     localStorage.setItem("ecell_recruitment_phase", newPhase);
     logTerminalMsg(`Broadcasting phase mutation sequence [${newPhase}] to server cache...`, "exec");
-    
     try {
       const serverSync = await fetch("/api/recruitment/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          action: "update-global-phase", 
-          phase: newPhase 
+        body: JSON.stringify({
+          action: "update-global-phase",
+          phase: newPhase
         })
       });
-      
       const syncResult = await serverSync.json();
-      
       if (syncResult.success) {
         logTerminalMsg(`Global portal phase completely locked to: [${newPhase}] across all student views.`, "success");
       } else {
@@ -238,7 +195,6 @@ useEffect(() => {
     setIsSubmitting(true);
     logTerminalMsg("Running centralized bulk updates to transition pending candidates to waitlist staging...", "exec");
     try {
-      // FIXED: Pointed to our unified API gateway handler matrix route cleanly
       const res = await fetch("/api/recruitment/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -254,31 +210,21 @@ useEffect(() => {
       setIsSubmitting(false);
     }
   };
-
   const triggerStatusOverrideGUI = async (candidateId: string, statusTarget: string) => {
   setIsSubmitting(true);
   logTerminalMsg(`Updating candidate status to [${statusTarget}]...`, "exec");
-  
   try {
-    // Step 1: Update the candidate's status in the Google Sheet database
     const dbResponse = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "update-shortlist", candidateId, score: parseInt(interviewScore) || 80, status: statusTarget })
     });
-    
     const dbResult = await dbResponse.json();
-
     if (dbResult.success) {
       logTerminalMsg(`Status successfully updated to ${statusTarget} for: ${candidateId}`, "success");
-      
-      // Find the candidate's details in local memory cache to extract their email and name
       const candidateMatch = candidates.find(c => c.id === candidateId);
-      
       if (candidateMatch) {
         logTerminalMsg(`Automatically dispatching notification email to: ${candidateMatch.email}...`, "exec");
-        
-        // Step 2: Automatically trigger the email dispatch route using the fresh status update
         await fetch(webhookUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -290,11 +236,8 @@ useEffect(() => {
             score: parseInt(interviewScore) || 80
           })
         });
-        
         logTerminalMsg(`Notification email successfully sent from ecell@bimtech.ac.in!`, "success");
       }
-      
-      // Refresh your dashboard metrics display smoothly
       await runBackgroundDatabaseCheck(false, false);
     }
   } catch (e) {
@@ -303,7 +246,6 @@ useEffect(() => {
     setIsSubmitting(false);
   }
 };
-
   const triggerAppendQuickNoteGUI = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCandidate || !quickNoteText.trim()) return;
@@ -324,7 +266,6 @@ useEffect(() => {
       setIsSubmitting(false);
     }
   };
-
   const triggerTrackTransferGUI = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCandidate) return;
@@ -344,7 +285,6 @@ useEffect(() => {
       setIsSubmitting(false);
     }
   };
-
   const triggerScheduleAssignmentGUI = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCandidate || !manualScheduleString.trim()) return;
@@ -365,18 +305,15 @@ useEffect(() => {
       setIsSubmitting(false);
     }
   };
-
   const triggerAuditComplianceScan = () => {
     logTerminalMsg("Starting local validation scan over dataset records...", "exec");
     if (candidates.length === 0) {
       logTerminalMsg("No entries available in cache memory to analyze.", "warn");
       return;
     }
-
     let sparseRows = 0;
     let duplicateMatches = 0;
     const emailTrackingMap = new Map<string, number>();
-
     candidates.forEach(c => {
       emailTrackingMap.set(c.email.toLowerCase(), (emailTrackingMap.get(c.email.toLowerCase()) || 0) + 1);
       if (c.choices.length < 25) {
@@ -384,30 +321,24 @@ useEffect(() => {
         logTerminalMsg(`[WARNING] ID [${c.id}] contains very short response context size.`, "warn");
       }
     });
-
     emailTrackingMap.forEach((count, email) => {
       if (count > 1) {
         duplicateMatches++;
         logTerminalMsg(`[DUPLICATE DETECTED] Email [${email}] has registered multiple forms (${count} rows).`, "warn");
       }
     });
-
     logTerminalMsg(`Scan finished. Found ${sparseRows} empty/short responses and ${duplicateMatches} duplicate email addresses.`, "success");
   };
-
   const handleCliCommandSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const commandClean = cliInput.trim();
     if (!commandClean) return;
-
     logTerminalMsg(commandClean, "cli");
     setCliInput("");
-
     const parts = commandClean.split(" ");
     const primaryCmd = parts[0].toLowerCase();
     const arg = parts.slice(1).join(" ");
     const lowerArg = arg.toLowerCase();
-
     switch (primaryCmd) {
       case "help":
         logTerminalMsg("============================= SYSTEM DIRECTORY MANUAL =============================", "exec");
@@ -437,17 +368,14 @@ useEffect(() => {
         logTerminalMsg("  uptime                  - Computes runtime analytics, bandwidth, and database fetch speeds.", "success");
         logTerminalMsg("=========================================================================================", "exec");
         break;
-
-      case "clear": 
-        setAllTerminalLogs([]); 
+      case "clear":
+        setAllTerminalLogs([]);
         setActiveFilter(null);
         break;
-
       case "refresh":
         logTerminalMsg("Executing manual data override fetch sequence...", "info");
         await runBackgroundDatabaseCheck(false, true);
         break;
-
       case "list":
         if (candidates.length === 0) {
           logTerminalMsg("Memory cache contains 0 entries. Run 'refresh' first.", "warn");
@@ -455,7 +383,6 @@ useEffect(() => {
           candidates.forEach(c => logTerminalMsg(`ID: ${c.id} | Name: ${c.name} | Status: ${c.status} | Score: ${c.score}`, "info"));
         }
         break;
-
       case "view":
         if (!arg) logTerminalMsg("Syntax structure expected: view [candidate_id]", "warn");
         else {
@@ -468,18 +395,15 @@ useEffect(() => {
           } else logTerminalMsg(`Identifier string reference '${arg}' not found.`, "warn");
         }
         break;
-
       case "stats":
         logTerminalMsg(`Roster Size: ${candidates.length} rows | Shortlisted PI: ${candidates.filter(c=>c.status==="SELECTED_FOR_PI").length} | Passed Final Core: ${candidates.filter(c=>c.status==="SELECTED_CORE").length}`, "success");
         break;
-
       case "top":
         const topLimitCount = parseInt(arg) || 3;
         const topSortedRows = [...candidates].sort((a,b) => b.score - a.score).slice(0, topLimitCount);
         logTerminalMsg(`Isolating top ${topLimitCount} entries by metric score scale hierarchy:`, "success");
         topSortedRows.forEach((c, i) => logTerminalMsg(`  [Rank #${i+1}] ID: ${c.id} | Score: ${c.score} | Name: ${c.name}`, "info"));
         break;
-
       case "find":
         if (!arg) logTerminalMsg("Syntax parameter query required: find [text_string]", "warn");
         else {
@@ -488,7 +412,6 @@ useEffect(() => {
           matchedSet.forEach(c => logTerminalMsg(`  -> ID: ${c.id} | Name: ${c.name} | Status: ${c.status}`, "info"));
         }
         break;
-
       case "filter":
         if (!arg) logTerminalMsg("Sector track context target expected: filter [ops|media|spons]", "warn");
         else {
@@ -497,11 +420,9 @@ useEffect(() => {
           targets.forEach(c => logTerminalMsg(`  • ID: ${c.id} | Name: ${c.name} | Status: ${c.status}`, "info"));
         }
         break;
-
       case "bulk-waitlist":
         await triggerBulkWaitlistGUI();
         break;
-
       case "pi-select":
       case "select-core":
       case "shortlist":
@@ -515,7 +436,6 @@ useEffect(() => {
           } else logTerminalMsg(`Candidate index reference '${arg}' not found.`, "warn");
         }
         break;
-
       case "score":
         const partsScore = arg.split(" ");
         const scoreC = candidates.find(c => c.id.toLowerCase() === partsScore[0]?.toLowerCase());
@@ -533,7 +453,6 @@ useEffect(() => {
           } catch (e) { logTerminalMsg("Network transactional timeout error.", "warn"); }
         } else logTerminalMsg("Syntax mismatch structure rules. Usage: score [candidate_id] [0-100]", "warn");
         break;
-
       case "transfer":
         const transParts = arg.split(" ");
         const transC = candidates.find(c => c.id.toLowerCase() === transParts[0]?.toLowerCase());
@@ -550,7 +469,6 @@ useEffect(() => {
           } catch (e) { logTerminalMsg("Failed to execute transfer network operation.", "warn"); }
         } else logTerminalMsg("Usage: transfer [candidate_id] [ops|media|spons]", "warn");
         break;
-
       case "note":
         const noteParts = arg.split(" ");
         const noteC = candidates.find(c => c.id.toLowerCase() === noteParts[0]?.toLowerCase());
@@ -568,7 +486,6 @@ useEffect(() => {
           } catch (e) { logTerminalMsg("Network cell patch drop.", "warn"); }
         } else logTerminalMsg("Usage: note [candidate_id] [string commentary content]", "warn");
         break;
-
       case "schedule":
         const sParts = arg.split(" ");
         const sCand = candidates.find(c => c.id.toLowerCase() === sParts[0]?.toLowerCase());
@@ -586,7 +503,6 @@ useEffect(() => {
           } catch (e) { logTerminalMsg("Failed to complete calendar booking.", "warn"); }
         } else logTerminalMsg("Usage: schedule [candidate_id] [datetime string values]", "warn");
         break;
-
       case "audit": triggerAuditComplianceScan(); break;
       case "bypass":
         if (lowerArg === "on") {
@@ -597,7 +513,6 @@ useEffect(() => {
           logTerminalMsg("Local bypass cleared. Route locks active.", "warn");
         }
         break;
-
       case "backup":
         const bBlob = new Blob([JSON.stringify(candidates, null, 2)], { type: "application/json" });
         const bUrl = URL.createObjectURL(bBlob);
@@ -605,7 +520,6 @@ useEffect(() => {
         document.body.appendChild(aNode); aNode.click(); document.body.removeChild(aNode);
         logTerminalMsg("JSON snapshot data backup file exported.", "success");
         break;
-
       case "rollback":
         const jsonPrompt = prompt("Paste your offline valid snapshot format structural JSON layout data string:");
         if (jsonPrompt) {
@@ -618,7 +532,6 @@ useEffect(() => {
           } catch (e) { logTerminalMsg("Format invalid.", "warn"); }
         }
         break;
-
       case "logs":
         if (!arg || lowerArg === "all") {
           setActiveFilter(null);
@@ -629,17 +542,14 @@ useEffect(() => {
           logTerminalMsg(`Logs layout filtered. Boundary matching set to: ${filterTarget}`, "success");
         }
         break;
-
       case "uptime":
         logTerminalMsg(`Session Duration: ${Math.round((Date.now() - sessionStartTimeRef.current)/1000)}s | Sheet Link Latency: ${lastFetchLatencyRef.current}ms`, "info");
         break;
-
       default:
         logTerminalMsg(`Unknown command option. Type 'help' to review usage rules.`, "warn");
         break;
     }
   };
-
   const triggerLiveStressGeneration = async () => {
     if (!selectedCandidate) return;
     setIsStressLoading(true);
@@ -655,107 +565,87 @@ useEffect(() => {
     } catch (e) { logTerminalMsg(" Groq proxy route drop.", "warn"); }
     setIsStressLoading(false);
   };
-
- 
   const commitPanelReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCandidate || !interviewerName) return;
     setIsSubmitting(true);
-    
     logTerminalMsg(`Initializing score upload pipeline for candidate: ${selectedCandidate.id}...`, "info");
-    
-    // Safety check: Prevent NaN crashes by validating scores before sending
     const validatedTech = Math.max(0, Math.min(100, parseInt(techScore) || 0));
     const validatedComm = Math.max(0, Math.min(100, parseInt(commScore) || 0));
     const validatedSolve = Math.max(0, Math.min(100, parseInt(solveScore) || 0));
     const calculatedMean = Math.round((validatedTech + validatedComm + validatedSolve) / 3);
-
     try {
       logTerminalMsg(`Transmitting review data packet (Tech: ${validatedTech}, Comm: ${validatedComm}, Solve: ${validatedSolve}, Mean: ${calculatedMean})...`, "exec");
-      
       const response = await fetch(webhookUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" }, // Clean JSON connection channel established
-        body: JSON.stringify({ 
-          action: "submit-peer-review", 
-          candidateId: selectedCandidate.id, 
-          interviewerName: interviewerName.trim(), 
-          techScore: validatedTech, 
-          commScore: validatedComm, 
-          solveScore: validatedSolve, 
-          notes: reviewNotes.trim() 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "submit-peer-review",
+          candidateId: selectedCandidate.id,
+          interviewerName: interviewerName.trim(),
+          techScore: validatedTech,
+          commScore: validatedComm,
+          solveScore: validatedSolve,
+          notes: reviewNotes.trim()
         })
       });
-
       const resData = await response.json();
-      
       if (response.ok && resData.success) {
         logTerminalMsg(`Panel interview scorecard successfully committed downstream for ${selectedCandidate.name}.`, "success");
         logTerminalMsg(`Process complete. Peer reviews count updated: ${(selectedCandidate.peerReviews?.length || 0) + 1}`, "success");
-        
-        setInterviewerName(""); 
+        setInterviewerName("");
         setReviewNotes("");
-        await runBackgroundDatabaseCheck(false, false); 
+        await runBackgroundDatabaseCheck(false, false);
       } else {
         logTerminalMsg(`Server rejected scorecard transmission payload: ${resData.error || "Unknown response error."}`, "warn");
       }
-    } catch (err) { 
-      logTerminalMsg("Critical transactional timeout: Check internet routing parameters.", "warn"); 
+    } catch (err) {
+      logTerminalMsg("Critical transactional timeout: Check internet routing parameters.", "warn");
     } finally {
       setIsSubmitting(false);
     }
   };
-
- 
   const processCandidateDecision = async (decision: "SELECTED" | "WAITLISTED") => {
     if (!selectedCandidate) return;
     setIsSubmitting(true);
-    
     logTerminalMsg(`Broadcasting final cohort decision parameter [${decision}] for candidate: ${selectedCandidate.id}...`, "exec");
     const targetBaseScore = parseInt(interviewScore) || 80;
-
     try {
       const response = await fetch(webhookUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" }, // Clean JSON connection channel established
-        body: JSON.stringify({ 
-          action: "update-shortlist", 
-          candidateId: selectedCandidate.id, 
-          score: targetBaseScore, 
-          status: decision 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update-shortlist",
+          candidateId: selectedCandidate.id,
+          score: targetBaseScore,
+          status: decision
         })
       });
-      
       const resData = await response.json();
-
       if (response.ok && resData.success) {
         logTerminalMsg(`Admissions matrix cell updated to status state [${decision}] successfully.`, "success");
         logTerminalMsg(`Transaction closed. Candidate ${selectedCandidate.name} assigned baseline score: ${targetBaseScore}/100.`, "success");
-        
         setOutputLetter(`Decision updated successfully for ${selectedCandidate.name}.`);
-        await runBackgroundDatabaseCheck(false, false); 
+        await runBackgroundDatabaseCheck(false, false);
       } else {
         logTerminalMsg(`Spreadsheet worker rejected status change payload: ${resData.error || "Matrix drop failure."}`, "warn");
       }
-    } catch (err) { 
-      logTerminalMsg("Connection drop saving database structural updates.", "warn"); 
+    } catch (err) {
+      logTerminalMsg("Connection drop saving database structural updates.", "warn");
     } finally {
       setIsSubmitting(false);
     }
   };
-
   const handleCsvExport = () => {
     const csvContent = "data:text/csv;charset=utf-8," + ["ID,Name,Track,Score,Status"].join(",") + "\n" + candidates.map(c => `${c.id},${c.name},${c.domain},${c.score},${c.status}`).join("\n");
     const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", `Data_Export.csv`);
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
-
   const filteredGuiCandidates = candidates.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(guiSearchQuery.toLowerCase()) || c.id.toLowerCase().includes(guiSearchQuery.toLowerCase());
     const matchesTrack = guiTrackFilter === "ALL" || c.domain.toLowerCase().includes(guiTrackFilter.toLowerCase());
     return matchesSearch && matchesTrack;
   });
-
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-black text-emerald-500 flex flex-col items-center justify-center p-4 font-mono">
@@ -773,17 +663,15 @@ useEffect(() => {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-black text-emerald-400 flex flex-col font-mono antialiased text-xs">
-      
-      {/* NAVBAR */}
+      {}
       <header className="border-b border-emerald-500/20 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-3.5 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div onClick={() => setActiveTab("hub")} className="flex items-center gap-3 cursor-pointer group">
           <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400"><Cpu size={16} /></div>
           <div>
             <h1 className="text-sm font-black tracking-widest uppercase text-white group-hover:text-emerald-400 transition">E-CELL MASTER SYSTEM</h1>
-            <p className="text-[9px] text-emerald-500/40">ADMIN COHORT HUB // YEAR: 2026</p>
+            <p className="text-[9px] text-emerald-500/40">ADMIN COHORT HUB
           </div>
         </div>
         <div className="flex items-center gap-2 bg-black border border-emerald-500/10 p-1 rounded-xl">
@@ -792,10 +680,8 @@ useEffect(() => {
           <button onClick={() => setActiveTab("recruitment")} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase transition ${activeTab === "recruitment" ? "bg-emerald-500 text-black font-bold" : "text-emerald-500/40 hover:text-emerald-400"}`}>Shortlist Engine</button>
         </div>
       </header>
-
       <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
-        
-        {/* TAB 1: CENTRAL COMMAND AND TERMINAL LOGS FEED */}
+        {}
         {activeTab === "hub" && (
           <div className="space-y-6 animate-fadeIn py-2">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-emerald-500/20 bg-zinc-950/60 p-5 rounded-xl">
@@ -807,8 +693,7 @@ useEffect(() => {
                 <Binary size={11} /> CLI TERMINAL READY
               </div>
             </div>
-
-            {/* LIVE API METRICS GRID */}
+            {}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
               <div className="bg-black border border-emerald-500/20 rounded-xl p-4">
                 <span className="text-[8px] text-emerald-500/40 uppercase block font-bold">TOTAL APPLICANTS</span>
@@ -827,23 +712,20 @@ useEffect(() => {
                 <span className="text-2xl font-black text-amber-400 block mt-1">MANUAL</span>
               </div>
             </div>
-
-            {/* TERMINAL EMULATOR */}
+            {}
             <div className="border border-emerald-500/20 rounded-2xl overflow-hidden bg-zinc-950 flex flex-col h-[320px]">
               <div className="bg-black border-b border-emerald-500/10 px-4 py-2 flex justify-between items-center text-[9px] text-emerald-500/40 font-bold tracking-widest">
                 <span>LOCAL_MANAGEMENT_SHELL.sh</span>
                 <span className="text-emerald-400 animate-pulse">● FEED_ACTIVE</span>
               </div>
-              
-              {/* INDEPENDENT DEEP ACCENT COLOR ASSIGNMENTS PER EXPRESSION TYPE */}
+              {}
               <div className="flex-1 p-4 overflow-y-auto font-mono text-[10px] space-y-1.5 bg-black/80 text-emerald-400/90 leading-relaxed scrollbar-thin scrollbar-thumb-emerald-500/20 scrollbar-track-transparent">
                 {visibleLogs.map((log, idx) => {
-                  let colorClass = "text-teal-500/90"; // Info style fallback
+                  let colorClass = "text-teal-500/90";
                   if (log.type === "exec") colorClass = "text-purple-400 font-bold";
                   if (log.type === "warn") colorClass = "text-amber-400 font-bold";
                   if (log.type === "success") colorClass = "text-cyan-400 font-bold";
                   if (log.type === "cli") colorClass = "text-white font-black bg-white/5 px-1 rounded";
-                  
                   return (
                     <p key={idx} className={`${colorClass} tracking-wide px-1 rounded whitespace-pre-wrap`}>
                       {log.text}
@@ -852,7 +734,6 @@ useEffect(() => {
                 })}
                 <div ref={terminalEndRef} />
               </div>
-              
               <form onSubmit={handleCliCommandSubmit} className="bg-black border-t border-emerald-500/10 px-4 py-2 flex items-center gap-2">
                 <span className="text-white/60 font-bold select-none">user@e-cell:$</span>
                 <input required type="text" value={cliInput} onChange={(e) => setCliInput(e.target.value)} className="flex-1 bg-transparent text-emerald-400 font-mono text-[11px] focus:outline-none placeholder-emerald-500/20" placeholder="Type an infrastructure operation command or 'help'..." autoComplete="off" />
@@ -860,8 +741,7 @@ useEffect(() => {
             </div>
           </div>
         )}
-
-        {/* TAB 2: DATA STUDIO METRICS AND FUNNELS */}
+        {}
         {activeTab === "analytics" && (
           <div className="space-y-6 animate-fadeIn">
             <div className="flex justify-between items-center border-b border-emerald-500/20 pb-4">
@@ -900,12 +780,10 @@ useEffect(() => {
             </div>
           </div>
         )}
-
-        {/* TAB 3: UPGRADED SHORTLIST CONTROL PANEL WITH RECRUITMENT CONTROLS */}
+        {}
         {activeTab === "recruitment" && (
           <div className="space-y-6 animate-fadeIn">
-            
-            {/* GRAPHICAL CONTROLS HEADER WORKSPACE */}
+            {}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-950 border border-emerald-500/20 p-4 rounded-xl gap-4 shadow-xl">
               <div className="flex items-center gap-3">
                 <Sliders size={16} className="text-emerald-400 animate-pulse" />
@@ -915,7 +793,7 @@ useEffect(() => {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {/* PORTAL PHASE SELECTION CONTROL DROPDOWN */}
+                {}
                 <div className="flex items-center gap-2 bg-black border border-emerald-500/20 px-2 py-1.5 rounded-lg">
                   <span className="text-[9px] font-bold uppercase text-white/50">Active Website Portal Phase:</span>
                   <select value={recruitmentPhase} onChange={(e) => handlePhaseChangeGUI(e.target.value)} className="bg-transparent text-emerald-400 border-none text-[9px] font-bold focus:outline-none cursor-pointer font-mono uppercase">
@@ -928,10 +806,8 @@ useEffect(() => {
                 <button onClick={triggerBulkWaitlistGUI} disabled={isSubmitting} className="px-2.5 py-1.5 border border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/15 text-amber-400 font-bold uppercase rounded-lg tracking-wide transition shadow-sm">⚠️ Bulk Post-Round 2 Waitlist</button>
               </div>
             </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
-              {/* SIDEBAR NAVIGATION LIST ROSTER BLOCK */}
+              {}
               <div className="lg:col-span-4 bg-zinc-950 border border-emerald-500/20 rounded-2xl p-4 space-y-3 max-h-[580px] overflow-hidden flex flex-col shadow-xl">
                 <div className="space-y-2 pb-2.5 border-b border-emerald-500/10">
                   <div className="relative flex items-center bg-black border border-emerald-500/20 rounded-lg px-2 py-1">
@@ -948,7 +824,6 @@ useEffect(() => {
                     </select>
                   </div>
                 </div>
-
                 <div className="flex-1 space-y-2 overflow-y-auto pr-1">
                   {filteredGuiCandidates.map((c, idx) => (
                     <button key={idx} onClick={() => { setSelectedCandidate(c); setOutputLetter(""); setStressScenario(""); }} className={`w-full text-left p-3 rounded-xl border transition flex flex-col gap-1 ${selectedCandidate?.id === c.id ? "bg-emerald-500/10 border-emerald-500 shadow-md relative" : "bg-black border-emerald-500/10 hover:border-emerald-500/30"}`}>
@@ -961,8 +836,7 @@ useEffect(() => {
                   ))}
                 </div>
               </div>
-
-              {/* ACTION MANAGEMENT WORKSPACE CONTAINER */}
+              {}
               <div className="lg:col-span-8 space-y-5">
                 {selectedCandidate ? (
                   <>
@@ -971,33 +845,30 @@ useEffect(() => {
                       <button onClick={() => setRecruitmentSubTab("audit")} className={`flex-1 py-1 rounded-lg font-bold tracking-wide uppercase text-[9px] transition ${recruitmentSubTab === "audit" ? "bg-emerald-500 text-black font-black" : "text-emerald-500/40 hover:text-emerald-300"}`}>Vetting Payload</button>
                       <button onClick={() => setRecruitmentSubTab("peer")} className={`flex-1 py-1 rounded-lg font-bold tracking-wide uppercase text-[9px] transition ${recruitmentSubTab === "peer" ? "bg-emerald-500 text-black font-black" : "text-emerald-500/40 hover:text-emerald-300"}`}>Panel Reviews ({selectedCandidate.peerReviews?.length || 0})</button>
                     </div>
-
-               {/* DUAL WORKSPACE TAB 1: GRAPHICAL PIPELINE FORM OVERRIDES */}
+               {}
                     {recruitmentSubTab === "gui_controls" && (
                       <div className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-6 shadow-2xl animate-fadeIn">
                         <div className="border-b border-emerald-500/10 pb-3 flex justify-between items-start">
                           <div>
                             <span className="text-[8px] text-emerald-400 font-bold tracking-widest bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">{selectedCandidate.id}</span>
                             <h2 className="text-base font-black uppercase text-white tracking-tight mt-1.5">{selectedCandidate.name}</h2>
-                            
-                            {/* 🌟 LIVE RESUME ACCELERATOR ACCESSIBLE DIRECTLY IN THE UI LAYOUT 🌟 */}
+                            {}
                             {selectedCandidate.resumeUrl ? (
-                              <a 
-                                href={selectedCandidate.resumeUrl} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
+                              <a
+                                href={selectedCandidate.resumeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-[10px] text-cyan-400 hover:text-cyan-300 hover:underline mt-2 font-mono transition-colors"
                               >
                                 <FileSpreadsheet size={12} /> View Attached Resume (Google Drive) →
                               </a>
                             ) : (
-                              <p className="text-[10px] text-zinc-500 mt-2 font-mono italic">// No Resume Document Uploaded //</p>
+                              <p className="text-[10px] text-zinc-500 mt-2 font-mono italic">
                             )}
                           </div>
                           <div className="text-right"><span className="text-[9px] uppercase block text-emerald-500/40">Current Pipeline Status</span><strong className="text-white bg-black border border-emerald-500/10 px-3 py-1 rounded-md block mt-1 tracking-widest text-xs">{selectedCandidate.status || "PENDING"}</strong></div>
                         </div>
-
-                        {/* STEPPED LIFE-CYCLE STATUS SELECTION NODES */}
+                        {}
                         <div className="space-y-1.5">
                           <label className="text-[9px] font-black uppercase tracking-wider text-emerald-500/40 flex items-center gap-1">Manual Shortlist Pipeline Updates</label>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
@@ -1015,8 +886,7 @@ useEffect(() => {
                             </button>
                           </div>
                         </div>
-
-                        {/* INTERVIEW CALENDAR SLOT BOOKING FORM */}
+                        {}
                         <form onSubmit={triggerScheduleAssignmentGUI} className="grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-emerald-500/10 pt-5 items-end">
                           <div className="md:col-span-3 space-y-1">
                             <label className="text-[9px] uppercase font-bold text-emerald-500/40 flex items-center gap-1">Allocate Live Personal Interview Calendar Metadata</label>
@@ -1024,8 +894,7 @@ useEffect(() => {
                           </div>
                           <button type="submit" className="w-full py-2 bg-black border border-emerald-500/30 text-emerald-400 font-bold uppercase rounded-xl tracking-wider text-center cursor-pointer font-mono text-xs">Log Schedule</button>
                         </form>
-
-                        {/* INTERVIEWER CELL QUICK NOTES INPUT FORM */}
+                        {}
                         <form onSubmit={triggerAppendQuickNoteGUI} className="grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-emerald-500/10 pt-5 items-end">
                           <div className="md:col-span-3 space-y-1">
                             <label className="text-[9px] uppercase font-bold text-emerald-500/40 flex items-center gap-1">Append Quick Interviewer Commentary Notation Text</label>
@@ -1033,8 +902,7 @@ useEffect(() => {
                           </div>
                           <button type="submit" className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-black font-bold uppercase rounded-xl tracking-wider font-mono text-center cursor-pointer text-xs">Commit Note</button>
                         </form>
-
-                        {/* RE-ROUTING TRACK MOVEMENT CLUSTER FORM */}
+                        {}
                         <form onSubmit={triggerTrackTransferGUI} className="grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-emerald-500/10 pt-5 items-end">
                           <div className="md:col-span-3 space-y-1">
                             <label className="text-[9px] uppercase font-bold text-emerald-500/40 flex items-center gap-1">Reallocate Cohort Tracking Vertical Cluster</label>
@@ -1048,8 +916,7 @@ useEffect(() => {
                         </form>
                       </div>
                     )}
-
-                    {/* VETTING PAYLOAD RENDER TRACK */}
+                    {}
                     {recruitmentSubTab === "audit" && (
                       <div className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-5 shadow-2xl">
                         <div className="border-b border-emerald-500/10 pb-3 flex justify-between items-start">
@@ -1083,8 +950,7 @@ useEffect(() => {
                         </div>
                       </div>
                     )}
-
-                    {/* PEER REVIEWS RENDER MATRIX */}
+                    {}
                     {recruitmentSubTab === "peer" && (
                       <div className="space-y-5 animate-fadeIn">
                         <form onSubmit={commitPanelReview} className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-5 space-y-4 shadow-xl">
@@ -1128,7 +994,7 @@ useEffect(() => {
           </div>
         )}
       </main>
-      <footer className="border-t border-emerald-500/10 p-4 text-center text-[9px] text-emerald-500/20 flex items-center justify-center gap-1.5 max-w-7xl w-full mx-auto"><ShieldAlert size={11} /> SYSTEM OPERATIONAL DIAGNOSTICS ACTIVE // CORE FRAMEWORK SECURE</footer>
+      <footer className="border-t border-emerald-500/10 p-4 text-center text-[9px] text-emerald-500/20 flex items-center justify-center gap-1.5 max-w-7xl w-full mx-auto"><ShieldAlert size={11} /> SYSTEM OPERATIONAL DIAGNOSTICS ACTIVE
     </div>
   );
 }

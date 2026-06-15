@@ -1,40 +1,30 @@
 import { NextResponse } from "next/server";
-
-// 📊 1. SECURE GET ROUTE: FORWARDS HUB QUERIES & HANDLES LIVE VISITOR RESULTS QUERIES
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
     const email = searchParams.get("email");
-
     if (!action) {
       return NextResponse.json({ error: "Missing action route parameter." }, { status: 400 });
     }
-
     const targetUrl = process.env.SHEET_WEBHOOK_URL;
     if (!targetUrl) {
       return NextResponse.json({ error: "Database backend key not configured." }, { status: 500 });
     }
-
-    // 🎓 STUDENT ADMISSIONS RESULTS LOOKUP MATRIX
     if (action === "check-student-result") {
       if (!email) {
         return NextResponse.json({ error: "Email query parameter missing." }, { status: 400 });
       }
-      
-      // Pull all active registrations securely from the spreadsheet pipeline
       const res = await fetch(`${targetUrl}?action=get-all-registrations`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         cache: "no-store"
       });
       const candidateJson = await res.json();
-      
       if (candidateJson.success && candidateJson.data) {
         const match = candidateJson.data.find(
           (row: any) => row.email?.toLowerCase() === email.trim().toLowerCase()
         );
-        
         if (match) {
           return NextResponse.json({
             success: true,
@@ -46,16 +36,12 @@ export async function GET(request: Request) {
       }
       return NextResponse.json({ success: false, error: "Profile node credentials not found in registry." });
     }
-
-    // 🛠️ STANDARD ADMIN TERMINAL / DATA STUDIO QUERIES
     const res = await fetch(`${targetUrl}?action=${action}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-      cache: "no-store" 
+      cache: "no-store"
     });
-
     if (!res.ok) throw new Error("Google Sheets network drop.");
-    
     const data = await res.json();
     return NextResponse.json(data);
   } catch (error) {
@@ -63,20 +49,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: "Database link synchronization failure." }, { status: 500 });
   }
 }
-
-// ⚡ 2. POST ROUTE: EXPERTLY BRANCHES ADMIN CONFIGURATIONS AND STUDENT SUBMISSIONS
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const targetUrl = process.env.SHEET_WEBHOOK_URL;
-    
     if (!targetUrl) {
       return NextResponse.json({ error: "Sheets webhook token target not defined." }, { status: 500 });
     }
-
-    // 🎯 A. ADMIN FLOW: CO-EVALUATION, TIMELINE MODIFICATIONS, & LIFECYCLE OVERRIDES
     if (
-      body.action === "update-shortlist" || 
+      body.action === "update-shortlist" ||
       body.action === "submit-peer-review" ||
       body.action === "bulk-waitlist" ||
       body.action === "transfer-track" ||
@@ -87,36 +68,27 @@ export async function POST(request: Request) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
       if (!res.ok) throw new Error("Spreadsheet row write failure.");
       return NextResponse.json({ success: true, message: "Admin updates saved to spreadsheet cells." });
     }
-
-    // 👥 B. STUDENT FLOW: PITCH SIMULATOR SUBMISSIONS (ORIGINAL INFRASTRUCTURE LOGIC)
     const { type, payload } = body;
     if (!type || !payload) {
       return NextResponse.json({ error: "Staging package fields missing parameters." }, { status: 400 });
     }
-
     const { startupTitle, problemStatement, selectedSector, selectedModel, selectedPricing } = payload;
     const problemTextClean = (problemStatement || "").trim().toLowerCase();
     const titleTextClean = (startupTitle || "").trim().toLowerCase();
-
-    // 🔒 CORE COMPLIANCE & SAFETY FILTER
     const complianceBlockTerms = ["scam", "exploit", "illegal", "hack", "bypass", "fraud", "slavery", "slave"];
     const hasComplianceViolation = complianceBlockTerms.some(
       term => problemTextClean.includes(term) || titleTextClean.includes(term)
     );
-
     if (hasComplianceViolation) {
-      return NextResponse.json({ 
-        success: false, 
+      return NextResponse.json({
+        success: false,
         isViolation: true,
-        error: "CRITICAL COMPLIANCE REFUSAL: This concept triggers automatic regulatory filters. The E-Cell algorithmic sandbox completely blocks architectures promoting illegal frameworks, human rights violations, or unethical business models." 
+        error: "CRITICAL COMPLIANCE REFUSAL: This concept triggers automatic regulatory filters. The E-Cell algorithmic sandbox completely blocks architectures promoting illegal frameworks, human rights violations, or unethical business models."
       }, { status: 403 });
     }
-
-    // BACKGROUND DATA STAGING: SAVE TO GOOGLE SHEETS FIRST
     try {
       await fetch(targetUrl, {
         method: "POST",
@@ -130,12 +102,9 @@ export async function POST(request: Request) {
     } catch (sheetError) {
       console.error("Sheets Ledger Sync Warning:", sheetError);
     }
-
-    // LIVE INFERENCE ENGINE: CALL GROQ API FOR FREE LLM INTELLIGENCE
     if (!process.env.GROQ_API_KEY) {
       return NextResponse.json({ error: "Groq API system token configuration missing." }, { status: 500 });
     }
-
     const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -143,8 +112,8 @@ export async function POST(request: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant", 
-        response_format: { type: "json_object" }, 
+        model: "llama-3.1-8b-instant",
+        response_format: { type: "json_object" },
         temperature: 0.3,
         messages: [
           {
@@ -182,20 +151,16 @@ export async function POST(request: Request) {
         ]
       })
     });
-
     const groqData = await groqResponse.json();
     if (!groqResponse.ok) {
       return NextResponse.json({ success: false, error: groqData.error?.message || "Groq Inference Failure" }, { status: groqResponse.status });
     }
-
     const rawContent = groqData.choices[0].message.content.trim();
     const aiAnalysis = JSON.parse(rawContent);
-
-    return NextResponse.json({ 
-      success: true, 
-      aiAnalysis 
+    return NextResponse.json({
+      success: true,
+      aiAnalysis
     });
-
   } catch (error) {
     console.error("Submit Queue Internal Error:", error);
     return NextResponse.json({ error: "Handshake channel error on simulation middleware pipelines." }, { status: 500 });

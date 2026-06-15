@@ -1,8 +1,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Restores the premium deep space aesthetic dark tone uniform background */
 html,
 body {
   background-color: #05050a !important;
@@ -10,8 +8,7 @@ body {
   margin: 0;
   padding: 0;
 }
-
-#root, 
+#root,
 next-route-announcer,
 main,
 div[template],
@@ -19,5 +16,5 @@ div[template],
 .page-transition-wrapper {
   background-color: transparent !important;
   background-image: none !important;
-  filter: none !important; /* Strips any legacy SVG filters cleanly */
+  filter: none !important;
 }

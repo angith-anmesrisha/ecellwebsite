@@ -1,14 +1,11 @@
 "use client";
-
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, Sparkles, Code, Compass, BarChart3 } from "lucide-react";
-
 interface JoinModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
 const QUIZ_STEPS = [
   {
     id: 1,
@@ -29,57 +26,47 @@ const QUIZ_STEPS = [
     ]
   }
 ];
-
 export default function JoinModal({ isOpen, onClose }: JoinModalProps) {
-  const [step, setStep] = useState(0); // 0 = Intro, 1 & 2 = Quiz Steps, 3 = Result/Form
+  const [step, setStep] = useState(0);
   const [scores, setScores] = useState({ builder: 0, visionary: 0, operator: 0 });
   const [persona, setPersona] = useState<{ name: string; desc: string; icon: any } | null>(null);
-
   const handleOptionSelect = (type: "builder" | "visionary" | "operator") => {
     const updatedScores = { ...scores, [type]: scores[type] + 1 };
     setScores(updatedScores);
-
     if (step < QUIZ_STEPS.length) {
       setStep(step + 1);
     } else {
-      // Calculate final persona based on highest score
-      const highest = Object.keys(updatedScores).reduce((a, b) => 
+      const highest = Object.keys(updatedScores).reduce((a, b) =>
         updatedScores[a as keyof typeof scores] > updatedScores[b as keyof typeof scores] ? a : b
       ) as keyof typeof scores;
-
       const personas = {
         builder: { name: "The Technical Builder", desc: "You turn complex concepts into functional, shipping code. The backbone of product deployment.", icon: <Code className="text-blue-500" size={32} /> },
         visionary: { name: "The Creative Visionary", desc: "You see trends before they happen and map elite designs. The catalyst for product strategy.", icon: <Compass className="text-purple-500" size={32} /> },
         operator: { name: "The Growth Operator", desc: "You manage project velocity, crunch metrics, and scale growth operations. The engine of execution.", icon: <BarChart3 className="text-emerald-500" size={32} /> }
       };
-
       setPersona(personas[highest]);
-      setStep(QUIZ_STEPS.length + 1); // Jump to final form layout
+      setStep(QUIZ_STEPS.length + 1);
     }
   };
-
   const resetModal = () => {
     setStep(0);
     setScores({ builder: 0, visionary: 0, operator: 0 });
     setPersona(null);
     onClose();
   };
-
   return (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6">
-          
-          {/* Frosted Backdrop Overlap */}
-          <motion.div 
+          {}
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={resetModal}
             className="absolute inset-0 bg-black/80 backdrop-blur-md"
           />
-
-          {/* Modal Container Body */}
+          {}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -87,12 +74,11 @@ export default function JoinModal({ isOpen, onClose }: JoinModalProps) {
             transition={{ type: "spring", damping: 25, stiffness: 250 }}
             className="relative w-full max-w-lg bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 overflow-hidden shadow-2xl z-10"
           >
-            {/* Close Trigger Button */}
+            {}
             <button onClick={resetModal} className="absolute top-4 right-4 text-white/40 hover:text-white transition">
               <X size={18} />
             </button>
-
-            {/* STEP 0: INTRO */}
+            {}
             {step === 0 && (
               <div className="space-y-6 text-center py-4">
                 <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto text-blue-500">
@@ -104,7 +90,7 @@ export default function JoinModal({ isOpen, onClose }: JoinModalProps) {
                     Before joining the BIMTECH E-Cell ecosystem, take our micro-evaluation to find your core operational startup alignment.
                   </p>
                 </div>
-                <button 
+                <button
                   onClick={() => setStep(1)}
                   className="w-full py-3 bg-white text-black text-sm font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-gray-200 transition group mt-4"
                 >
@@ -113,8 +99,7 @@ export default function JoinModal({ isOpen, onClose }: JoinModalProps) {
                 </button>
               </div>
             )}
-
-            {/* STEP 1 & 2: THE QUIZ SLIDERS */}
+            {}
             {step > 0 && step <= QUIZ_STEPS.length && (
               <div className="space-y-6 py-2">
                 <div className="flex justify-between items-center text-xs text-white/40 tracking-widest font-mono uppercase">
@@ -137,11 +122,10 @@ export default function JoinModal({ isOpen, onClose }: JoinModalProps) {
                 </div>
               </div>
             )}
-
-            {/* STEP 3: PERSONA REVEAL & REGISTRATION FORM */}
+            {}
             {step > QUIZ_STEPS.length && persona && (
               <div className="space-y-6">
-                {/* Micro Persona Badge Block */}
+                {}
                 <div className="p-4 bg-white/5 border border-white/10 rounded-xl flex items-center gap-4">
                   <div className="p-2 bg-white/5 rounded-lg border border-white/10 shrink-0">
                     {persona.icon}
@@ -152,8 +136,7 @@ export default function JoinModal({ isOpen, onClose }: JoinModalProps) {
                     <p className="text-xs text-white/50 leading-relaxed mt-0.5">{persona.desc}</p>
                   </div>
                 </div>
-
-                {/* Simplified Final Membership Input Form */}
+                {}
                 <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); resetModal(); }}>
                   <div className="space-y-1">
                     <label className="text-[11px] font-semibold text-white/40 uppercase tracking-wider">Full Name</label>
@@ -169,7 +152,6 @@ export default function JoinModal({ isOpen, onClose }: JoinModalProps) {
                 </form>
               </div>
             )}
-
           </motion.div>
         </div>
       )}

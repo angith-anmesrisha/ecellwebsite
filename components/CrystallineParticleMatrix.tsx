@@ -1,7 +1,5 @@
 "use client";
-
 import React, { useEffect, useRef } from "react";
-
 interface WaterRipple {
   x: number;
   y: number;
@@ -9,18 +7,15 @@ interface WaterRipple {
   maxRadius: number;
   strength: number;
 }
-
 export default function CrystallineParticleMatrix() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: 0, y: 0, lastX: 0, lastY: 0, active: false, velocity: 0 });
   const ripplesRef = useRef<WaterRipple[]>([]);
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
     let animationFrameId: number;
     let lastTime = performance.now();
     let particles: Array<{
@@ -36,7 +31,6 @@ export default function CrystallineParticleMatrix() {
       angle: number;
       speedFactor: number;
     }> = [];
-
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = Math.max(
@@ -46,19 +40,15 @@ export default function CrystallineParticleMatrix() {
       );
       initParticles();
     };
-
     const initParticles = () => {
       particles = [];
       const particleCount = Math.min(Math.floor((canvas.width * canvas.height) / 1600), 900);
-      
       for (let i = 0; i < particleCount; i++) {
         const x = Math.random() * canvas.width;
         const y = Math.random() * canvas.height;
-        
-        const randomHue = Math.random() > 0.5 
-          ? Math.floor(Math.random() * 40) + 260 
+        const randomHue = Math.random() > 0.5
+          ? Math.floor(Math.random() * 40) + 260
           : Math.floor(Math.random() * 40) + 160;
-
         particles.push({
           x,
           y,
@@ -74,14 +64,11 @@ export default function CrystallineParticleMatrix() {
         });
       }
     };
-
     const animate = (currentTime: number) => {
       const deltaTime = (currentTime - lastTime) * 0.001;
       lastTime = currentTime;
-
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const mouse = mouseRef.current;
-
       const mDx = mouse.x - mouse.lastX;
       const mDy = mouse.y - mouse.lastY;
       const mouseSpeed = Math.sqrt(mDx * mDx + mDy * mDy);
@@ -89,17 +76,14 @@ export default function CrystallineParticleMatrix() {
       mouse.velocity *= 0.93;
       mouse.lastX = mouse.x;
       mouse.lastY = mouse.y;
-
       ripplesRef.current.forEach((ripple, idx) => {
         ripple.time += deltaTime;
         if (ripple.time > 1.5) {
           ripplesRef.current.splice(idx, 1);
         }
       });
-
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
-
         if (!mouse.active) {
           p.x += p.vx;
           p.y += p.vy;
@@ -112,7 +96,6 @@ export default function CrystallineParticleMatrix() {
           const dy = mouse.y - p.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
           const activeRadius = 350;
-
           if (distance < activeRadius) {
             const force = (activeRadius - distance) / activeRadius;
             if (mouse.velocity > 15) {
@@ -130,55 +113,44 @@ export default function CrystallineParticleMatrix() {
             p.y += (p.originY - p.y) * 0.02;
           }
         }
-
         let renderX = p.x;
         let renderY = p.y;
         let finalColor = p.baseColor;
-
         ripplesRef.current.forEach((ripple) => {
           const rDx = p.x - ripple.x;
           const rDy = p.y - ripple.y;
           const rDistance = Math.sqrt(rDx * rDx + rDy * rDy);
-          
-          const waveSpeed = 240; 
+          const waveSpeed = 240;
           const currentWaveFront = ripple.time * waveSpeed;
-          
           if (rDistance < ripple.maxRadius && rDistance < currentWaveFront) {
-            const waveFrequency = 0.09; 
-            const waveWidth = 40; 
+            const waveFrequency = 0.09;
+            const waveWidth = 40;
             const distFromFront = Math.abs(rDistance - currentWaveFront);
-            
             if (distFromFront < waveWidth) {
               const waveMath = Math.sin((rDistance - currentWaveFront) * waveFrequency);
               const falloff = (1.0 - distFromFront / waveWidth) * (1.0 - rDistance / ripple.maxRadius);
               const timeDecay = Math.max(0, 1.0 - ripple.time / 1.5);
-              
               const pushScale = waveMath * 16 * ripple.strength * falloff * timeDecay;
-              
               if (rDistance > 0) {
                 renderX += (rDx / rDistance) * pushScale;
                 renderY += (rDy / rDistance) * pushScale;
               }
-              
               if (waveMath > 0.3) {
                 finalColor = `hsla(${p.hue}, 100%, 80%, ${0.5 * falloff * timeDecay})`;
               }
             }
           }
         });
-
         ctx.beginPath();
         ctx.arc(renderX, renderY, p.size, 0, Math.PI * 2);
         ctx.fillStyle = finalColor;
         ctx.fill();
-
         if (mouse.velocity < 20) {
-          for (let j = i + 1; j < particles.length; j += 4) { 
+          for (let j = i + 1; j < particles.length; j += 4) {
             const p2 = particles[j];
             const distx = renderX - p2.x;
             const disty = renderY - p2.y;
             const linkDist = Math.sqrt(distx * distx + disty * disty);
-
             if (linkDist < 100) {
               ctx.beginPath();
               ctx.moveTo(renderX, renderY);
@@ -190,63 +162,51 @@ export default function CrystallineParticleMatrix() {
           }
         }
       }
-
       animationFrameId = requestAnimationFrame(animate);
     };
-
     resizeCanvas();
-    
     const triggerRipple = (clientX: number, clientY: number, strength: number) => {
       ripplesRef.current.push({
         x: clientX + window.scrollX,
         y: clientY + window.scrollY,
         time: 0,
-        maxRadius: 240, 
+        maxRadius: 240,
         strength: strength
       });
       if (ripplesRef.current.length > 8) ripplesRef.current.shift();
     };
-
     const handleGlobalClick = (e: MouseEvent) => {
       triggerRipple(e.clientX, e.clientY, 1.5);
     };
-
     const handleGlobalMouseMove = (e: MouseEvent) => {
       mouseRef.current.x = e.clientX + window.scrollX;
       mouseRef.current.y = e.clientY + window.scrollY;
       mouseRef.current.active = true;
-
       const dx = mouseRef.current.x - mouseRef.current.lastX;
       const dy = mouseRef.current.y - mouseRef.current.lastY;
       const moveSpeed = Math.sqrt(dx * dx + dy * dy);
-
       if (moveSpeed > 35) {
         triggerRipple(e.clientX, e.clientY, Math.min(0.7, moveSpeed * 0.008));
       }
     };
-
     const handleGlobalMouseLeave = () => {
       mouseRef.current.active = false;
     };
-
     const handleGlobalScroll = () => {
       if (Math.random() > 0.75) {
         triggerRipple(
-          window.innerWidth / 2 + (Math.random() - 0.5) * 300, 
-          window.innerHeight / 2 + (Math.random() - 0.5) * 300, 
+          window.innerWidth / 2 + (Math.random() - 0.5) * 300,
+          window.innerHeight / 2 + (Math.random() - 0.5) * 300,
           0.8
         );
       }
     };
-
     window.addEventListener("resize", resizeCanvas);
     window.addEventListener("mousemove", handleGlobalMouseMove);
     window.addEventListener("click", handleGlobalClick);
     window.addEventListener("scroll", handleGlobalScroll, { passive: true });
     document.addEventListener("mouseleave", handleGlobalMouseLeave);
-
     animationFrameId = requestAnimationFrame(animate);
-
     return () => {
       window.removeEventListener("resize", resizeCanvas);
       window.removeEventListener("mousemove", handleGlobalMouseMove);
@@ -256,12 +216,11 @@ export default function CrystallineParticleMatrix() {
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
-
   return (
-    <canvas 
-      ref={canvasRef} 
-      className="absolute inset-0 w-full h-full block pointer-events-none mix-blend-screen" 
-      style={{ zIndex: 50 }} // 🌟 LAYER CORRECTION: Sits on top of layouts so it is 100% visible
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full block pointer-events-none mix-blend-screen"
+      style={{ zIndex: 50 }}
     />
   );
 }

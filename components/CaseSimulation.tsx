@@ -1,22 +1,17 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import { AlertTriangle, Clock, Send, ShieldCheck, FileText, Loader2 } from "lucide-react";
-
 interface CaseSimulationProps {
   candidateId: string;
   candidateEmail: string;
   department: "ops" | "media" | "spons";
   onComplete: (caseAnswer: string) => void;
 }
-
 export default function CaseSimulation({ candidateId, candidateEmail, department, onComplete }: CaseSimulationProps) {
   const [assembledScenario, setAssembledScenario] = useState("");
   const [userSubmission, setUserSubmission] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // --- DETERMINISTIC SCENARIO MATRIX ---
   const scenarioPool = {
     ops: {
       triggers: [
@@ -70,9 +65,7 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
       ]
     }
   };
-
   useEffect(() => {
-    // Lightweight deterministic string hash function
     const generateDeterministicIndex = (str: string, poolSize: number) => {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -80,39 +73,28 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
       }
       return Math.abs(hash) % poolSize;
     };
-
     const pools = scenarioPool[department];
-    
-    // Hash input strings to choose unique combinations deterministically
     const triggerIdx = generateDeterministicIndex(candidateId + "trig", pools.triggers.length);
     const escalationIdx = generateDeterministicIndex(candidateEmail + "esc", pools.escalations.length);
     const constraintIdx = generateDeterministicIndex(candidateId + candidateEmail, pools.constraints.length);
-
     const compiledText = `CRITICAL INCIDENT: ${pools.triggers[triggerIdx]}, ${pools.escalations[escalationIdx]}. \n\nINSTRUCTION TASK: ${pools.constraints[constraintIdx]}`;
     setAssembledScenario(compiledText);
-
-    // Verify if candidate has already logged an answer to this dynamic round
     const existingLog = localStorage.getItem(`ecell_r2_submission_${candidateId}`);
     if (existingLog) {
       setUserSubmission(existingLog);
       setIsSubmitted(true);
     }
   }, [candidateId, candidateEmail, department]);
-
   const handleSubmitCase = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     const currentCount = userSubmission.trim() === "" ? 0 : userSubmission.trim().split(/\s+/).length;
     if (currentCount < 50) {
       alert("Strategic solutions must be substantive. Please elaborate further to meet the minimum 50-word requirement.");
       return;
     }
-
     if (confirm("Lock final execution plan? Once submitted, this node cannot be re-edited.")) {
       setIsSubmitting(true);
-      
       try {
-        // Dispatching structural payload to the local free evaluation middleware route
         const response = await fetch("/api/recruitment/submit-case", {
           method: "POST",
           headers: {
@@ -123,14 +105,9 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
             caseAnswer: userSubmission,
           }),
         });
-
         const resData = await response.json();
-
         if (response.ok && resData.success) {
-          // Lock the submission state in local memory cache logs
           localStorage.setItem(`ecell_r2_submission_${candidateId}`, userSubmission);
-          
-          // Re-sync fallback backup array mapping for the master admin reviews
           const localLogTree = JSON.parse(localStorage.getItem("ecell_submissions_backup_tree") || "[]");
           const syncedTree = localLogTree.map((item: any) => {
             if (item.email.toLowerCase() === candidateEmail.toLowerCase()) {
@@ -139,7 +116,6 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
             return item;
           });
           localStorage.setItem("ecell_submissions_backup_tree", JSON.stringify(syncedTree));
-
           setIsSubmitted(true);
           onComplete(userSubmission);
         } else {
@@ -152,9 +128,7 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
       }
     }
   };
-
   const currentWordCount = userSubmission.trim() === "" ? 0 : userSubmission.trim().split(/\s+/).length;
-
   if (isSubmitted) {
     return (
       <div className="w-full bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 text-center space-y-4 font-mono max-w-2xl mx-auto">
@@ -169,11 +143,9 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
       </div>
     );
   }
-
   return (
     <div className="w-full bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden max-w-2xl mx-auto flex flex-col font-sans shadow-2xl">
-      
-      {/* CARD TOP CONTROLS */}
+      {}
       <div className="p-5 border-b border-white/10 bg-white/[0.01] flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs font-bold font-mono tracking-wider text-amber-500 uppercase">
           <AlertTriangle size={14} className="animate-bounce" /> Round 2: Crisis Command Simulation
@@ -182,10 +154,8 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
           Node: Sector {department}
         </div>
       </div>
-
       <div className="p-6 space-y-5">
-        
-        {/* ASSEMBLED SCENARIO BOX */}
+        {}
         <div className="bg-amber-500/5 border border-amber-500/10 p-4 rounded-xl space-y-2">
           <div className="flex items-center gap-1.5 font-mono text-[10px] font-black tracking-widest uppercase text-amber-400">
             <Clock size={12} /> Dynamic Prompt Manifest
@@ -194,8 +164,7 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
             {assembledScenario}
           </p>
         </div>
-
-        {/* INPUT RESPONSE FORM */}
+        {}
         <form onSubmit={handleSubmitCase} className="space-y-3">
           <div className="space-y-1">
             <div className="flex justify-between items-center text-[10px] uppercase font-mono text-white/40 tracking-wider">
@@ -214,7 +183,6 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
               className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white placeholder-white/20 focus:outline-none focus:border-amber-500 font-mono resize-none leading-relaxed disabled:opacity-40"
             />
           </div>
-
           <button
             type="submit"
             disabled={currentWordCount < 50 || isSubmitting}
@@ -231,7 +199,6 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
             )}
           </button>
         </form>
-
       </div>
     </div>
   );

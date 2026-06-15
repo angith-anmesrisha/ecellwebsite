@@ -1,9 +1,7 @@
 "use client";
-
 import { useRef, useState } from "react";
 import { motion, useSpring, useMotionValue } from "framer-motion";
 import { ArrowUpRight, Sparkles, Users, Skull, Calendar } from "lucide-react";
-
 import RotatingBadge from '@/components/RotatingBadge';
 import AnimatedWord from '@/components/AnimatedWord';
 import Navbar from '@/components/Navbar';
@@ -18,8 +16,7 @@ import KineticGlitchReveal from '@/components/KineticGlitchReveal';
 import DigitalStripSplitter from '@/components/DigitalStripSplitter';
 import InfiniteMarquee from '@/components/InfiniteMarquee';
 import HorizonSlideDeck from '@/components/HorizonSlideDeck';
-import Preloader from "@/components/Preloader"; // 🌟 Imported your new premium preloader
-
+import Preloader from "@/components/Preloader";
 interface ModuleNode {
   title: string;
   icon: React.ReactNode;
@@ -28,7 +25,6 @@ interface ModuleNode {
   cta: string;
   glowColor: string;
 }
-
 function AnimatedGridLine({ orientation = "horizontal", className = "" }: { orientation?: "horizontal" | "vertical"; className?: string }) {
   return (
     <motion.div
@@ -42,10 +38,8 @@ function AnimatedGridLine({ orientation = "horizontal", className = "" }: { orie
     />
   );
 }
-
 function MasterMagnet({ children, radius = 300, pull = 0.4 }: { children: React.ReactNode; radius?: number; pull?: number }) {
   const elementRef = useRef<HTMLDivElement>(null);
-
   return (
     <motion.div
       ref={elementRef}
@@ -55,28 +49,21 @@ function MasterMagnet({ children, radius = 300, pull = 0.4 }: { children: React.
     </motion.div>
   );
 }
-
 export default function Home() {
   const containerRef = useRef(null);
-
   return (
     <>
       <CustomCursor />
-
-      {/* 🌟 NEW INTEGRATION: Mounts the self-contained loading pipeline */}
+      {}
       <Preloader />
-
       <div ref={containerRef} className="relative min-h-[200vh] text-white overflow-hidden bg-transparent w-full">
-        
         <Navbar />
-
-        {/* Hero Section */}
+        {}
         <main className="relative z-10 flex flex-col pt-44 sm:pt-48 pb-32 overflow-visible">
           <HeroCanvas3D />
-          
           <div className="flex-1 flex flex-col lg:flex-row items-center justify-between px-6 md:px-10 max-w-7xl mx-auto w-full gap-16 relative z-10 pointer-events-none">
             <div className="flex-1 space-y-8 text-center lg:text-left z-20 w-full pointer-events-auto">
-              <motion.p 
+              <motion.p
                 initial={{ opacity: 0, x: -25 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
@@ -85,7 +72,6 @@ export default function Home() {
                 <span className="inline-block w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse" />
                 {"// Where Aspiration Meets Opportunity"}
               </motion.p>
-              
               <MasterMagnet radius={300} pull={0.4}>
                 <h1 className="text-6xl sm:text-8xl md:text-9xl font-black tracking-tighter leading-[0.85] block text-left uppercase pointer-events-none overflow-visible w-full select-none">
                   <span className="text-white block relative z-10 pointer-events-auto" style={{ textShadow: "0 10px 30px rgba(0,0,0,0.7)" }}>
@@ -94,8 +80,7 @@ export default function Home() {
                   <AnimatedWord />
                 </h1>
               </MasterMagnet>
-              
-              <motion.p 
+              <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
@@ -104,8 +89,7 @@ export default function Home() {
                 Empowering the next generation of founders at BIMTECH. We help turn your ideas into impactful ventures.
               </motion.p>
             </div>
-
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, rotate: -5 }}
               animate={{ opacity: 1, scale: 1, rotate: 0 }}
               transition={{ type: "spring", stiffness: 60, damping: 15, delay: 0.2 }}
@@ -116,13 +100,12 @@ export default function Home() {
           </div>
           <AnimatedGridLine orientation="horizontal" className="bottom-0" />
         </main>
-
-        {/* Global Trends Loop Section */}
+        {}
         <section id="ai-feed" data-cursor="view" data-cursor-text="view" className="relative z-40 py-28 bg-transparent w-full overflow-hidden">
           <KineticGlitchReveal>
             <div className="text-center mb-16 relative z-10 pointer-events-auto">
-              <KineticTextReveal 
-                text="// Global Trends Loop" 
+              <KineticTextReveal
+                text="// Global Trends Loop"
                 className="text-xs font-mono tracking-widest uppercase text-purple-500 font-bold"
                 delay={0.1}
               />
@@ -138,16 +121,14 @@ export default function Home() {
           </KineticGlitchReveal>
           <AnimatedGridLine orientation="horizontal" className="bottom-0" />
         </section>
-
         <InfiniteMarquee />
-
-        {/* Ecosystem Network Section */}
+        {}
         <section id="ecosystem" className="relative z-30 py-32 max-w-7xl mx-auto space-y-16 px-6 md:px-10">
           <KineticGlitchReveal>
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pb-6 relative">
               <div className="space-y-3 pointer-events-auto">
-                <KineticTextReveal 
-                  text="// E-Cell Network" 
+                <KineticTextReveal
+                  text="// E-Cell Network"
                   className="text-xs font-mono tracking-widest uppercase text-purple-500 font-bold"
                   delay={0.1}
                 />
@@ -163,20 +144,17 @@ export default function Home() {
                   Connect with seasoned professionals, register for active campus initiatives, or explore previous business frameworks built directly within our startup community.
                 </p>
               </div>
-              
               <div className="font-mono text-[10px] bg-zinc-950/60 border border-white/10 rounded-lg px-4 py-2 flex items-center gap-2 text-white/60 shadow-xl shrink-0">
                 <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
                 <span>CAMPUS INITIATIVE ARCHITECTURE</span>
               </div>
             </div>
           </KineticGlitchReveal>
-
           <div className="w-full perspective-1000 preserve-3d">
             <div className="grid grid-cols-1 md:grid-cols-3 border border-white/10 rounded-2xl overflow-hidden bg-zinc-950/10 backdrop-blur-2xs relative preserve-3d">
               <AnimatedGridLine orientation="vertical" className="left-1/3 hidden md:block" />
               <AnimatedGridLine orientation="vertical" className="left-2/3 hidden md:block" />
-
-              <TrackedCyberCard 
+              <TrackedCyberCard
                 delay={0.05}
                 node={{
                   title: "Alumni Advisory Circle",
@@ -187,7 +165,7 @@ export default function Home() {
                   glowColor: "rgba(168, 85, 247, 0.04)"
                 }}
               />
-              <TrackedCyberCard 
+              <TrackedCyberCard
                 delay={0.15}
                 node={{
                   title: "Strategic Action Hub",
@@ -198,7 +176,7 @@ export default function Home() {
                   glowColor: "rgba(168, 85, 247, 0.04)"
                 }}
               />
-              <TrackedCyberCard 
+              <TrackedCyberCard
                 delay={0.25}
                 node={{
                   title: "The Entrepreneurship Archive",
@@ -212,20 +190,17 @@ export default function Home() {
             </div>
           </div>
         </section>
-
         <InfiniteMarquee />
-
-        {/* Horizon Slide Deck */}
+        {}
         <div className="w-full bg-transparent relative z-30">
           <HorizonSlideDeck />
         </div>
-
-        {/* Startup Ecosystem Tools */}
+        {}
         <section className="relative z-30 py-32 max-w-7xl mx-auto px-6 md:px-10 border-t border-white/[0.06]">
           <KineticGlitchReveal>
             <div className="mb-14">
-              <KineticTextReveal 
-                text="// Startup Ecosystem Tools" 
+              <KineticTextReveal
+                text="// Startup Ecosystem Tools"
                 className="text-xs font-mono tracking-widest uppercase text-purple-400 font-bold"
                 delay={0.1}
               />
@@ -233,38 +208,35 @@ export default function Home() {
                 STUDENT EMBYTER RESOURCES
               </h2>
             </div>
-
             <div className="w-full mt-8 flex flex-col border-t border-white/10 pointer-events-auto">
-              <DigitalStripSplitter 
-                text="Executive Recruitment Application" 
-                tag="//PORTAL.RECRUITMENT" 
-                href="/recruitment" 
+              <DigitalStripSplitter
+                text="Executive Recruitment Application"
+                tag="//PORTAL.RECRUITMENT"
+                href="/recruitment"
               />
-              <DigitalStripSplitter 
-                text="Global Innovation Trends" 
-                tag="//TRENDS.LIVE.FEED" 
-                href="#ai-feed" 
+              <DigitalStripSplitter
+                text="Global Innovation Trends"
+                tag="//TRENDS.LIVE.FEED"
+                href="#ai-feed"
               />
-              <DigitalStripSplitter 
-                text="E-Cell Network Ecosystem" 
-                tag="//NETWORK.DIRECTORY" 
-                href="#ecosystem" 
+              <DigitalStripSplitter
+                text="E-Cell Network Ecosystem"
+                tag="//NETWORK.DIRECTORY"
+                href="#ecosystem"
               />
-              <DigitalStripSplitter 
-                text="Venture Analytics Sandbox" 
-                tag="//SIMULATOR.RUN" 
-                href="#simulator" 
+              <DigitalStripSplitter
+                text="Venture Analytics Sandbox"
+                tag="//SIMULATOR.RUN"
+                href="#simulator"
               />
             </div>
           </KineticGlitchReveal>
         </section>
-
-        {/* Recruitment Call-Out Section */}
+        {}
         <section className="w-full max-w-7xl mx-auto px-6 md:px-10 py-32 relative z-10">
           <KineticGlitchReveal>
             <div className="w-full bg-zinc-950/40 backdrop-blur-xs border border-white/10 rounded-2xl p-8 md:p-14 relative overflow-hidden flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 group hover:border-purple-500/20 transition-all duration-500">
               <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/5 rounded-full blur-[80px] pointer-events-none group-hover:bg-purple-500/15 transition-all duration-500" />
-              
               <div className="space-y-3 max-w-2xl pointer-events-auto">
                 <div className="text-[10px] font-mono font-bold tracking-widest text-purple-500 uppercase flex items-center gap-1.5">
                   <Sparkles size={12} className="animate-pulse" />
@@ -277,19 +249,16 @@ export default function Home() {
                   Applications for official E-Cell leadership positions open soon. Select your area of interest, complete our simple review process, and secure a spot for the final evaluation rounds.
                 </p>
               </div>
-
               <div className="w-full lg:w-auto shrink-0 z-20">
-                <FracturedTextButton 
-                  text="Enter Application Portal" 
-                  href="/recruitment" 
+                <FracturedTextButton
+                  text="Enter Application Portal"
+                  href="/recruitment"
                 />
               </div>
-
             </div>
           </KineticGlitchReveal>
         </section>
-
-        {/* Core Footer Link Node */}
+        {}
         <div className="relative w-full">
           <AnimatedGridLine orientation="horizontal" className="top-0" />
           <ConnectSection />
@@ -298,48 +267,37 @@ export default function Home() {
     </>
   );
 }
-
 function TrackedCyberCard({ node, delay }: { node: ModuleNode; delay: number }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
-  
   const rotateX = useMotionValue(0);
   const rotateY = useMotionValue(0);
-  
   const springX = useSpring(rotateX, { stiffness: 200, damping: 25, mass: 0.5 });
   const springY = useSpring(rotateY, { stiffness: 200, damping: 25, mass: 0.5 });
-
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
-    
     const box = cardRef.current.getBoundingClientRect();
     const cardCenterX = e.clientX - box.left;
     const cardCenterY = e.clientY - box.top;
-    
     const xPct = (cardCenterX / box.width) - 0.5;
     const yPct = (cardCenterY / box.height) - 0.5;
-    
     rotateX.set(yPct * -15);
     rotateY.set(xPct * 15);
-    
     cardRef.current.style.setProperty("--mouse-x", `${cardCenterX}px`);
     cardRef.current.style.setProperty("--mouse-y", `${cardCenterY}px`);
   };
-
   const handleMouseLeave = () => {
     setIsHovered(false);
     rotateX.set(0);
     rotateY.set(0);
   };
-
   const letters = node.cta.split("");
-
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 40 }} 
-      whileInView={{ opacity: 1, y: 0 }} 
-      viewport={{ once: true, margin: "-10%" }} 
-      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay }} 
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-10%" }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay }}
       className="w-full relative preserve-3d"
     >
       <motion.div
@@ -348,26 +306,23 @@ function TrackedCyberCard({ node, delay }: { node: ModuleNode; delay: number }) 
         onMouseLeave={handleMouseLeave}
         onMouseEnter={() => setIsHovered(true)}
         onClick={() => window.location.href = node.link}
-        style={{ 
-          rotateX: springX, 
-          rotateY: springY, 
-          transformStyle: "preserve-3d" 
+        style={{
+          rotateX: springX,
+          rotateY: springY,
+          transformStyle: "preserve-3d"
         }}
         className="group relative z-30 pointer-events-auto w-full bg-zinc-950 p-8 space-y-6 flex flex-col justify-between overflow-hidden cursor-pointer h-[280px] border border-white/5 hover:bg-zinc-900/20 perspective-1000 select-none"
       >
-        <div 
+        <div
           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
           style={{ backgroundImage: `radial-gradient(180px circle at var(--mouse-x) var(--mouse-y), ${node.glowColor}, transparent 80%)` }}
         />
-
         <div className="absolute top-0 right-0 w-6 h-6 border-r border-t border-white/10 group-hover:border-purple-500/40 group-hover:w-8 group-hover:h-8 transition-all duration-300 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-6 h-6 border-l border-b border-white/10 group-hover:border-purple-500/40 group-hover:w-8 group-hover:h-8 transition-all duration-300 pointer-events-none" />
-
         <div className="space-y-4 relative z-10 translate-z-0 group-hover:translate-z-12 transition-transform duration-500 ease-[0.16,1,0.3,1] pointer-events-none">
           <div className="text-white/30 group-hover:text-purple-400 group-hover:scale-110 transition-all duration-300 origin-left inline-block">
             {node.icon}
           </div>
-          
           <div className="space-y-2">
             <h3 className="text-sm font-black uppercase tracking-wider text-white">
               {node.title}
@@ -377,19 +332,15 @@ function TrackedCyberCard({ node, delay }: { node: ModuleNode; delay: number }) 
             </p>
           </div>
         </div>
-
         <div className="flex justify-between items-center text-[10px] font-bold tracking-wider uppercase pt-4 border-t border-white/5 relative z-10 translate-z-0 group-hover:translate-z-6 transition-transform duration-500 ease-[0.16,1,0.3,1] pointer-events-none overflow-visible">
           <span className="flex overflow-visible text-white/40 group-hover:text-white transition-colors duration-300">
             {letters.map((char, idx) => {
               if (char === " ") return <span key={idx} className="w-1" />;
-              
               const midIndex = letters.length / 2;
               const directionFactor = idx - midIndex;
-              
               const spreadX = isHovered ? directionFactor * 4 : 0;
               const spreadY = isHovered ? (idx % 2 === 0 ? -12 : 12) : 0;
               const randomRotation = isHovered ? (idx % 2 === 0 ? -15 : 15) : 0;
-
               return (
                 <motion.span
                   key={idx}

@@ -1,40 +1,31 @@
 import { NextResponse } from "next/server";
-
 const SERVER_ANSWER_KEY = [
   { pointsMap: [25, 10, 5] },
   { pointsMap: [25, 15, 5] },
   { pointsMap: [25, 10, 0] },
   { pointsMap: [25, 15, 5] }
 ];
-
-// ==========================================================
-// 🌟 FIX #5: GET HANDLER FOR STUDENT RESULTS STATUS LOOKUPS
-// ==========================================================
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
     const email = searchParams.get("email");
     const targetUrl = process.env.SHEET_WEBHOOK_URL;
-
     if (!targetUrl) throw new Error("Google webhook destination variable is blank.");
-
     if (action === "check-student-result" && email) {
       const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`);
       const sheetData = await sheetFetch.json();
-
       if (sheetData.success && Array.isArray(sheetData.data)) {
         const studentMatch = sheetData.data.find(
           (row: any) => row.email.toLowerCase() === email.trim().toLowerCase()
         );
-
         if (studentMatch) {
           return NextResponse.json({
             success: true,
             name: studentMatch.name,
             status: studentMatch.status || "PENDING",
             score: parseInt(studentMatch.rollNumber) || 0,
-            choices: studentMatch.customAnswers || "" // Forwards customAnswers string carrying schedule metadata
+            choices: studentMatch.customAnswers || ""
           });
         }
       }
@@ -43,50 +34,38 @@ export async function GET(request: Request) {
         { status: 404 }
       );
     }
-
     return NextResponse.json({ error: "Invalid routing request parameter configuration." }, { status: 400 });
   } catch (err) {
     return NextResponse.json({ error: "Data Studio handshake connection exception node fault." }, { status: 500 });
   }
 }
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const targetUrl = process.env.SHEET_WEBHOOK_URL;
     if (!targetUrl) throw new Error("Google webhook destination variable is blank.");
-
-    // ==========================================================
-    // ACTION 1: PRE-QUIZ SECURITY ELIGIBILITY CHECK
-    // ==========================================================
     if (body.action === "check-initial-eligibility") {
       const { email } = body;
       if (!email) return NextResponse.json({ error: "Missing identity parameter fields." }, { status: 400 });
-
       const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`);
       const sheetData = await sheetFetch.json();
-
       if (sheetData.success && Array.isArray(sheetData.data)) {
         const foundUser = sheetData.data.find((row: any) => row.email.toLowerCase() === email.toLowerCase());
-
         if (foundUser) {
           const historicalScore = parseInt(foundUser.rollNumber) || 0;
-          const hasCompletedRound2 = foundUser.customAnswers && 
-                                     foundUser.customAnswers.trim() !== "" && 
+          const hasCompletedRound2 = foundUser.customAnswers &&
+                                     foundUser.customAnswers.trim() !== "" &&
                                      foundUser.customAnswers !== "No payload logged.";
-
           if (historicalScore < 40) {
-            return NextResponse.json({ 
-              error: "This email address has already completed an assessment attempt. Multiple retries are strictly restricted." 
+            return NextResponse.json({
+              error: "This email address has already completed an assessment attempt. Multiple retries are strictly restricted."
             }, { status: 403 });
           }
-
           if (historicalScore >= 40 && hasCompletedRound2) {
             return NextResponse.json({
               error: "You have already completed and locked your Round 2 Case Simulation submission. Multiple attempts are not permitted."
             }, { status: 403 });
           }
-
           if (historicalScore >= 40 && !hasCompletedRound2) {
             return NextResponse.json({
               success: true,
@@ -97,24 +76,15 @@ export async function POST(request: Request) {
           }
         }
       }
-
       return NextResponse.json({ success: true, isExistingSession: false });
     }
-
-    // ==========================================================
-    // 🌟 FIX #6: HANDLE SYSTEM COHORT BULK WAITLIST AUTOMATION
-    // ==========================================================
     if (body.action === "bulk-waitlist") {
       const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`);
       const sheetData = await sheetFetch.json();
-
       if (sheetData.success && Array.isArray(sheetData.data)) {
-        // Filter down to capture candidates whose status column is explicitly blank or "PENDING"
         const pendingRows = sheetData.data.filter(
           (row: any) => !row.status || row.status.toString().toUpperCase() === "PENDING"
         );
-
-        // Dispatches sequential batch mutation fetch frames to your Apps Script sheet worker
         for (const candidate of pendingRows) {
           await fetch(targetUrl, {
             method: "POST",
@@ -131,17 +101,11 @@ export async function POST(request: Request) {
       }
       return NextResponse.json({ error: "Failed to read database configurations snapshot." }, { status: 400 });
     }
-
-    // ==========================================================
-    // ACTION 2: HANDLE ROUND 2 CASE SUBMISSION & AUTOMATED CONFIRMATION EMAIL
-    // ==========================================================
     if (body.action === "update-case") {
       const { name, email, caseAnswer } = body;
       if (!email || !caseAnswer) {
         return NextResponse.json({ error: "Missing required core answer parameters." }, { status: 400 });
       }
-
-      // 1. Save Case Study Text directly into Column G of your Spreadsheet
       const sheetHandshake = await fetch(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -151,13 +115,10 @@ export async function POST(request: Request) {
           caseAnswer: caseAnswer.trim()
         })
       });
-
       const result = await sheetHandshake.json();
       if (!result.success) {
         return NextResponse.json({ error: result.error || "Failed to append case payload on data matrix rows." }, { status: 400 });
       }
-
-      // 2. Fire the Automated Confirmation Email directly via your active institutional Apps Script Mail pipeline
       try {
         await fetch(targetUrl, {
           method: "POST",
@@ -166,28 +127,19 @@ export async function POST(request: Request) {
             action: "dispatch-email-notice",
             email: email.trim().toLowerCase(),
             name: name || "Candidate",
-            status: "APPLICATION_RECEIVED" 
+            status: "APPLICATION_RECEIVED"
           })
         });
       } catch (emailErr) {
-        // Suppress email networking blocks from interrupting successful data logging parameters
       }
-
       return NextResponse.json({ success: true });
     }
-
-    // ==========================================================
-    // ACTION 3: STANDARD ROUND 1 SCORE CALCULATION & RESUME SUBMISSION
-    // ==========================================================
     const { name, email, dept, round1Choices, resumeFileBase64, resumeFileName } = body;
-
     if (!name || !email || !dept || !Array.isArray(round1Choices)) {
       return NextResponse.json({ error: "Malformed request payload parameters." }, { status: 400 });
     }
-
     let finalizedScore = 0;
     const readableChoices: string[] = [];
-
     SERVER_ANSWER_KEY.forEach((keyNode, index) => {
       const selectedIdx = round1Choices[index];
       if (selectedIdx !== undefined && selectedIdx >= 0 && selectedIdx < keyNode.pointsMap.length) {
@@ -195,7 +147,6 @@ export async function POST(request: Request) {
         readableChoices.push(`Q${index + 1}: Choice [${selectedIdx}]`);
       }
     });
-
     const sheetHandshake = await fetch(targetUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -211,12 +162,10 @@ export async function POST(request: Request) {
         resumeFileName
       })
     });
-
     const result = await sheetHandshake.json();
     if (!result.success) {
       return NextResponse.json({ error: result.error || "Duplicate entry detected on server database." }, { status: 403 });
     }
-
     return NextResponse.json({
       success: true,
       score: finalizedScore,

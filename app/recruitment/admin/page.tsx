@@ -1,8 +1,6 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import { Sliders, Film, Briefcase, Trophy, ArrowLeft, ShieldCheck, Lock, Unlock, Calendar as CalendarIcon, Save, AlertTriangle, FileText, ChevronDown, ChevronUp, CheckSquare, HelpCircle, Trash2 } from "lucide-react";
-
 interface Submission {
   id: string;
   name: string;
@@ -13,7 +11,6 @@ interface Submission {
   caseAnswer: string;
   timestamp?: string;
 }
-
 export default function AdminDashboard() {
   const [hasMounted, setHasMounted] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -22,27 +19,22 @@ export default function AdminDashboard() {
   const [filterDept, setFilterDept] = useState<string>("all");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
   const [targetDateInput, setTargetDateInput] = useState("2026-07-15");
   const [targetTimeInput, setTargetTimeInput] = useState("00:00");
   const [isDateSaved, setIsDateSaved] = useState(false);
   const [isPortalForceUnlocked, setIsPortalForceUnlocked] = useState(false);
-
   useEffect(() => {
     setHasMounted(true);
     const savedDateRaw = localStorage.getItem("ecell_recruitment_launch_date") || "2026-07-15T00:00:00";
     const [datePart, timePart] = savedDateRaw.split("T");
     if (datePart) setTargetDateInput(datePart);
     if (timePart) setTargetTimeInput(timePart.substring(0, 5));
-
     const currentOverrideState = localStorage.getItem("ecell_admin_override_unlocked") === "true";
     setIsPortalForceUnlocked(currentOverrideState);
-
     if (isAuthenticated) {
       fetchSpreadsheetData();
     }
   }, [isAuthenticated]);
-
   const fetchSpreadsheetData = async () => {
     setIsLoading(true);
     try {
@@ -56,34 +48,26 @@ export default function AdminDashboard() {
       setIsLoading(false);
     }
   };
-
   const handleTogglePortalGate = () => {
     const nextState = !isPortalForceUnlocked;
     setIsPortalForceUnlocked(nextState);
     localStorage.setItem("ecell_admin_override_unlocked", nextState.toString());
   };
-
-  // 🚨 NEW HARD RESET MASTER FUNCTION
   const handleWipeLeaderboardDatabase = async () => {
     const confirmStep1 = confirm("⚠️ CRITICAL SECURITY WARNING:\nYou are about to execute a complete database wipe. This will permanently delete ALL applicant metrics, score tracking rows, and essay responses from your live Google Sheet. Proceed?");
-    
     if (confirmStep1) {
       const confirmStep2 = confirm("FINAL CONFIRMATION:\nThis process is completely irreversible. Are you absolutely certain you want to reset the cluster logs?");
-      
       if (confirmStep2) {
         setIsLoading(true);
         try {
-          // Fire a clear event directly to the sheet web app middleware route
           const response = await fetch("/api/recruitment/submit-case", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              email: "clear_command_system_override@ecell.com", // Trigger address
+              email: "clear_command_system_override@ecell.com",
               caseAnswer: "RESET_ALL_DATA_ROWS_IMMEDIATELY_COHORT_2026"
             })
           });
-
-          // Flush local storage sync trees
           localStorage.removeItem("ecell_submissions_backup_tree");
           setSubmissions([]);
           alert("Database Cluster Successfully Cleared! All candidate profiles have been purged.");
@@ -95,7 +79,6 @@ export default function AdminDashboard() {
       }
     }
   };
-
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === "ecelladmin2026") {
@@ -104,7 +87,6 @@ export default function AdminDashboard() {
       alert("Invalid Admin Verification Credentials.");
     }
   };
-
   const handleUpdateLaunchDate = (e: React.FormEvent) => {
     e.preventDefault();
     const compiledISOString = `${targetDateInput}T${targetTimeInput}:00`;
@@ -112,10 +94,8 @@ export default function AdminDashboard() {
     setIsDateSaved(true);
     setTimeout(() => setIsDateSaved(false), 3000);
   };
-
   if (!hasMounted) return <div className="min-h-screen bg-black" />;
   const filteredData = filterDept === "all" ? submissions : submissions.filter(item => item.dept === filterDept);
-
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col justify-center items-center px-4 font-sans antialiased">
@@ -133,18 +113,16 @@ export default function AdminDashboard() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-black text-white py-16 px-4 md:px-8 font-sans antialiased">
       <div className="max-w-5xl mx-auto space-y-8">
-        
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-white/10 pb-6 gap-4">
           <div>
             <div className="flex items-center gap-2 text-blue-500 text-[10px] uppercase font-mono tracking-widest font-black"><ShieldCheck size={14} /> Systems Active</div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight mt-1">E-Cell Recruitment Workspace</h1>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
-            {/* 🗑️ THE RESET BUTTON GRAPHIC INTERACTION */}
+            {}
             <button onClick={handleWipeLeaderboardDatabase} disabled={isLoading} className="text-xs font-mono border border-red-500/30 bg-red-500/15 px-4 py-1.5 rounded-lg text-red-400 font-bold hover:bg-red-500/25 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40">
               <Trash2 size={13} /> WIPE SHEET ENTRIES
             </button>
@@ -154,7 +132,6 @@ export default function AdminDashboard() {
             <button onClick={() => window.location.href = "/recruitment"} className="text-xs font-mono border border-white/10 bg-white/5 px-3 py-1.5 rounded-lg text-white/60 hover:text-white transition flex items-center gap-1.5 shrink-0 cursor-pointer"><ArrowLeft size={14} /> Return Portal</button>
           </div>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className={`border rounded-2xl p-6 space-y-4 shadow-xl transition-all duration-300 ${isPortalForceUnlocked ? 'bg-emerald-950/20 border-emerald-500/30' : 'bg-zinc-950 border-white/10'}`}>
             <div className="flex items-center justify-between">
@@ -168,7 +145,6 @@ export default function AdminDashboard() {
               {isPortalForceUnlocked ? "🚨 Force Lock Recruitment Portal" : "🔓 Force Open Recruitment Portal"}
             </button>
           </div>
-
           <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 space-y-4">
             <div className="flex items-center gap-2 text-xs font-bold tracking-wider uppercase font-mono text-white/80"><CalendarIcon size={16} className="text-blue-500" /> Automated Calendar Clock Setup</div>
             <form onSubmit={handleUpdateLaunchDate} className="flex flex-col gap-3">
@@ -180,7 +156,6 @@ export default function AdminDashboard() {
             </form>
           </div>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-zinc-950 border border-white/10 p-4 rounded-xl flex items-center justify-between">
             <div><span className="text-[9px] font-mono uppercase text-white/40 block">Total Applicants</span><span className="text-xl font-mono font-black mt-1 block">{submissions.length}</span></div>
@@ -199,13 +174,11 @@ export default function AdminDashboard() {
             <Briefcase size={20} className="text-emerald-500 opacity-40" />
           </div>
         </div>
-
         <div className="flex gap-2 border-b border-white/5 pb-4">
           {["all", "ops", "media", "spons"].map((tab) => (
             <button key={tab} onClick={() => setFilterDept(tab)} className={`px-4 py-2 rounded-xl border text-xs font-mono uppercase font-bold transition cursor-pointer ${filterDept === tab ? 'bg-blue-500/10 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'}`}>{tab === "all" ? "Global Cluster" : tab === "ops" ? "Ops/Tech/Fin" : tab === "media" ? "Media" : "Sponsorship"}</button>
           ))}
         </div>
-
         <div className="bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden">
           {filteredData.length === 0 ? (
             <div className="p-12 text-center text-xs font-mono text-white/30">No candidate records logged inside this sector node loop. Click refresh to query Google Sheets.</div>
@@ -242,7 +215,6 @@ export default function AdminDashboard() {
                           </button>
                         </td>
                       </tr>
-
                       {expandedRow === item.id && (
                         <tr className="bg-zinc-900/30 border-b border-white/10">
                           <td colSpan={5} className="p-6 space-y-5">
@@ -258,7 +230,7 @@ export default function AdminDashboard() {
                                   ))}
                                 </div>
                               ) : (
-                                <div className="text-[11px] text-white/30 italic">// No MCQ breakdown string returned for entry</div>
+                                <div className="text-[11px] text-white/30 italic">
                               )}
                             </div>
                             <div className="space-y-2">
@@ -266,7 +238,7 @@ export default function AdminDashboard() {
                               {item.caseAnswer ? (
                                 <div className="bg-black/50 border border-white/5 rounded-xl p-4 text-xs text-white/80 leading-relaxed italic">"{item.caseAnswer}"</div>
                               ) : (
-                                <div className="text-[11px] text-white/30 italic">// Case Simulation incomplete or dropped</div>
+                                <div className="text-[11px] text-white/30 italic">
                               )}
                             </div>
                           </td>
@@ -279,7 +251,6 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
-
       </div>
     </div>
   );

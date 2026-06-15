@@ -1,32 +1,22 @@
 "use client";
-
 import React, { useEffect, useState, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-
-// 🌟 ULTRA-SUBTLE AMBIENT DATA MATRIX FIELD
 function SubtleMicroDust() {
   const pointsRef = useRef<THREE.Points>(null);
-
-  // Lower count (180 points) makes it sparse and premium rather than busy
   const [positions] = useState(() => {
     const currentPoints = new Float32Array(180 * 3);
     for (let i = 0; i < 180 * 3; i++) {
-      // Spreads them out broadly so they remain strictly in the periphery
       currentPoints[i] = (Math.random() - 0.5) * 6;
     }
     return currentPoints;
   });
-
   useFrame((state) => {
     if (!pointsRef.current) return;
     const elapsedClockTime = state.clock.getElapsedTime();
-    
-    // Microscopic slow drift velocity
     pointsRef.current.rotation.y = elapsedClockTime * 0.02;
     pointsRef.current.rotation.x = elapsedClockTime * 0.01;
   });
-
   return (
     <points ref={pointsRef}>
       <bufferGeometry>
@@ -36,22 +26,20 @@ function SubtleMicroDust() {
         />
       </bufferGeometry>
       <pointsMaterial
-        color="#a855f7" // Your perfect purple brand accent color
-        size={0.018}    // Shrunk down to make them look like tiny crisp pixels
+        color="#a855f7"
+        size={0.018}
         transparent={true}
-        opacity={0.3}    // Made highly translucent to keep it purely ambient
+        opacity={0.3}
         sizeAttenuation={true}
         depthWrite={false}
       />
     </points>
   );
 }
-
 export default function Preloader() {
   const [progress, setProgress] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const [shouldRender, setShouldRender] = useState(true);
-
   useEffect(() => {
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
@@ -63,7 +51,6 @@ export default function Preloader() {
         return Math.min(prev + increment, 100);
       });
     }, 38);
-
     const checkLoadState = () => {
       if (document.readyState === "complete") {
         const matchTimer = setInterval(() => {
@@ -77,54 +64,44 @@ export default function Preloader() {
         }, 15);
       }
     };
-
     window.addEventListener("load", checkLoadState);
     checkLoadState();
-
     return () => {
       clearInterval(progressInterval);
       window.removeEventListener("load", checkLoadState);
     };
   }, []);
-
   useEffect(() => {
     if (isLoaded) {
       const unmountTimeout = setTimeout(() => setShouldRender(false), 500);
       return () => clearTimeout(unmountTimeout);
     }
   }, [isLoaded]);
-
   if (!shouldRender) return null;
-
   const displayPercentage = Math.floor(progress);
-
   return (
     <div
       className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black transition-opacity duration-500 ease-in-out ${
         isLoaded ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
-      {/* 🌟 PASSIVE SUBTLE 3D ENVIRONMENT */}
+      {}
       <div className="absolute inset-0 w-full h-full z-0 pointer-events-none opacity-50">
         <Canvas camera={{ position: [0, 0, 2], fov: 60 }}>
           <SubtleMicroDust />
         </Canvas>
       </div>
-
-      {/* CORE CONTROL TELEMETRY PANEL */}
+      {}
       <div className="relative z-10 flex flex-col items-center max-w-md px-6 text-center select-none pointer-events-none">
-        
-        {/* TELEMETRY INDICATOR RING */}
+        {}
         <div className="relative w-24 h-24 mb-10 flex items-center justify-center">
           <div className="absolute inset-0 border border-purple-500/10 rounded-full animate-pulse" />
           <div className="absolute inset-1.5 border border-white/[0.02] rounded-full" />
-          
           <span className="font-mono text-xl font-black text-white tracking-tighter">
             {displayPercentage}<span className="text-purple-500 text-xs font-normal ml-0.5">%</span>
           </span>
         </div>
-
-        {/* ECOSYSTEM QUOTE BRAND LAYERS */}
+        {}
         <div className="space-y-2 mb-8">
           <p className="text-[10px] font-mono font-bold tracking-[0.25em] text-purple-400/80 uppercase">
             {"// INITIALIZING ECOSYSTEM COMPONENTS"}
@@ -133,8 +110,7 @@ export default function Preloader() {
             "Where Aspiration Meets Opportunity."
           </h2>
         </div>
-
-        {/* LOGARITHMIC SYSTEM PROGRESS TRACK */}
+        {}
         <div className="w-52">
           <div className="w-full h-[3px] bg-white/[0.06] rounded-full overflow-hidden relative border border-white/[0.01]">
             <div
@@ -142,7 +118,6 @@ export default function Preloader() {
               style={{ width: `${progress}%` }}
             />
           </div>
-          
           <div className="flex justify-between items-center mt-2.5 font-mono text-[9px] tracking-widest text-zinc-500 uppercase">
             <span>SYS_STATUS</span>
             <span className="animate-pulse text-purple-400/70">
@@ -150,7 +125,6 @@ export default function Preloader() {
             </span>
           </div>
         </div>
-
         <span className="text-[9px] font-mono text-zinc-600 tracking-widest uppercase mt-12 block">
           BIMTECH E-CELL SYSTEM PLATFORM
         </span>

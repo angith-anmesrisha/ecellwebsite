@@ -1,8 +1,6 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import { Plus, X, BarChart2, ListFilter, Users, Upload, Image as ImageIcon, Loader2, Lock } from "lucide-react";
-
 interface EventItem {
   id: string;
   title: string;
@@ -12,7 +10,6 @@ interface EventItem {
   customFields: string[];
   bannerUrl?: string;
 }
-
 interface RegistrationRecord {
   regId: string;
   eventId: string;
@@ -22,39 +19,28 @@ interface RegistrationRecord {
   rollNumber: string;
   customAnswers: Record<string, string>;
 }
-
 export default function AdminEventsPanel() {
-  // Security Authentication States
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [securityError, setSecurityError] = useState("");
-
   const [events, setEvents] = useState<EventItem[]>([]);
   const [registrations, setRegistrations] = useState<RegistrationRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"create" | "history">("create");
-
-  // Create Event Form States
   const [newTitle, setNewTitle] = useState("");
   const [newDate, setNewDate] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newStatus, setNewStatus] = useState("ACTIVE");
-  
-  // Upload States
-  const [bannerUrl, setBannerUrl] = useState(""); 
+  const [bannerUrl, setBannerUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  
   const [customFields, setCustomFields] = useState<string[]>([]);
   const [currentFieldInput, setCurrentFieldInput] = useState("");
   const [selectedEventFilter, setSelectedEventFilter] = useState("all");
-
   useEffect(() => {
-    // Only query database rows if the security key check passes successfully
     if (isAuthenticated) {
       fetchAdminData();
     }
   }, [isAuthenticated]);
-
   const fetchAdminData = async () => {
     try {
       setIsLoading(true);
@@ -72,12 +58,9 @@ export default function AdminEventsPanel() {
       setIsLoading(false);
     }
   };
-
-  // SECURITY KEY HANDLER
   const handleSecurityCheck = (e: React.FormEvent) => {
     e.preventDefault();
     const globalMasterKey = process.env.NEXT_PUBLIC_ADMIN_MASTER_KEY;
-
     if (passwordInput === globalMasterKey) {
       setIsAuthenticated(true);
       setSecurityError("");
@@ -85,16 +68,13 @@ export default function AdminEventsPanel() {
       setSecurityError("Invalid master key. Access denied.");
     }
   };
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setIsUploading(true);
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_PRESET!);
-
     try {
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
@@ -111,7 +91,6 @@ export default function AdminEventsPanel() {
       setIsUploading(false);
     }
   };
-
   const addCustomFieldTag = () => {
     if (!currentFieldInput.trim()) return;
     if (!customFields.includes(currentFieldInput.trim())) {
@@ -119,15 +98,12 @@ export default function AdminEventsPanel() {
     }
     setCurrentFieldInput("");
   };
-
   const removeCustomFieldTag = (index: number) => {
     setCustomFields(customFields.filter((_, i) => i !== index));
   };
-
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle || !newDate) return;
-
     try {
       const res = await fetch("/api/events", {
         method: "POST",
@@ -139,10 +115,9 @@ export default function AdminEventsPanel() {
           description: newDesc,
           status: newStatus,
           customFields: customFields,
-          bannerUrl: bannerUrl 
+          bannerUrl: bannerUrl
         })
       });
-
       const data = await res.json();
       if (data.success) {
         alert("Event published successfully!");
@@ -157,12 +132,9 @@ export default function AdminEventsPanel() {
       alert("Failed to build event node.");
     }
   };
-
   const filteredRegistrations = registrations.filter(
     r => selectedEventFilter === "all" || r.eventId === selectedEventFilter
   );
-
-  // 🔒 GATEKEEPER CONDITION: SHOW LOGIN FORM IF UNVERIFIED
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 font-sans antialiased">
@@ -174,11 +146,10 @@ export default function AdminEventsPanel() {
             <h1 className="text-xl font-bold tracking-tight">Admin Authentication</h1>
             <p className="text-xs text-white/40">Enter the E-Cell system master key to open administrative event parameters.</p>
           </div>
-
           <form onSubmit={handleSecurityCheck} className="space-y-3 text-left">
             <div className="space-y-1">
               <label className="text-white/50 uppercase tracking-wider text-[9px] font-bold">Master Security Key</label>
-              <input 
+              <input
                 required
                 type="password"
                 value={passwordInput}
@@ -187,11 +158,9 @@ export default function AdminEventsPanel() {
                 placeholder="••••••••••••"
               />
             </div>
-
             {securityError && (
               <p className="text-[11px] text-red-400 font-medium font-mono">{securityError}</p>
             )}
-
             <button type="submit" className="w-full py-2 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-zinc-200 transition cursor-pointer mt-2">
               Verify Key Axis
             </button>
@@ -200,13 +169,10 @@ export default function AdminEventsPanel() {
       </div>
     );
   }
-
-  // 🔓 ACCESS GRANTED: RENDER COMPLETE MANAGEMENT SYSTEM
   return (
     <div className="min-h-screen bg-black text-white py-16 px-4 md:px-8 font-sans antialiased">
       <div className="max-w-6xl mx-auto space-y-8">
-        
-        {/* CONTROL BAR */}
+        {}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/10 pb-6">
           <div className="space-y-1">
             <h1 className="text-2xl font-black uppercase font-mono tracking-tight text-blue-500">E-Cell Event Console</h1>
@@ -217,23 +183,19 @@ export default function AdminEventsPanel() {
             <button onClick={() => setActiveTab("history")} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${activeTab === "history" ? "bg-white text-black" : "text-white/60 hover:text-white"}`}>Registration History Log</button>
           </div>
         </div>
-
         {isLoading ? (
           <div className="text-center py-20 text-xs text-white/40 font-mono animate-pulse">Syncing administrative database data matrices...</div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
-            {/* FORM BUILDER */}
+            {}
             {activeTab === "create" && (
               <>
                 <form onSubmit={handleCreateEvent} className="lg:col-span-5 bg-zinc-950 border border-white/10 p-6 rounded-2xl space-y-4 text-xs">
                   <h2 className="text-sm font-bold uppercase tracking-wider text-blue-400 border-b border-white/5 pb-2">Event Form Builder</h2>
-                  
                   <div className="space-y-1">
                     <label className="text-white/50 uppercase tracking-wider text-[10px] font-bold">Event Title</label>
                     <input required type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500" placeholder="e.g., TEDxBIMTECH 2026" />
                   </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-white/50 uppercase tracking-wider text-[10px] font-bold">Event Date</label>
@@ -247,8 +209,7 @@ export default function AdminEventsPanel() {
                       </select>
                     </div>
                   </div>
-
-                  {/* BANNER FILE UPLOAD */}
+                  {}
                   <div className="space-y-1">
                     <label className="text-white/50 uppercase tracking-wider text-[10px] font-bold">Event Banner Image</label>
                     <div className="border border-dashed border-white/20 rounded-xl p-4 bg-white/[0.02] flex flex-col items-center justify-center text-center hover:bg-white/[0.04] transition relative group">
@@ -271,19 +232,16 @@ export default function AdminEventsPanel() {
                       )}
                     </div>
                   </div>
-
                   <div className="space-y-1">
                     <label className="text-white/50 uppercase tracking-wider text-[10px] font-bold">Brief Description</label>
                     <textarea rows={3} value={newDesc} onChange={(e) => setNewDesc(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500 resize-none" placeholder="Provide basic information for student viewers..." />
                   </div>
-
                   <div className="space-y-2 border-t border-white/5 pt-3">
                     <label className="text-white/50 uppercase tracking-wider text-[10px] font-bold block">Inject Custom Form Questions</label>
                     <div className="flex gap-2">
                       <input type="text" value={currentFieldInput} onChange={(e) => setCurrentFieldInput(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-white focus:outline-none focus:border-blue-500" placeholder="e.g., GitHub Link, Team Size" />
                       <button type="button" onClick={addCustomFieldTag} className="px-3 bg-white text-black font-bold rounded-xl hover:bg-zinc-200 transition">Add</button>
                     </div>
-                    
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {customFields.map((field, index) => (
                         <span key={field} className="px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-lg text-[10px] font-mono flex items-center gap-1">
@@ -292,12 +250,10 @@ export default function AdminEventsPanel() {
                       ))}
                     </div>
                   </div>
-
                   <button type="submit" className="w-full py-2.5 mt-2 bg-white text-black font-sans font-bold uppercase tracking-wider text-xs rounded-xl hover:bg-zinc-200 transition flex items-center justify-center gap-1.5 cursor-pointer">
                     <Plus size={14} /> Publish Event Form
                   </button>
                 </form>
-
                 <div className="lg:col-span-7 space-y-4">
                   <h3 className="text-xs font-mono font-bold tracking-widest text-white/40 uppercase flex items-center gap-2">
                     Active Form Ecosystem Nodes ({events.length})
@@ -328,8 +284,7 @@ export default function AdminEventsPanel() {
                 </div>
               </>
             )}
-
-            {/* REGISTRATION LOG TAB */}
+            {}
             {activeTab === "history" && (
               <div className="lg:col-span-12 space-y-4 font-mono text-xs">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-zinc-950 p-4 border border-white/10 rounded-xl gap-4">
@@ -346,7 +301,6 @@ export default function AdminEventsPanel() {
                     Synced Row Blocks: {filteredRegistrations.length} Entries
                   </div>
                 </div>
-
                 <div className="border border-white/10 rounded-xl overflow-hidden bg-zinc-950 shadow-2xl">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[700px]">
@@ -386,10 +340,8 @@ export default function AdminEventsPanel() {
                 </div>
               </div>
             )}
-
           </div>
         )}
-
       </div>
     </div>
   );

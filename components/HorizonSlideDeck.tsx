@@ -1,83 +1,66 @@
 "use client";
-
 import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import TeamCarousel3D from "./TeamCarousel3D";
 import PitchSimulator from "./PitchSimulator";
 import KineticTextReveal from "./KineticTextReveal";
-
 export default function HorizonSlideDeck() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isFixed, setIsFixed] = useState(false);
   const [isPast, setIsPast] = useState(false);
-
   useEffect(() => {
     const handleScroll = () => {
       if (!containerRef.current) return;
-
       const rect = containerRef.current.getBoundingClientRect();
       const containerHeight = containerRef.current.offsetHeight;
       const windowHeight = window.innerHeight;
-
-      // Calculate how far the user has scrolled through this section (0 to 1)
       const totalScrollableDistance = containerHeight - windowHeight;
       const currentScrollPosition = -rect.top;
       const progress = Math.max(0, Math.min(1, currentScrollPosition / totalScrollableDistance));
-      
       setScrollProgress(progress);
-
-      // Trigger hard fixed layout constraints when the element hits the top view
       if (rect.top <= 0 && -rect.top <= totalScrollableDistance) {
         setIsFixed(true);
         setIsPast(false);
       } else if (-rect.top > totalScrollableDistance) {
         setIsFixed(false);
-        setIsPast(true); // User scrolled past the entire module track
+        setIsPast(true);
       } else {
         setIsFixed(false);
-        setIsPast(false); // User is above the module track
+        setIsPast(false);
       }
     };
-
     window.addEventListener("scroll", handleScroll, { passive: true });
-    // Run an initial check to capture layout bounds immediately upon mount
     handleScroll();
-
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  // Map the scroll progress directly to the horizontal rail position
   const xTranslate = `${-scrollProgress * 200}vw`;
-
   return (
-    <div 
-      ref={containerRef} 
+    <div
+      ref={containerRef}
       className="relative h-[300vh] w-full bg-transparent"
     >
-      {/* 🌟 THE DIRECT VIEWPORT LOCK LAYER */}
-      <div 
+      {}
+      <div
         className={`w-full h-screen overflow-hidden flex items-center border-t border-b border-white/10 bg-zinc-950/20 backdrop-blur-3xl transition-shadow duration-300 ${
-          isFixed 
-            ? "fixed top-0 left-0 z-50 shadow-2xl" 
-            : isPast 
-            ? "absolute bottom-0 left-0" 
+          isFixed
+            ? "fixed top-0 left-0 z-50 shadow-2xl"
+            : isPast
+            ? "absolute bottom-0 left-0"
             : "absolute top-0 left-0"
         }`}
       >
-        
-        {/* Hardware-Accelerated Animation Rail */}
-        <motion.div 
+        {}
+        <motion.div
           animate={{ x: xTranslate }}
           transition={{ type: "spring", stiffness: 100, damping: 20, mass: 0.2 }}
           className="flex h-full w-[300vw] will-change-transform bg-transparent"
         >
-          
-          {/* DECK PANEL 1: Introduction Anchor */}
+          {}
           <div className="w-screen h-full flex flex-col justify-center px-12 md:px-24 shrink-0 relative bg-transparent">
             <div className="max-w-xl space-y-4">
-              <KineticTextReveal 
-                text="// System Architecture Matrix" 
+              <KineticTextReveal
+                text="// System Architecture Matrix"
                 className="text-xs font-mono tracking-widest uppercase text-purple-400 font-bold"
                 delay={0.1}
               />
@@ -94,34 +77,31 @@ export default function HorizonSlideDeck() {
               </div>
             </div>
           </div>
-
-          {/* DECK PANEL 2: Executive Board Carousel */}
+          {}
           <div id="team" className="w-screen h-full flex flex-col justify-center px-12 md:px-20 shrink-0 border-l border-r border-white/10 bg-transparent relative scroll-mt-24">
             <div className="w-full max-w-7xl mx-auto space-y-6">
               <div className="border-b border-white/5 pb-4 flex items-center justify-between font-mono text-[10px] tracking-widest">
-                <span className="text-purple-400 font-bold">01 // EXECUTIVE BOARD ROSTER</span>
-                <span className="text-white/20">// CORE COMMAND CONTROL ARRAY</span>
+                <span className="text-purple-400 font-bold">01
+                <span className="text-white/20">
               </div>
               <div className="w-full overflow-hidden max-h-[460px] flex items-center justify-center relative">
-                {/* 🌟 UPGRADE: Pass down the live timeline tracker state progress into the component */}
+                {}
                 <TeamCarousel3D progress={scrollProgress} />
               </div>
             </div>
           </div>
-
-          {/* DECK PANEL 3: Venture Simulation Lab */}
+          {}
           <div id="simulator" className="w-screen h-full flex flex-col justify-center px-12 md:px-20 shrink-0 bg-transparent relative scroll-mt-24">
             <div className="w-full max-w-6xl mx-auto space-y-6">
               <div className="border-b border-white/5 pb-4 flex items-center justify-between font-mono text-[10px] tracking-widest">
-                <span className="text-blue-400 font-bold">02 // VENTURE SIMULATION LAB</span>
-                <span className="text-white/20">// REAL-TIME DATA INFERENCE NODE</span>
+                <span className="text-blue-400 font-bold">02
+                <span className="text-white/20">
               </div>
               <div className="w-full max-w-4xl mx-auto">
                 <PitchSimulator />
               </div>
             </div>
           </div>
-
         </motion.div>
       </div>
     </div>
