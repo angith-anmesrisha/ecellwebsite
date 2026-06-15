@@ -1,18 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useSpring, useMotionValue } from "framer-motion";
+import { useRef, useState } from "react";
+import { motion, useSpring, useMotionValue } from "framer-motion";
 import { ArrowUpRight, Sparkles, Users, Skull, Calendar } from "lucide-react";
 
 import RotatingBadge from '@/components/RotatingBadge';
 import AnimatedWord from '@/components/AnimatedWord';
 import Navbar from '@/components/Navbar';
 import ConnectSection from '@/components/ConnectSection';
-import PitchSimulator from "@/components/PitchSimulator";
 import AiStories from "@/components/AiStories";
 import HeroCanvas3D from '@/components/HeroCanvas3D';
 import KineticTextReveal from '@/components/KineticTextReveal';
-import TeamCarousel3D from '@/components/TeamCarousel3D';
 import FracturedTextButton from '@/components/FracturedTextButton';
 import InertialSkewText from '@/components/InertialSkewText';
 import CustomCursor from '@/components/CustomCursor';
@@ -20,17 +18,7 @@ import KineticGlitchReveal from '@/components/KineticGlitchReveal';
 import DigitalStripSplitter from '@/components/DigitalStripSplitter';
 import InfiniteMarquee from '@/components/InfiniteMarquee';
 import HorizonSlideDeck from '@/components/HorizonSlideDeck';
-
-const STARTUP_QUOTES = [
-  { text: "The best way to predict the future is to create it.", author: "Peter Drucker" },
-  { text: "Your work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work.", author: "Steve Jobs" },
-  { text: "Ideas are easy. Implementation is hard.", author: "Guy Kawasaki" },
-  { text: "Don't be afraid to assert yourself, have confidence in your abilities and don't let the bastards grind you down.", author: "Michael Bloomberg" },
-  { text: "Chase the vision, not the money; the money will end up following you.", author: "Tony Hsieh" },
-  { text: "Move fast and break things. If you are not breaking things, you are not moving fast enough.", author: "Mark Zuckerberg" },
-  { text: "Risk more than others think is safe. Dream more than others think is practical.", author: "Howard Schultz" },
-  { text: "If you are not embarrassed by the first version of your product, you've launched too late.", author: "Reid Hoffman" }
-];
+import Preloader from "@/components/Preloader"; // 🌟 Imported your new premium preloader
 
 interface ModuleNode {
   title: string;
@@ -57,43 +45,10 @@ function AnimatedGridLine({ orientation = "horizontal", className = "" }: { orie
 
 function MasterMagnet({ children, radius = 300, pull = 0.4 }: { children: React.ReactNode; radius?: number; pull?: number }) {
   const elementRef = useRef<HTMLDivElement>(null);
-  const [offset, setOffset] = useState({ x: 0, y: 0, rotateX: 0, rotateY: 0 });
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!elementRef.current) return;
-      const { clientX, clientY } = e;
-      const rect = elementRef.current.getBoundingClientRect();
-      
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      
-      const deltaX = clientX - centerX;
-      const deltaY = clientY - centerY;
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY); // 🌟 FIXED TYPO HERE
-
-      if (distance < radius) {
-        const intensity = (radius - distance) / radius;
-        setOffset({
-          x: deltaX * pull * intensity,
-          y: deltaY * pull * intensity,
-          rotateX: (deltaY / rect.height) * -10 * intensity,
-          rotateY: (deltaX / rect.width) * 10 * intensity
-        });
-      } else {
-        setOffset({ x: 0, y: 0, rotateX: 0, rotateY: 0 });
-      }
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [radius, pull]);
 
   return (
     <motion.div
       ref={elementRef}
-      animate={{ x: offset.x, y: offset.y, rotateX: offset.rotateX, rotateY: offset.rotateY }}
-      transition={{ type: "spring", stiffness: 150, damping: 20, mass: 0.2 }}
       className="inline-block w-full lg:w-auto overflow-visible perspective-1000"
     >
       {children}
@@ -102,75 +57,14 @@ function MasterMagnet({ children, radius = 300, pull = 0.4 }: { children: React.
 }
 
 export default function Home() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeQuote, setActiveQuote] = useState({ text: "", author: "" });
   const containerRef = useRef(null);
-
-  useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * STARTUP_QUOTES.length);
-    setActiveQuote(STARTUP_QUOTES[randomIndex]);
-
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2400);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <>
       <CustomCursor />
 
-      {/* Intro Gateway Loader */}
-      <AnimatePresence mode="wait">
-        {isLoading && (
-          <motion.div
-            key="loader"
-            initial={{ opacity: 1 }}
-            exit={{ 
-              opacity: 0,
-              y: "-100%",
-              transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } 
-            }}
-            className="fixed inset-0 bg-black z-[9999] flex flex-col items-center justify-center px-6"
-          >
-            <div className="max-w-2xl text-center space-y-6">
-              <motion.div 
-                initial={{ width: 0 }}
-                animate={{ width: "60px" }}
-                transition={{ duration: 0.8 }}
-                className="h-[2px] bg-purple-500 mx-auto"
-              />
-              <motion.p
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
-                className="text-xl md:text-2xl font-light tracking-wide text-white/90 leading-relaxed italic font-serif"
-              >
-                &ldquo;{activeQuote.text}&rdquo;
-              </motion.p>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8, duration: 0.6 }}
-                className="text-xs uppercase tracking-widest text-purple-500 font-semibold"
-              >
-                — {activeQuote.author}
-              </motion.p>
-            </div>
-            <div className="absolute bottom-12 left-0 w-full flex justify-center">
-              <div className="w-32 h-[1px] bg-white/10 overflow-hidden relative rounded-full">
-                <motion.div 
-                  initial={{ left: "-100%" }}
-                  animate={{ left: "100%" }}
-                  transition={{ duration: 2.2, ease: "easeInOut", repeat: Infinity }}
-                  className="absolute top-0 bottom-0 w-1/2 bg-gradient-to-r from-transparent via-purple-500 to-transparent"
-                />
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* 🌟 NEW INTEGRATION: Mounts the self-contained loading pipeline */}
+      <Preloader />
 
       <div ref={containerRef} className="relative min-h-[200vh] text-white overflow-hidden bg-transparent w-full">
         
@@ -321,12 +215,12 @@ export default function Home() {
 
         <InfiniteMarquee />
 
-        {/* UPGRADED UNIVERSAL SYSTEM ARCHITECTURE DECK - RUNS ON DESKTOP & MOBILE */}
+        {/* Horizon Slide Deck */}
         <div className="w-full bg-transparent relative z-30">
           <HorizonSlideDeck />
         </div>
 
-        {/* Simplified, High-Impact Campus Operations Directory */}
+        {/* Startup Ecosystem Tools */}
         <section className="relative z-30 py-32 max-w-7xl mx-auto px-6 md:px-10 border-t border-white/[0.06]">
           <KineticGlitchReveal>
             <div className="mb-14">
