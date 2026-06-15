@@ -8,7 +8,7 @@ export default function CustomCursor() {
   const [cursorText, setCursorText] = useState("");
   const [isVisible, setIsVisible] = useState(false);
 
-  // Core tracking coordinates using responsive springs for lag-behind fluid physics
+  
   const mouseX = useMotionValue(-100);
   const mouseY = useMotionValue(-100);
   
@@ -23,12 +23,12 @@ export default function CustomCursor() {
       if (!isVisible) setIsVisible(true);
     };
 
-    // Dynamic scanning loop to read underlying element context attributes
+    
     const handleMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target) return;
 
-      // Check nearest structural interactive container roles
+      
       const interactiveEl = target.closest("[data-cursor]");
       if (interactiveEl) {
         const type = interactiveEl.getAttribute("data-cursor") as any;
@@ -57,7 +57,7 @@ export default function CustomCursor() {
 
   if (!isVisible) return null;
 
-  // Dynamic dimension configurations based on current element focus states
+  
   const cursorSizes = {
     default: { width: 8, height: 8, backgroundColor: "#a855f7" },
     hover: { width: 55, height: 55, backgroundColor: "rgba(168, 85, 247, 0.15)", borderColor: "#a855f7" },

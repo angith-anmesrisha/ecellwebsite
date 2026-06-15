@@ -20,28 +20,28 @@ export default function HorizonSlideDeck() {
       const containerHeight = containerRef.current.offsetHeight;
       const windowHeight = window.innerHeight;
 
-      // Calculate how far the user has scrolled through this section (0 to 1)
+      
       const totalScrollableDistance = containerHeight - windowHeight;
       const currentScrollPosition = -rect.top;
       const progress = Math.max(0, Math.min(1, currentScrollPosition / totalScrollableDistance));
       
       setScrollProgress(progress);
 
-      // Trigger hard fixed layout constraints when the element hits the top view
+      
       if (rect.top <= 0 && -rect.top <= totalScrollableDistance) {
         setIsFixed(true);
         setIsPast(false);
       } else if (-rect.top > totalScrollableDistance) {
         setIsFixed(false);
-        setIsPast(true); // User scrolled past the entire module track
+        setIsPast(true); 
       } else {
         setIsFixed(false);
-        setIsPast(false); // User is above the module track
+        setIsPast(false); 
       }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    // Run an initial check to capture layout bounds immediately upon mount
+    
     handleScroll();
 
     return () => window.removeEventListener("scroll", handleScroll);

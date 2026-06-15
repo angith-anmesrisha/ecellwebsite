@@ -6,20 +6,20 @@ import { motion, useMotionValue, useSpring, useScroll, useTransform, useVelocity
 export default function InfiniteMarquee() {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 1. Hook into Global Scroll Velocity Math
+  
   const { scrollY } = useScroll();
   const scrollVelocity = useVelocity(scrollY);
   
-  // 🌟 ULTRA-TUNED: Bumped damping way up (28 -> 45) to entirely flatten explosive speed jumps
+  
   const smoothVelocity = useSpring(scrollVelocity, { stiffness: 25, damping: 45 });
   
-  // 🌟 ULTRA-TUNED: Tightened skew limits (-8/8 -> -4/4) so text slants gracefully on heavy scrolling
+  
   const skewX = useTransform(smoothVelocity, [-1500, 1500], [-4, 4]);
 
-  // 2. Track Base Horizontal Progression
+  
   const basePositionX = useMotionValue(0);
   
-  // 3. Hook into Mouse Movement for Vertical Axis Shifting
+  
   const verticalDrift = useMotionValue(0);
   const smoothVerticalDrift = useSpring(verticalDrift, { stiffness: 40, damping: 18 });
 
@@ -43,7 +43,7 @@ export default function InfiniteMarquee() {
     return () => window.removeEventListener("mousemove", handleGlobalMouseMove);
   }, []);
 
-  // 4. Framer Motion Animation Frame Progression Ticker
+  
   useEffect(() => {
     let frameId: number;
     let lastTime = performance.now();
@@ -52,13 +52,13 @@ export default function InfiniteMarquee() {
       const delta = time - lastTime;
       lastTime = time;
 
-      // 🌟 ULTRA-TUNED: Cut base steady speed in half (0.015 -> 0.006) and lowered velocity reaction factor (0.0006 -> 0.00015)
+      
       const velocityFactor = Math.abs(smoothVelocity.get()) * 0.00015;
       const regularSpeed = 0.006 * delta;
       
       const nextX = basePositionX.get() - (regularSpeed + velocityFactor);
       
-      // Infinite loop wrap point resets at 50% boundary node cleanly
+      
       if (nextX <= -50) {
         basePositionX.set(0);
       } else {

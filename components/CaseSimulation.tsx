@@ -16,7 +16,7 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // --- DETERMINISTIC SCENARIO MATRIX ---
+  
   const scenarioPool = {
     ops: {
       triggers: [
@@ -72,7 +72,7 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
   };
 
   useEffect(() => {
-    // Lightweight deterministic string hash function
+    
     const generateDeterministicIndex = (str: string, poolSize: number) => {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -83,7 +83,7 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
 
     const pools = scenarioPool[department];
     
-    // Hash input strings to choose unique combinations deterministically
+    
     const triggerIdx = generateDeterministicIndex(candidateId + "trig", pools.triggers.length);
     const escalationIdx = generateDeterministicIndex(candidateEmail + "esc", pools.escalations.length);
     const constraintIdx = generateDeterministicIndex(candidateId + candidateEmail, pools.constraints.length);
@@ -91,7 +91,7 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
     const compiledText = `CRITICAL INCIDENT: ${pools.triggers[triggerIdx]}, ${pools.escalations[escalationIdx]}. \n\nINSTRUCTION TASK: ${pools.constraints[constraintIdx]}`;
     setAssembledScenario(compiledText);
 
-    // Verify if candidate has already logged an answer to this dynamic round
+    
     const existingLog = localStorage.getItem(`ecell_r2_submission_${candidateId}`);
     if (existingLog) {
       setUserSubmission(existingLog);
@@ -112,7 +112,7 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
       setIsSubmitting(true);
       
       try {
-        // Dispatching structural payload to the local free evaluation middleware route
+        
         const response = await fetch("/api/recruitment/submit-case", {
           method: "POST",
           headers: {
@@ -127,10 +127,10 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
         const resData = await response.json();
 
         if (response.ok && resData.success) {
-          // Lock the submission state in local memory cache logs
+          
           localStorage.setItem(`ecell_r2_submission_${candidateId}`, userSubmission);
           
-          // Re-sync fallback backup array mapping for the master admin reviews
+          
           const localLogTree = JSON.parse(localStorage.getItem("ecell_submissions_backup_tree") || "[]");
           const syncedTree = localLogTree.map((item: any) => {
             if (item.email.toLowerCase() === candidateEmail.toLowerCase()) {

@@ -7,11 +7,11 @@ export async function GET() {
       return NextResponse.json({ error: "Google microservice URL configuration missing." }, { status: 500 });
     }
 
-    // Handshake to request the active row logs from the Alumni directory sheet
+    
     const response = await fetch(`${targetUrl}?action=get-alumni`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-      next: { revalidate: 10 } // Optional caching layer: auto-refreshes data logs every 10 seconds
+      next: { revalidate: 10 } 
     });
 
     const data = await response.json();

@@ -261,7 +261,7 @@ export default function CrystallineParticleMatrix() {
     <canvas 
       ref={canvasRef} 
       className="absolute inset-0 w-full h-full block pointer-events-none mix-blend-screen" 
-      style={{ zIndex: 50 }} // 🌟 LAYER CORRECTION: Sits on top of layouts so it is 100% visible
+      style={{ zIndex: 50 }} 
     />
   );
 }

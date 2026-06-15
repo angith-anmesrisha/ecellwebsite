@@ -9,14 +9,14 @@ export default function NativeFluidRipple() {
     const handleGlobalClick = (e: MouseEvent) => {
       if (!containerRef.current) return;
 
-      // 🌟 Create a native ripple element container
+      
       const ripple = document.createElement("div");
       
-      // Set the exact birth coordinates based on the mouse click position
+      
       ripple.className = "absolute rounded-full pointer-events-none border border-blue-400/40 bg-gradient-to-r from-blue-500/5 to-transparent";
       
-      // Starting styles for a fine, tight concentric ripple ring
-      const size = 20; // Starting radius
+      
+      const size = 20; 
       ripple.style.width = `${size}px`;
       ripple.style.height = `${size}px`;
       ripple.style.left = `${e.pageX - size / 2}px`;
@@ -27,13 +27,13 @@ export default function NativeFluidRipple() {
 
       containerRef.current.appendChild(ripple);
 
-      // 🌟 Trigger hardware acceleration expansion frame
+      
       requestAnimationFrame(() => {
-        ripple.style.transform = "scale(15)"; // Controls the maximum expansion size
+        ripple.style.transform = "scale(15)"; 
         ripple.style.opacity = "0";
       });
 
-      // Clear the element out of the active DOM tree once the animation cycle completes
+      
       setTimeout(() => {
         ripple.remove();
       }, 1200);
@@ -47,7 +47,7 @@ export default function NativeFluidRipple() {
     <div 
       ref={containerRef} 
       className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden" 
-      style={{ zIndex: 99999 }} // Forces it above every single layer on the page
+      style={{ zIndex: 99999 }} 
     />
   );
 }

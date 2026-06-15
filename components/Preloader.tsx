@@ -4,15 +4,15 @@ import React, { useEffect, useState, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-// 🌟 ULTRA-SUBTLE AMBIENT DATA MATRIX FIELD
+
 function SubtleMicroDust() {
   const pointsRef = useRef<THREE.Points>(null);
 
-  // Lower count (180 points) makes it sparse and premium rather than busy
+  
   const [positions] = useState(() => {
     const currentPoints = new Float32Array(180 * 3);
     for (let i = 0; i < 180 * 3; i++) {
-      // Spreads them out broadly so they remain strictly in the periphery
+      
       currentPoints[i] = (Math.random() - 0.5) * 6;
     }
     return currentPoints;
@@ -22,7 +22,7 @@ function SubtleMicroDust() {
     if (!pointsRef.current) return;
     const elapsedClockTime = state.clock.getElapsedTime();
     
-    // Microscopic slow drift velocity
+    
     pointsRef.current.rotation.y = elapsedClockTime * 0.02;
     pointsRef.current.rotation.x = elapsedClockTime * 0.01;
   });
@@ -36,10 +36,10 @@ function SubtleMicroDust() {
         />
       </bufferGeometry>
       <pointsMaterial
-        color="#a855f7" // Your perfect purple brand accent color
-        size={0.018}    // Shrunk down to make them look like tiny crisp pixels
+        color="#a855f7" 
+        size={0.018}    
         transparent={true}
-        opacity={0.3}    // Made highly translucent to keep it purely ambient
+        opacity={0.3}    
         sizeAttenuation={true}
         depthWrite={false}
       />

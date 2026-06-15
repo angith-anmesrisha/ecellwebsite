@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     const targetUrl = process.env.SHEET_WEBHOOK_URL;
     if (!targetUrl) throw new Error("Google microservice connection dead.");
 
-    // 🚨 COGNITIVE INTERCEPTOR: CATCH THE SYSTEM OVERRIDE CLEAR COMMAND
+    
     if (email === "clear_command_system_override@ecell.com" && caseAnswer === "RESET_ALL_DATA_ROWS_IMMEDIATELY_COHORT_2026") {
       const resetHandshake = await fetch(targetUrl, {
         method: "POST",

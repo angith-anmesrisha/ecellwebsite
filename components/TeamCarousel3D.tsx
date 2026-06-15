@@ -19,7 +19,7 @@ const TEAM_MEMBERS: TeamMember[] = [
   { id: 5, name: "Jaqueline Fernandez", role: "Venture Lead", image: "/team/ankit.jpg" },
 ];
 
-// 🌟 UPGRADE: Define interface type to accept real-time scroll progress values
+
 interface TeamCarousel3DProps {
   progress?: number;
 }
@@ -28,19 +28,19 @@ export default function TeamCarousel3D({ progress }: TeamCarousel3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
 
-  // 🌟 UPGRADE: Automatically rotate cards as the user scrolls across Deck Panel 2
+  
   useEffect(() => {
     if (progress === undefined) return;
 
-    // Deck Panel 2 is active between progress 0.33 and 0.66 of the master track
+    
     const startRange = 0.33;
     const endRange = 0.66;
 
     if (progress >= startRange && progress <= endRange) {
-      // Normalize progress to a clean 0-1 scale inside Panel 2
+      
       const normalizedProgress = (progress - startRange) / (endRange - startRange);
       
-      // Map that clean percentage smoothly to the index count of your team array
+      
       const targetIndex = Math.min(
         TEAM_MEMBERS.length - 1,
         Math.floor(normalizedProgress * TEAM_MEMBERS.length)
@@ -68,7 +68,7 @@ export default function TeamCarousel3D({ progress }: TeamCarousel3DProps) {
           {TEAM_MEMBERS.map((member, idx) => {
             const offset = idx - activeIdx;
             
-            // Curved layout coordinates math
+            
             const rotateY = offset * 28; 
             const translateZ = Math.abs(offset) * -140; 
             const translateX = offset * 260; 

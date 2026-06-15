@@ -8,7 +8,7 @@ export default function GlobalBackButton() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // If the user is on the main landing homepage, do not render the back button
+  
   if (pathname === "/") return null;
 
   return (

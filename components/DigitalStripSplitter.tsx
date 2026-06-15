@@ -14,7 +14,7 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
   const [isHovered, setIsHovered] = useState(false);
   const elementRef = useRef<HTMLDivElement>(null);
 
-  // 🌟 TRIONN UPGRADE: Broadcast exact coordinates on hover to snap background grid lines
+  
   const handleMouseEnter = () => {
     setIsHovered(true);
     if (!elementRef.current) return;
@@ -37,7 +37,7 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
     window.dispatchEvent(new CustomEvent("gridSnapInactive"));
   };
 
-  // 🌟 TRIONN UPGRADE: Capture absolute cursor click coordinates to center the expansion inversion wave
+  
   const handleClick = (e: React.MouseEvent) => {
     window.dispatchEvent(
       new CustomEvent("canvasInversionTrigger", {
@@ -111,7 +111,7 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
             transition={{ type: "spring", stiffness: 180, damping: 12 }}
             className="text-white/30 group-hover:text-purple-400 font-mono text-sm pr-4 shrink-0"
           >
-            // →
+            
           </motion.div>
         </div>
 

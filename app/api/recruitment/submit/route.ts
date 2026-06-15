@@ -7,9 +7,9 @@ const SERVER_ANSWER_KEY = [
   { pointsMap: [25, 15, 5] }
 ];
 
-// ==========================================================
-// 🌟 FIX #5: GET HANDLER FOR STUDENT RESULTS STATUS LOOKUPS
-// ==========================================================
+
+
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
             name: studentMatch.name,
             status: studentMatch.status || "PENDING",
             score: parseInt(studentMatch.rollNumber) || 0,
-            choices: studentMatch.customAnswers || "" // Forwards customAnswers string carrying schedule metadata
+            choices: studentMatch.customAnswers || "" 
           });
         }
       }
@@ -56,9 +56,9 @@ export async function POST(request: Request) {
     const targetUrl = process.env.SHEET_WEBHOOK_URL;
     if (!targetUrl) throw new Error("Google webhook destination variable is blank.");
 
-    // ==========================================================
-    // ACTION 1: PRE-QUIZ SECURITY ELIGIBILITY CHECK
-    // ==========================================================
+    
+    
+    
     if (body.action === "check-initial-eligibility") {
       const { email } = body;
       if (!email) return NextResponse.json({ error: "Missing identity parameter fields." }, { status: 400 });
@@ -101,20 +101,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, isExistingSession: false });
     }
 
-    // ==========================================================
-    // 🌟 FIX #6: HANDLE SYSTEM COHORT BULK WAITLIST AUTOMATION
-    // ==========================================================
+    
+    
+    
     if (body.action === "bulk-waitlist") {
       const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`);
       const sheetData = await sheetFetch.json();
 
       if (sheetData.success && Array.isArray(sheetData.data)) {
-        // Filter down to capture candidates whose status column is explicitly blank or "PENDING"
+        
         const pendingRows = sheetData.data.filter(
           (row: any) => !row.status || row.status.toString().toUpperCase() === "PENDING"
         );
 
-        // Dispatches sequential batch mutation fetch frames to your Apps Script sheet worker
+        
         for (const candidate of pendingRows) {
           await fetch(targetUrl, {
             method: "POST",
@@ -132,16 +132,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to read database configurations snapshot." }, { status: 400 });
     }
 
-    // ==========================================================
-    // ACTION 2: HANDLE ROUND 2 CASE SUBMISSION & AUTOMATED CONFIRMATION EMAIL
-    // ==========================================================
+    
+    
+    
     if (body.action === "update-case") {
       const { name, email, caseAnswer } = body;
       if (!email || !caseAnswer) {
         return NextResponse.json({ error: "Missing required core answer parameters." }, { status: 400 });
       }
 
-      // 1. Save Case Study Text directly into Column G of your Spreadsheet
+      
       const sheetHandshake = await fetch(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -157,7 +157,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: result.error || "Failed to append case payload on data matrix rows." }, { status: 400 });
       }
 
-      // 2. Fire the Automated Confirmation Email directly via your active institutional Apps Script Mail pipeline
+      
       try {
         await fetch(targetUrl, {
           method: "POST",
@@ -170,15 +170,15 @@ export async function POST(request: Request) {
           })
         });
       } catch (emailErr) {
-        // Suppress email networking blocks from interrupting successful data logging parameters
+        
       }
 
       return NextResponse.json({ success: true });
     }
 
-    // ==========================================================
-    // ACTION 3: STANDARD ROUND 1 SCORE CALCULATION & RESUME SUBMISSION
-    // ==========================================================
+    
+    
+    
     const { name, email, dept, round1Choices, resumeFileBase64, resumeFileName } = body;
 
     if (!name || !email || !dept || !Array.isArray(round1Choices)) {

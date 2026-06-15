@@ -13,7 +13,7 @@ export default function FracturedTextButton({ text, href }: Props) {
   const containerRef = useRef<HTMLButtonElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Smooth elastic magnetism for the button base container
+  
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const springX = useSpring(x, { stiffness: 150, damping: 15, mass: 0.2 });
@@ -55,10 +55,10 @@ export default function FracturedTextButton({ text, href }: Props) {
           {letters.map((char, idx) => {
             if (char === " ") return <span key={idx} className="w-2" />;
 
-            // 🌟 KINETIC SPREAD MATH: 
-            // - Calculates the letter position relative to the middle of the string
-            // - Pushes characters left or right based on their position to widen the text string
-            // - Throws them vertically clean out of the box boundaries
+            
+            
+            
+            
             const midIndex = letters.length / 2;
             const directionFactor = idx - midIndex;
             
@@ -81,7 +81,7 @@ export default function FracturedTextButton({ text, href }: Props) {
                   stiffness: 140,
                   damping: 11,
                   mass: 0.3,
-                  // Staggered trigger array loop
+                  
                   delay: isHovered ? idx * 0.015 : (letters.length - idx) * 0.01
                 }}
                 className="inline-block will-change-transform font-mono"

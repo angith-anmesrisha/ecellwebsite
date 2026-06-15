@@ -23,7 +23,7 @@ export default function AnimatedWord() {
       <AnimatePresence mode="wait">
         <motion.span
           key={index}
-          // TRIONN SIGNATURE: Oversized brutalist stroke styling combined with clean interactive values
+          
           className="absolute left-0 top-0 font-black whitespace-nowrap tracking-tighter uppercase text-zinc-900 drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
           style={{
             WebkitTextStroke: "2px #a855f7",

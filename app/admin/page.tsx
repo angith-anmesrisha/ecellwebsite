@@ -37,7 +37,7 @@ export default function AdvancedAdminHub() {
   const [activeTab, setActiveTab] = useState<"hub" | "analytics" | "recruitment">("hub");
   const [recruitmentSubTab, setRecruitmentSubTab] = useState<"gui_controls" | "audit" | "peer">("gui_controls");
 
-  // Database Management States
+  
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [interviewScore, setInterviewScore] = useState("80");
@@ -45,14 +45,14 @@ export default function AdvancedAdminHub() {
   const [sectorData, setSectorData] = useState<DistributionItem[]>([]);
   const [funnelData, setFunnelData] = useState<FunnelItem[]>([]);
 
-  // Interview Panel Evaluation Variables
+  
   const [interviewerName, setInterviewerName] = useState("");
   const [techScore, setTechScore] = useState("80");
   const [commScore, setCommScore] = useState("80");
   const [solveScore, setSolveScore] = useState("80");
   const [reviewNotes, setReviewNotes] = useState("");
 
-  // Graphical UI Filtering & Action States
+  
   const [recruitmentPhase, setRecruitmentPhase] = useState("LOCKED");
   const [guiSearchQuery, setGuiSearchQuery] = useState("");
   const [guiTrackFilter, setGuiTrackFilter] = useState("ALL");
@@ -60,13 +60,13 @@ export default function AdvancedAdminHub() {
   const [transferTrackTarget, setTransferTrackTarget] = useState("ops");
   const [manualScheduleString, setManualScheduleString] = useState("");
 
-  // Stress Simulator State Trackers
+  
   const [stressScenario, setStressScenario] = useState("");
   const [isStressLoading, setIsStressLoading] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Console Log States Structured as Objects for Exact Independent Colors
+  
   const [allTerminalLogs, setAllTerminalLogs] = useState<LogEntry[]>([]);
   const [visibleLogs, setVisibleLogs] = useState<LogEntry[]>([]);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
@@ -74,7 +74,7 @@ export default function AdvancedAdminHub() {
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const totalRowsCountRef = useRef<number>(0);
   
-  // Instrumentation Performance Trackers
+  
   const sessionStartTimeRef = useRef<number>(Date.now());
   const lastFetchLatencyRef = useRef<number>(0);
 
@@ -184,7 +184,7 @@ useEffect(() => {
       logTerminalMsg("System online.", "success");
       logTerminalMsg("CLI Core Interface engine activated cleanly.", "info");
       
-      // FIXED: Pull the master running state straight from the API layer instead of a stale browser cache key
+      
       const synchronizeMasterPhaseState = async () => {
         try {
           const res = await fetch("/api/recruitment/admin");
@@ -195,7 +195,7 @@ useEffect(() => {
             logTerminalMsg(`Synchronized admin panel UI state with global server phase: [${data.phase}]`, "success");
           }
         } catch (err) {
-          // Fall back to storage safely if offline
+          
           const savedPhase = localStorage.getItem("ecell_recruitment_phase") || "LOCKED";
           setRecruitmentPhase(savedPhase);
         }
@@ -206,7 +206,7 @@ useEffect(() => {
     }
   }, [isAuthenticated]);
 
- // FIXED: Synchronize local state with the global Vercel server memory engine instantly
+ 
   const handlePhaseChangeGUI = async (newPhase: string) => {
     setRecruitmentPhase(newPhase);
     localStorage.setItem("ecell_recruitment_phase", newPhase);
@@ -238,7 +238,7 @@ useEffect(() => {
     setIsSubmitting(true);
     logTerminalMsg("Running centralized bulk updates to transition pending candidates to waitlist staging...", "exec");
     try {
-      // FIXED: Pointed to our unified API gateway handler matrix route cleanly
+      
       const res = await fetch("/api/recruitment/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -260,7 +260,7 @@ useEffect(() => {
   logTerminalMsg(`Updating candidate status to [${statusTarget}]...`, "exec");
   
   try {
-    // Step 1: Update the candidate's status in the Google Sheet database
+    
     const dbResponse = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -272,13 +272,13 @@ useEffect(() => {
     if (dbResult.success) {
       logTerminalMsg(`Status successfully updated to ${statusTarget} for: ${candidateId}`, "success");
       
-      // Find the candidate's details in local memory cache to extract their email and name
+      
       const candidateMatch = candidates.find(c => c.id === candidateId);
       
       if (candidateMatch) {
         logTerminalMsg(`Automatically dispatching notification email to: ${candidateMatch.email}...`, "exec");
         
-        // Step 2: Automatically trigger the email dispatch route using the fresh status update
+        
         await fetch(webhookUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -294,7 +294,7 @@ useEffect(() => {
         logTerminalMsg(`Notification email successfully sent from ecell@bimtech.ac.in!`, "success");
       }
       
-      // Refresh your dashboard metrics display smoothly
+      
       await runBackgroundDatabaseCheck(false, false);
     }
   } catch (e) {
@@ -664,7 +664,7 @@ useEffect(() => {
     
     logTerminalMsg(`Initializing score upload pipeline for candidate: ${selectedCandidate.id}...`, "info");
     
-    // Safety check: Prevent NaN crashes by validating scores before sending
+    
     const validatedTech = Math.max(0, Math.min(100, parseInt(techScore) || 0));
     const validatedComm = Math.max(0, Math.min(100, parseInt(commScore) || 0));
     const validatedSolve = Math.max(0, Math.min(100, parseInt(solveScore) || 0));
@@ -675,7 +675,7 @@ useEffect(() => {
       
       const response = await fetch(webhookUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" }, // Clean JSON connection channel established
+        headers: { "Content-Type": "application/json" }, 
         body: JSON.stringify({ 
           action: "submit-peer-review", 
           candidateId: selectedCandidate.id, 
@@ -717,7 +717,7 @@ useEffect(() => {
     try {
       const response = await fetch(webhookUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" }, // Clean JSON connection channel established
+        headers: { "Content-Type": "application/json" }, 
         body: JSON.stringify({ 
           action: "update-shortlist", 
           candidateId: selectedCandidate.id, 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-// Local heuristic keyword weight definitions for analyzing venture problems
+
 const STRATEGIC_MARKET_KEYWORDS = [
   { words: ["void", "voids", "gap", "friction", "inefficiency"], weight: 15 },
   { words: ["marketing", "b2b", "acquisition", "conversion", "branding"], weight: 15 },
@@ -17,8 +17,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Startup parameters incomplete." }, { status: 400 });
     }
 
-    // 1. Calculate an objective Venture Viability Rating using free heuristic parameters
-    let baseViabilityScore = 45; // Minimum starting threshold score
+    
+    let baseViabilityScore = 45; 
     const cleanText = problemStatement.toLowerCase();
 
     STRATEGIC_MARKET_KEYWORDS.forEach((cluster) => {
@@ -26,11 +26,11 @@ export async function POST(request: Request) {
       if (matched) baseViabilityScore += cluster.weight;
     });
 
-    // Add pricing premium incentives dynamically
+    
     if (pricingMatrix?.toLowerCase().includes("premium")) baseViabilityScore += 10;
-    if (baseViabilityScore > 98) baseViabilityScore = 98; // Cap maximum algorithmic potential
+    if (baseViabilityScore > 98) baseViabilityScore = 98; 
 
-    // 2. Draft dynamic, domain-specific sandbox analysis strings natively for the right container panel
+    
     const sectorAlerts: Record<string, string> = {
       "B2B SaaS Infrastructure Tools": "Market scalability potential is exceptionally high. Your focus should prioritize insulating initial enterprise contract nodes against churn overhead risks.",
       "default": "Solid unit economics roadmap framework configuration. Validate early customer acquisition costs before aggressively scaling outbound growth engines."
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
     const sectorReport = sectorAlerts[domainSector] || sectorAlerts["default"];
 
-    // 3. Dispatch the complete simulated dataset back to the UI panel block
+    
     return NextResponse.json({
       success: true,
       score: baseViabilityScore,

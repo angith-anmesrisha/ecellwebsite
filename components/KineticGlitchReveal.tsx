@@ -25,7 +25,7 @@ export default function KineticGlitchReveal({ children, delay = 0 }: Props) {
     }
   }, [isInView]);
 
-  // 🌟 THE FIX: Explicitly typed as 'Variants' to enforce compatibility with motion.div
+  
   const glitchVariants: Variants = {
     hidden: { 
       opacity: 0, 

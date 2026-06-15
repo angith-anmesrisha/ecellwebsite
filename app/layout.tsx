@@ -5,7 +5,7 @@ import GlobalBackButton from "@/components/GlobalBackButton";
 import PageTransition from "@/components/PageTransition";
 import SmoothScroll from "@/components/SmoothScroll"; 
 import CrystallineParticleMatrix from "@/components/CrystallineParticleMatrix";
-import NativeFluidRipple from "@/components/NativeFluidRipple"; // 🌟 Import the new engine
+import NativeFluidRipple from "@/components/NativeFluidRipple"; 
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {

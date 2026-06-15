@@ -24,7 +24,7 @@ interface RegistrationRecord {
 }
 
 export default function AdminEventsPanel() {
-  // Security Authentication States
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [securityError, setSecurityError] = useState("");
@@ -34,13 +34,13 @@ export default function AdminEventsPanel() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"create" | "history">("create");
 
-  // Create Event Form States
+  
   const [newTitle, setNewTitle] = useState("");
   const [newDate, setNewDate] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newStatus, setNewStatus] = useState("ACTIVE");
   
-  // Upload States
+  
   const [bannerUrl, setBannerUrl] = useState(""); 
   const [isUploading, setIsUploading] = useState(false);
   
@@ -49,7 +49,7 @@ export default function AdminEventsPanel() {
   const [selectedEventFilter, setSelectedEventFilter] = useState("all");
 
   useEffect(() => {
-    // Only query database rows if the security key check passes successfully
+    
     if (isAuthenticated) {
       fetchAdminData();
     }
@@ -73,7 +73,7 @@ export default function AdminEventsPanel() {
     }
   };
 
-  // SECURITY KEY HANDLER
+  
   const handleSecurityCheck = (e: React.FormEvent) => {
     e.preventDefault();
     const globalMasterKey = process.env.NEXT_PUBLIC_ADMIN_MASTER_KEY;
@@ -162,7 +162,7 @@ export default function AdminEventsPanel() {
     r => selectedEventFilter === "all" || r.eventId === selectedEventFilter
   );
 
-  // 🔒 GATEKEEPER CONDITION: SHOW LOGIN FORM IF UNVERIFIED
+  
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 font-sans antialiased">
@@ -201,7 +201,7 @@ export default function AdminEventsPanel() {
     );
   }
 
-  // 🔓 ACCESS GRANTED: RENDER COMPLETE MANAGEMENT SYSTEM
+  
   return (
     <div className="min-h-screen bg-black text-white py-16 px-4 md:px-8 font-sans antialiased">
       <div className="max-w-6xl mx-auto space-y-8">

@@ -30,7 +30,7 @@ export default function PitchSimulator() {
   const [advisoryAssessment, setAdvisoryAssessment] = useState("");
   const [isViolationBlock, setIsViolationBlock] = useState(false);
 
-  // Dynamic state stores fetched straight from Llama 3
+  
   const [dynamicPhases, setDynamicPhases] = useState<RoadmapStep[]>([]);
   const [dynamicHurdles, setDynamicHurdles] = useState<HurdleStep[]>([]);
 
@@ -66,7 +66,7 @@ export default function PitchSimulator() {
         return;
       }
 
-      // Read values cleanly from the live Llama 3 analysis
+      
       const analysis = resData.aiAnalysis;
       
       setViabilityIndex(analysis.viabilityScore);

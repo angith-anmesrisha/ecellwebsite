@@ -13,11 +13,11 @@ export default function FluidHoverTile({ children, onClick, className = "" }: Pr
   const containerRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Spotlight pointer coordinate stores
+  
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  // Smooth content drifting spring trackers
+  
   const contentX = useMotionValue(0);
   const contentY = useMotionValue(0);
   const springX = useSpring(contentX, { stiffness: 150, damping: 20, mass: 0.2 });
@@ -33,7 +33,7 @@ export default function FluidHoverTile({ children, onClick, className = "" }: Pr
     mouseX.set(x);
     mouseY.set(y);
 
-    // Subtle alignment drift towards tracking vector coordinates
+    
     const pctX = (x / bounds.width) - 0.5;
     const pctY = (y / bounds.height) - 0.5;
     contentX.set(pctX * 12);

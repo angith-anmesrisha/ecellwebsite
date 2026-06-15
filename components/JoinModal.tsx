@@ -31,7 +31,7 @@ const QUIZ_STEPS = [
 ];
 
 export default function JoinModal({ isOpen, onClose }: JoinModalProps) {
-  const [step, setStep] = useState(0); // 0 = Intro, 1 & 2 = Quiz Steps, 3 = Result/Form
+  const [step, setStep] = useState(0); 
   const [scores, setScores] = useState({ builder: 0, visionary: 0, operator: 0 });
   const [persona, setPersona] = useState<{ name: string; desc: string; icon: any } | null>(null);
 
@@ -42,7 +42,7 @@ export default function JoinModal({ isOpen, onClose }: JoinModalProps) {
     if (step < QUIZ_STEPS.length) {
       setStep(step + 1);
     } else {
-      // Calculate final persona based on highest score
+      
       const highest = Object.keys(updatedScores).reduce((a, b) => 
         updatedScores[a as keyof typeof scores] > updatedScores[b as keyof typeof scores] ? a : b
       ) as keyof typeof scores;
@@ -54,7 +54,7 @@ export default function JoinModal({ isOpen, onClose }: JoinModalProps) {
       };
 
       setPersona(personas[highest]);
-      setStep(QUIZ_STEPS.length + 1); // Jump to final form layout
+      setStep(QUIZ_STEPS.length + 1); 
     }
   };
 

@@ -18,7 +18,7 @@ export default function StudentAdmissionsPortal() {
     setStudentRecord(null);
 
     try {
-      // FIXED: Routed straight to our unified, highly secured backend pipeline endpoint mapping
+      
       const res = await fetch(`/api/recruitment/submit?action=check-student-result&email=${encodeURIComponent(emailInput.trim().toLowerCase())}`);
       const data = await res.json();
       
@@ -27,7 +27,7 @@ export default function StudentAdmissionsPortal() {
           name: data.name,
           status: data.status.toUpperCase(),
           score: data.score,
-          rawNotes: data.choices || "" // Maps evaluation customAnswers string holding [SCHEDULED_PI] markers
+          rawNotes: data.choices || "" 
         });
       } else {
         setSearchError(data.error || "No registration profile matches that email coordinates.");
@@ -39,7 +39,7 @@ export default function StudentAdmissionsPortal() {
     }
   };
 
-  // HELPER ENGINE: Extracts the admin-allocated interview details securely out of data records
+  
   const extractInterviewSlot = (notesText: string) => {
     if (!notesText) return null;
     const matchMarker = notesText.match(/\[SCHEDULED_PI\]:\s*(.*)/i);

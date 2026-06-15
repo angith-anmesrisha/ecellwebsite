@@ -7,21 +7,21 @@ import Image from "next/image";
 interface TeamCardProps {
   name: string;
   role: string;
-  imagePath?: string; // Future-proof prop: Pass an image URL like "/team/angith.jpg" later
+  imagePath?: string; 
 }
 
 export default function TeamCard({ name, role, imagePath }: TeamCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   
-  // Use lower velocity tracking motion values to eliminate micro-stutter
+  
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  // Softened spring values: lower stiffness and higher damping create that heavy, premium glide
+  
   const mouseXSpring = useSpring(x, { stiffness: 120, damping: 22, mass: 0.6 });
   const mouseYSpring = useSpring(y, { stiffness: 120, damping: 22, mass: 0.6 });
 
-  // Tightened tilt range to max 8 degrees for a cleaner, high-end look
+  
   const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["8deg", "-8deg"]);
   const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-8deg", "8deg"]);
 
@@ -29,7 +29,7 @@ export default function TeamCard({ name, role, imagePath }: TeamCardProps) {
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
     
-    // Normalized calculation relative to center point
+    
     const width = rect.width;
     const height = rect.height;
     const mouseX = e.clientX - rect.left;
@@ -71,7 +71,7 @@ export default function TeamCard({ name, role, imagePath }: TeamCardProps) {
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
             </>
           ) : (
-            // Fallback premium layout when no image is uploaded yet
+            
             <div className="absolute inset-0 bg-gradient-to-br from-zinc-950 via-zinc-900/50 to-black bg-cyber-grid opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
           )}
         </div>

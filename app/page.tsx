@@ -18,7 +18,7 @@ import KineticGlitchReveal from '@/components/KineticGlitchReveal';
 import DigitalStripSplitter from '@/components/DigitalStripSplitter';
 import InfiniteMarquee from '@/components/InfiniteMarquee';
 import HorizonSlideDeck from '@/components/HorizonSlideDeck';
-import Preloader from "@/components/Preloader"; // 🌟 Imported your new premium preloader
+import Preloader from "@/components/Preloader"; 
 
 interface ModuleNode {
   title: string;

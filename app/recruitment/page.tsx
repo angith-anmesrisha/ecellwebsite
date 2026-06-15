@@ -14,7 +14,7 @@ interface Candidate {
 export default function RecruitmentPortal() {
   const [hasMounted, setHasMounted] = useState(false);
   
-  // Recruitment Phase Management States
+  
   const [portalPhase, setPortalPhase] = useState<"LOCKED" | "REGISTRATION_OPEN" | "COMPLETED">("LOCKED");
   const [daysRemaining, setDaysRemaining] = useState("00");
   const [hoursRemaining, setHoursRemaining] = useState("00");
@@ -23,13 +23,13 @@ export default function RecruitmentPortal() {
   const [bypassInput, setBypassInput] = useState("");
   const [isBypassed, setIsBypassed] = useState(false);
 
-  // Registration Form States
+  
   const [activeCandidate, setActiveCandidate] = useState<Candidate | null>(null);
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regDept, setRegDept] = useState<"ops" | "media" | "spons">("ops");
   
-  // Assessment Progress States
+  
   const [currentRound, setCurrentRound] = useState<1 | 2>(1);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [runningScore, setRunningScore] = useState<number | null>(null);
@@ -41,7 +41,7 @@ export default function RecruitmentPortal() {
   const [userR2Submission, setUserR2Submission] = useState("");
   const [r2Completed, setR2Completed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // PDF Resume Staging Hooks
+  
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [base64String, setBase64String] = useState<string>("");
 
@@ -138,7 +138,7 @@ export default function RecruitmentPortal() {
     setHasMounted(true);
 
     const checkLockStatus = async () => {
-      // If the admin has already bypassed it locally via the passkey input, let them in
+      
       if (isBypassed) {
         setPortalPhase("REGISTRATION_OPEN");
         return;
@@ -147,7 +147,7 @@ export default function RecruitmentPortal() {
       let serverPhase = "LOCKED";
 
       try {
-        // Fetch the true configuration phase safely from the server side
+        
         const res = await fetch("/api/recruitment/admin");
         const data = await res.json();
         
@@ -164,10 +164,10 @@ export default function RecruitmentPortal() {
           }
         }
       } catch (err) {
-        // Fallback gracefully if network drops momentarily
+        
       }
 
-      // If the server explicitly says LOCKED, calculate countdown mechanics
+      
       setPortalPhase("LOCKED");
       const targetLaunchRaw = localStorage.getItem("ecell_recruitment_launch_date") || "2026-07-15T00:00:00";
       const targetTime = new Date(targetLaunchRaw).getTime();
@@ -175,11 +175,11 @@ export default function RecruitmentPortal() {
       const difference = targetTime - currentTime;
 
       if (difference <= 0) {
-        // Only open automatically if the server wasn't explicitly set to LOCKED by an admin
+        
         if (serverPhase !== "LOCKED") {
           setPortalPhase("REGISTRATION_OPEN");
         } else {
-          // If the admin forced a LOCKED state, keep the UI locked and zero out timer variables
+          
           setDaysRemaining("00");
           setHoursRemaining("00");
           setMinutesRemaining("00");
@@ -205,7 +205,7 @@ export default function RecruitmentPortal() {
       const parsedCandidate = JSON.parse(cachedUserRaw) as Candidate;
       setActiveCandidate(parsedCandidate);
 
-      // FIXED: Safely restore active mid-quiz question indexes and answer choices
+      
       const savedQuizIndex = localStorage.getItem(`ecell_quiz_index_${parsedCandidate.id}`);
       const savedQuizChoices = localStorage.getItem(`ecell_quiz_choices_${parsedCandidate.id}`);
       if (savedQuizIndex && savedQuizChoices && !localStorage.getItem(`ecell_progress_${parsedCandidate.id}`)) {
@@ -260,7 +260,7 @@ export default function RecruitmentPortal() {
     const val = e.target.value;
     setBypassInput(val);
     
-    // Evaluate strings when typing threshold crosses a standard length limit
+    
     if (val.length >= 4) {
       try {
         const res = await fetch("/api/recruitment/admin", {
@@ -276,7 +276,7 @@ export default function RecruitmentPortal() {
           setPortalPhase("REGISTRATION_OPEN");
         }
       } catch (err) {
-        // Suppress mid-keystroke intermediate network logs gracefully
+        
       }
     }
   };
@@ -290,7 +290,7 @@ const handleFileAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         return;
       }
       
-      if (file.size > 4 * 1024 * 1024) { // 4MB Size limit safeguard
+      if (file.size > 4 * 1024 * 1024) { 
         alert("File size bounds exceeded. Please compress your resume document sheet below 4MB.");
         e.target.value = "";
         return;
@@ -300,7 +300,7 @@ const handleFileAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const reader = new FileReader();
       reader.onload = () => {
         const rawResult = reader.result as string;
-        // Strip out metadata header data padding block prefix string seamlessly
+        
         const cleanBase64 = rawResult.split(",")[1];
         setBase64String(cleanBase64);
       };
@@ -314,7 +314,7 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
     setIsSubmitting(true);
 
     try {
-      // Handshake with the backend to verify historical entry states before starting
+      
       const res = await fetch("/api/recruitment/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -333,12 +333,12 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
 
       if (data.success) {
         if (data.isExistingSession) {
-          // Seamlessly restore their progress if they passed Round 1 historically
+          
           const restoredCandidate: Candidate = {
             id: data.candidate.regId,
             name: data.candidate.name,
             email: data.candidate.email,
-            dept: regDept // Map to their currently selected department node dynamically
+            dept: regDept 
           };
 
           localStorage.setItem("ecell_active_candidate_session", JSON.stringify(restoredCandidate));
@@ -352,7 +352,7 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
           
           alert(`Welcome back, ${data.candidate.name}. Your verified score (${data.progress.score}/100) has been pulled from the server database. Proceeding to Case Stage.`);
         } else {
-          // Standard execution path for an actual fresh applicant
+          
           const newCandidate: Candidate = {
             id: "cand_" + Math.random().toString(36).substring(2, 11),
             name: regName.trim(),
@@ -380,7 +380,7 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
     if (currentQuestionIdx + 1 < quizQuestions.length) {
       const nextIdx = currentQuestionIdx + 1;
       setCurrentQuestionIdx(nextIdx);
-      // FIXED: Save state to cache immediately to secure current progression against reload exploits
+      
       localStorage.setItem(`ecell_quiz_index_${activeCandidate.id}`, nextIdx.toString());
       localStorage.setItem(`ecell_quiz_choices_${activeCandidate.id}`, JSON.stringify(updatedIndices));
     } else {
@@ -395,7 +395,7 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
             email: activeCandidate.email,
             dept: activeCandidate.dept,
             round1Choices: updatedIndices,
-            resumeFileBase64: base64String, // Passes the file stream securely
+            resumeFileBase64: base64String, 
             resumeFileName: selectedFile ? `${activeCandidate.name.replace(/\s+/g, '_')}_Resume.pdf` : "Candidate_Resume.pdf"
           })
         });
@@ -411,7 +411,7 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
             passed: auditData.passedRound1
           }));
 
-          // FIXED: Clear runtime quiz tracking parameters cleanly on submission completion
+          
           localStorage.removeItem(`ecell_quiz_index_${activeCandidate.id}`);
           localStorage.removeItem(`ecell_quiz_choices_${activeCandidate.id}`);
 
@@ -452,7 +452,7 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
     if (activeCandidate && confirm("Are you sure you want to lock your final answers? Submissions cannot be edited afterwards.")) {
       setIsSubmitting(true);
       try {
-        // FIXED: Route parameters mapped to our unified endpoint layer with email notice trigger flags
+        
         const response = await fetch("/api/recruitment/submit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -490,7 +490,7 @@ const handleRegisterCandidate = async (e: React.FormEvent) => {
     }
   };
 
-  // PHASE 1 VIEWPORT DEPLOYMENT: COUNTDOWN TIMER BARRICADE
+  
   if (portalPhase === "LOCKED") {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col justify-center items-center px-4 select-none antialiased">

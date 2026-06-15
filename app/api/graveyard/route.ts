@@ -10,7 +10,7 @@ export async function GET() {
     const response = await fetch(`${targetUrl}?action=get-graveyard`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-      next: { revalidate: 10 } // Auto-refreshes data logs from cache pools every 10 seconds
+      next: { revalidate: 10 } 
     });
 
     const data = await response.json();

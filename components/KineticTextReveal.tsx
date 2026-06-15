@@ -14,13 +14,13 @@ const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$
 export default function KineticTextReveal({ text, className = "", delay = 0 }: Props) {
   const containerRef = useRef<HTMLSpanElement>(null);
   
-  // 🌟 THE FIX: Changed 'once: true' to 'once: false' so it listens for repeat scroll events
+  
   const isInView = useInView(containerRef, { once: false, margin: "-10% 0px" });
   const [displayText, setDisplayText] = useState(text);
 
   useEffect(() => {
-    // If the element leaves the viewport, reset the text to blank or its scrambled state 
-    // so it's ready to re-scramble cleanly when the user scrolls back
+    
+    
     if (!isInView) {
       setDisplayText("");
       return;

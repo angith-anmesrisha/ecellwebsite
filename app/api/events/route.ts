@@ -2,17 +2,17 @@ import { NextResponse } from "next/server";
 
 const TARGET_URL = process.env.SHEET_WEBHOOK_URL;
 
-// GET: Fetch master events list or complete registration history
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const mode = searchParams.get("mode") || "events"; // Accepts "events" or "registrations"
+    const mode = searchParams.get("mode") || "events"; 
     
     const action = mode === "registrations" ? "get-all-registrations" : "get-events";
     
     const response = await fetch(`${TARGET_URL}?action=${action}`, {
       method: "GET",
-      next: { revalidate: 0 } // Bypasses caching for instantaneous admin visibility
+      next: { revalidate: 0 } 
     });
     
     const data = await response.json();
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST: Direct router for creating events or logging candidate signups
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();

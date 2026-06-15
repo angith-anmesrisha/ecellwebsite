@@ -35,17 +35,17 @@ export default function WebGLCurtainWipe() {
 
       const rawVelocity = scrollVelocity.get();
       
-      // Amplified the tracking range slightly so it catches slow scrolls better
+      
       const targetVelocity = Math.max(Math.min(rawVelocity * 0.12, 50), -50);
       currentVelocity += (targetVelocity - currentVelocity) * 0.1;
       
       time += 0.02;
 
-      // Lowered threshold to 0.01 so it renders lines instantly upon movement
+      
       if (Math.abs(currentVelocity) > 0.01) {
         ctx.save();
         
-        // 🌟 FORCE OPAQUE COLORING: Swapped out low opacity tint for a high-contrast purple line track
+        
         ctx.strokeStyle = "rgba(147, 51, 234, 0.45)"; 
         ctx.lineWidth = 2;
 
@@ -83,7 +83,7 @@ export default function WebGLCurtainWipe() {
   return (
     <canvas
       ref={canvasRef}
-      // 🌟 REMOVED MIX-BLEND: Dropped mix-blend-screen to prevent dark background color cancellation bugs
+      
       className="fixed inset-0 w-full h-full z-[9999] pointer-events-none block"
     />
   );

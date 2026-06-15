@@ -18,11 +18,11 @@ export default function EventsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Core Form Fields
+  
   const [studentName, setStudentName] = useState("");
   const [studentEmail, setStudentEmail] = useState("");
   const [rollNumber, setRollNumber] = useState("");
-  // Dictionary to map custom fields dynamically
+  
   const [customAnswers, setCustomAnswers] = useState<Record<string, string>>({});
 
   useEffect(() => {

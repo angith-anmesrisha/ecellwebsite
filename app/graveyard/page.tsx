@@ -17,7 +17,7 @@ export default function StartupGraveyard() {
   const [failures, setFailures] = useState<FallenVenture[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Archive Form States
+  
   const [showGraveForm, setShowGraveForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [graveData, setGraveData] = useState({

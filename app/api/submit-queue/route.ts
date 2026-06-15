@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-// 📊 1. SECURE GET ROUTE: FORWARDS HUB QUERIES & HANDLES LIVE VISITOR RESULTS QUERIES
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -16,13 +16,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Database backend key not configured." }, { status: 500 });
     }
 
-    // 🎓 STUDENT ADMISSIONS RESULTS LOOKUP MATRIX
+    
     if (action === "check-student-result") {
       if (!email) {
         return NextResponse.json({ error: "Email query parameter missing." }, { status: 400 });
       }
       
-      // Pull all active registrations securely from the spreadsheet pipeline
+      
       const res = await fetch(`${targetUrl}?action=get-all-registrations`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: "Profile node credentials not found in registry." });
     }
 
-    // 🛠️ STANDARD ADMIN TERMINAL / DATA STUDIO QUERIES
+    
     const res = await fetch(`${targetUrl}?action=${action}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
@@ -64,7 +64,7 @@ export async function GET(request: Request) {
   }
 }
 
-// ⚡ 2. POST ROUTE: EXPERTLY BRANCHES ADMIN CONFIGURATIONS AND STUDENT SUBMISSIONS
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Sheets webhook token target not defined." }, { status: 500 });
     }
 
-    // 🎯 A. ADMIN FLOW: CO-EVALUATION, TIMELINE MODIFICATIONS, & LIFECYCLE OVERRIDES
+    
     if (
       body.action === "update-shortlist" || 
       body.action === "submit-peer-review" ||
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, message: "Admin updates saved to spreadsheet cells." });
     }
 
-    // 👥 B. STUDENT FLOW: PITCH SIMULATOR SUBMISSIONS (ORIGINAL INFRASTRUCTURE LOGIC)
+    
     const { type, payload } = body;
     if (!type || !payload) {
       return NextResponse.json({ error: "Staging package fields missing parameters." }, { status: 400 });
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
     const problemTextClean = (problemStatement || "").trim().toLowerCase();
     const titleTextClean = (startupTitle || "").trim().toLowerCase();
 
-    // 🔒 CORE COMPLIANCE & SAFETY FILTER
+    
     const complianceBlockTerms = ["scam", "exploit", "illegal", "hack", "bypass", "fraud", "slavery", "slave"];
     const hasComplianceViolation = complianceBlockTerms.some(
       term => problemTextClean.includes(term) || titleTextClean.includes(term)
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
       }, { status: 403 });
     }
 
-    // BACKGROUND DATA STAGING: SAVE TO GOOGLE SHEETS FIRST
+    
     try {
       await fetch(targetUrl, {
         method: "POST",
@@ -131,7 +131,7 @@ export async function POST(request: Request) {
       console.error("Sheets Ledger Sync Warning:", sheetError);
     }
 
-    // LIVE INFERENCE ENGINE: CALL GROQ API FOR FREE LLM INTELLIGENCE
+    
     if (!process.env.GROQ_API_KEY) {
       return NextResponse.json({ error: "Groq API system token configuration missing." }, { status: 500 });
     }

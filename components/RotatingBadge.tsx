@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import Image from 'next/image'; // Import the Next.js optimized Image component
+import Image from 'next/image'; 
 
 export default function RotatingBadge() {
   return (

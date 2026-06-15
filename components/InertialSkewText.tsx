@@ -12,13 +12,13 @@ export default function InertialSkewText({ text, className = "" }: Props) {
   const containerRef = useRef<HTMLSpanElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
-  // Elastic tracking values for directional skewing
+  
   const skewX = useMotionValue(0);
   const skewY = useMotionValue(0);
   const springSkewX = useSpring(skewX, { stiffness: 120, damping: 10, mass: 0.3 });
   const springSkewY = useSpring(skewY, { stiffness: 120, damping: 10, mass: 0.3 });
 
-  // Positional letter attraction offsets
+  
   const translateX = useMotionValue(0);
   const translateY = useMotionValue(0);
   const springTransX = useSpring(translateX, { stiffness: 100, damping: 14, mass: 0.2 });
@@ -85,7 +85,7 @@ export default function InertialSkewText({ text, className = "" }: Props) {
               animate={{
                 y: isHovered ? Math.sin(charIdx * 0.6) * -8 : 0,
                 scale: isHovered ? 1.05 : 1,
-                // 🌟 PRODUCTION FIX: Explicitly stating fixed string variables instead of triggering implicit transitions
+                
                 color: isHovered ? "rgba(255, 255, 255, 1)" : "rgba(255, 255, 255, 1)"
               }}
               transition={{

@@ -63,7 +63,7 @@ export default function AdminDashboard() {
     localStorage.setItem("ecell_admin_override_unlocked", nextState.toString());
   };
 
-  // 🚨 NEW HARD RESET MASTER FUNCTION
+  
   const handleWipeLeaderboardDatabase = async () => {
     const confirmStep1 = confirm("⚠️ CRITICAL SECURITY WARNING:\nYou are about to execute a complete database wipe. This will permanently delete ALL applicant metrics, score tracking rows, and essay responses from your live Google Sheet. Proceed?");
     
@@ -73,17 +73,17 @@ export default function AdminDashboard() {
       if (confirmStep2) {
         setIsLoading(true);
         try {
-          // Fire a clear event directly to the sheet web app middleware route
+          
           const response = await fetch("/api/recruitment/submit-case", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              email: "clear_command_system_override@ecell.com", // Trigger address
+              email: "clear_command_system_override@ecell.com", 
               caseAnswer: "RESET_ALL_DATA_ROWS_IMMEDIATELY_COHORT_2026"
             })
           });
 
-          // Flush local storage sync trees
+          
           localStorage.removeItem("ecell_submissions_backup_tree");
           setSubmissions([]);
           alert("Database Cluster Successfully Cleared! All candidate profiles have been purged.");

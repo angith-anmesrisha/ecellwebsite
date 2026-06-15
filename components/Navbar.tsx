@@ -39,7 +39,7 @@ function MagneticNavLink({ href, label, tagline }: NavLinkProps) {
     y.set(0);
   };
 
-  // 🌟 THE FIX: Smoothly scrolls and forces the URL state to stay entirely hash-free
+  
   const handleClick = (e: React.MouseEvent) => {
     if (href.startsWith("#")) {
       e.preventDefault();
@@ -49,7 +49,7 @@ function MagneticNavLink({ href, label, tagline }: NavLinkProps) {
       if (targetElement) {
         targetElement.scrollIntoView({ behavior: "smooth" });
         
-        // Overwrites the address bar state with the base clean pathname, stripping out the hash entirely
+        
         if (window.history.pushState) {
           window.history.pushState(null, "", window.location.pathname);
         }
