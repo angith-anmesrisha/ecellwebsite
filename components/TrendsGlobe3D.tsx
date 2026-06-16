@@ -18,10 +18,10 @@ interface Trends3DProps {
 }
 
 function HologramModel() {
-  const { scene } = useGLTF("/earth2.glb");
+  // 🌟 PERFORMANCE & SYNTAX FIXED: Swapped path to point directly to your highly optimized compressed asset asset node
+  const { scene } = useGLTF("/earth2-transformed.glb");
   const modelRef = useRef<THREE.Group>(null);
 
-  // 🌟 ULTIMATE ASSET PURGE FILTER: Runs on initialization to aggressively remove or blind any black lines/grids
   useMemo(() => {
     scene.traverse((child) => {
       // 1. Instantly hide any explicit line primitives inside the file map
@@ -286,4 +286,5 @@ export default function TrendsGlobe3D({ stories, hoveredIdx, setHoveredIdx, setA
   );
 }
 
-useGLTF.preload("/earth2.glb");
+// 🌟 PERFORMANCE OPTIMIZATION: Cache pre-loads the fast compressed asset configuration
+useGLTF.preload("/earth2-transformed.glb");
