@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+// @ts-ignore - Disables strict module type-declaration checking for external build compilation
 import Spline from "@splinetool/react-spline";
 
 interface SplineHeroAssetProps {
@@ -11,24 +12,17 @@ interface SplineHeroAssetProps {
 export default function SplineHeroAsset({ colorHex = "#a855f7", className = "" }: SplineHeroAssetProps) {
   const assetRef = useRef<any>(null);
 
-  
   function handleOnLoad(splineApp: any) {
-    
-    
-    
     const targetMesh = splineApp.findObjectByName("Rock"); 
     
     if (targetMesh) {
       assetRef.current = targetMesh;
-      
       applyCustomColor(colorHex);
     }
   }
 
-  
   function applyCustomColor(hex: string) {
     if (assetRef.current && assetRef.current.material) {
-      
       assetRef.current.material.color.set(hex);
     }
   }

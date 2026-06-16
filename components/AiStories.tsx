@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect } from "react";
 import { Sparkles, ArrowRight, X, Calendar, LineChart } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import FluidHoverTile from "./FluidHoverTile";
+import TrendsGlobe3D from "./TrendsGlobe3D";
 
 interface StoryItem {
   objectID: string;
@@ -17,8 +18,8 @@ interface StoryItem {
 export default function AiStories() {
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchAiNews = async () => {
@@ -44,7 +45,6 @@ export default function AiStories() {
         setLoading(false);
       }
     };
-
     fetchAiNews();
   }, []);
 
@@ -57,59 +57,94 @@ export default function AiStories() {
           className="absolute top-0 bottom-0 w-1/2 bg-purple-500"
         />
       </div>
-      Gathering the latest updates...
+      Gathering latest news matrix...
     </div>
   );
 
+  const leftColStories = stories.slice(0, 3);
+  const rightColStories = stories.slice(3, 6);
+const renderCard = (story: StoryItem, globalIndex: number) => {
+    const isTargeted = hoveredIdx === globalIndex;
+
+    return (
+      // 🌟 FIX: The 'key' prop MUST be placed on this outer wrapper div element
+      <div
+        key={story.objectID}
+        onMouseEnter={() => setHoveredIdx(globalIndex)}
+        onMouseLeave={() => setHoveredIdx(null)}
+        className="w-full"
+      >
+        <FluidHoverTile
+          onClick={() => setActiveIdx(globalIndex)}
+          className={`w-full backdrop-blur-md border rounded-xl p-5 flex flex-col justify-between min-h-[140px] transition-all duration-300 group ${
+            isTargeted 
+              ? "bg-cyan-950/30 border-cyan-400/60 shadow-[0_0_25px_rgba(6,182,212,0.15)] scale-[1.02]" 
+              : "bg-zinc-950/50 border-white/5 hover:border-purple-500/30"
+          }`}
+        >
+          {/* ... keeping your internal title meta layers exactly the same ... */}
+          <div className="space-y-2.5 w-full text-left">
+            <div className="flex justify-between items-center font-mono text-[9px] tracking-widest text-zinc-500">
+              <span className={`flex items-center gap-1.5 uppercase font-bold transition-colors ${isTargeted ? "text-cyan-400" : "text-purple-400"}`}>
+                <LineChart size={10} />
+                Satellite Link // 0{globalIndex + 1}
+              </span>
+              <span className="uppercase truncate max-w-[80px]">By {story.author}</span>
+            </div>
+            <h4 className={`text-xs md:text-sm font-black tracking-wide leading-snug line-clamp-3 uppercase font-mono transition-colors ${isTargeted ? "text-white" : "text-white/80"}`}>
+              {story.title}
+            </h4>
+          </div>
+
+          <div className="flex justify-between items-center text-[9px] font-mono tracking-wider pt-3 border-t border-white/5 w-full mt-3">
+            <span className="text-zinc-500 flex items-center gap-1">
+              <Calendar size={10} />
+              {new Date(story.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+            </span>
+            <span className={`font-bold ${isTargeted ? "text-cyan-400" : "text-purple-400"}`}>
+              🔥 {story.points} Pts
+            </span>
+          </div>
+        </FluidHoverTile>
+      </div>
+    );
+  };
   return (
-    <div ref={containerRef} className="w-full relative overflow-visible py-6 font-sans">
+    <div className="w-full relative overflow-visible py-4 font-sans max-w-[1450px] mx-auto">
       
-      {/* 🌟 UPGRADED FLUID SPOTLIGHT BENTO MATRIX */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/10 border border-white/10 rounded-xl overflow-hidden shadow-2xl backdrop-blur-md">
-        {stories.map((story, idx) => {
-          const isLargeCard = idx === 0 || idx === 4;
-          
-          return (
-            <FluidHoverTile
-              key={story.objectID}
-              onClick={() => setActiveIdx(idx)}
-              className={isLargeCard ? "md:col-span-2 lg:col-span-1" : ""}
-            >
-              {/* Top Meta Headers Block */}
-              <div className="space-y-4 w-full">
-                <div className="flex justify-between items-center font-mono text-[9px] tracking-widest text-zinc-500">
-                  <span className="flex items-center gap-1.5 uppercase font-bold text-purple-400">
-                    <LineChart size={10} />
-                    Trending Story // 0{idx + 1}
-                  </span>
-                  <span className="uppercase">By {story.author}</span>
-                </div>
+      {/* Absolute 12-Column Spatial Grid Balance */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full">
+        
+        {/* Left Wings: Cards 1, 2, 3 */}
+        <div className="flex flex-col gap-4 lg:col-span-4 w-full z-20">
+          {leftColStories.map((story, i) => renderCard(story, i))}
+        </div>
 
-                <h4 className="text-lg md:text-xl font-black text-white/80 group-hover:text-white tracking-tight leading-snug transition-colors duration-300 line-clamp-3 uppercase">
-                  {story.title}
-                </h4>
-              </div>
+        {/* Center Space: High-Fi 3D Viewport Bounding Area */}
+        <div className="lg:col-span-4 w-full aspect-square flex items-center justify-center relative my-4 lg:my-0 h-[400px] lg:h-[450px]">
+          <div className="absolute w-[130%] h-[130%] bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.04)_0%,transparent_70%)] pointer-events-none" />
+          <div className="w-full h-full relative z-10 flex items-center justify-center overflow-visible">
+            <TrendsGlobe3D 
+              stories={stories} 
+              hoveredIdx={hoveredIdx} 
+              setHoveredIdx={setHoveredIdx} 
+              setActiveIdx={setActiveIdx}
+            />
+          </div>
+        </div>
 
-              {/* Bottom Info Metrics Row */}
-              <div className="flex justify-between items-center text-[10px] font-mono tracking-wider pt-6 border-t border-white/5 w-full mt-6">
-                <span className="text-zinc-500 group-hover:text-zinc-300 transition-colors duration-300 flex items-center gap-1">
-                  <Calendar size={11} />
-                  {new Date(story.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                </span>
-                <span className="text-purple-500/60 group-hover:text-purple-400 font-bold transition-colors duration-300">
-                  🔥 {story.points} Upvotes
-                </span>
-              </div>
-            </FluidHoverTile>
-          );
-        })}
+        {/* Right Wings: Cards 4, 5, 6 */}
+        <div className="flex flex-col gap-4 lg:col-span-4 w-full z-20">
+          {rightColStories.map((story, i) => renderCard(story, i + 3))}
+        </div>
+
       </div>
 
-      {/* FULL SCREEN COMPREHENSIVE OVERLAY MODAL */}
+      {/* COMPREHENSIVE OVERLAY MODAL */}
       <AnimatePresence>
-        {activeIdx !== null && (
+        {activeIdx !== null && stories[activeIdx] && (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-12 bg-black/98 backdrop-blur-2xl">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.05)_0%,transparent_70%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.05)_0%,transparent_70%)] pointer-events-none" />
             <div className="absolute inset-0" onClick={() => setActiveIdx(null)} />
 
             <motion.div
@@ -125,7 +160,7 @@ export default function AiStories() {
 
               <div className="flex justify-between items-start w-full relative z-10">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-[10px] font-mono text-purple-400 uppercase tracking-[0.3em] font-bold">
+                  <div className="flex items-center gap-2 text-[10px] font-mono text-cyan-400 uppercase tracking-[0.3em] font-bold">
                     <Sparkles size={12} className="animate-pulse" />
                     <span>Global Tech Insights</span>
                   </div>
@@ -150,7 +185,7 @@ export default function AiStories() {
                   <span className="w-1.5 h-1.5 bg-zinc-800 rounded-full" />
                   <span>Published: {new Date(stories[activeIdx].created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                   <span className="w-1.5 h-1.5 bg-zinc-800 rounded-full" />
-                  <span className="text-purple-400 font-bold">🔥 {stories[activeIdx].points} Community Points</span>
+                  <span className="text-cyan-400 font-bold">🔥 {stories[activeIdx].points} Community Points</span>
                 </div>
               </div>
 
@@ -159,7 +194,7 @@ export default function AiStories() {
                   href={stories[activeIdx].url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-purple-500 text-black hover:text-white text-xs font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-3 transition-all duration-300"
+                  className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-cyan-500 text-black hover:text-white text-xs font-black uppercase tracking-widest rounded-xl flex items-center justify-center gap-3 transition-all duration-300"
                 >
                   <span>Read Full Article</span>
                   <ArrowRight size={14} />
