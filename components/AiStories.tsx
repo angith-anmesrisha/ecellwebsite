@@ -1,10 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { Sparkles, ArrowRight, X, Calendar, LineChart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
 import FluidHoverTile from "./FluidHoverTile";
-import TrendsGlobe3D from "./TrendsGlobe3D";
+
+// 🌟 PERFORMANCE OPTIMIZATION: Lazy-load the heavy WebGL component out of the server runtime
+const TrendsGlobe3D = dynamic(() => import("./TrendsGlobe3D"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex flex-col items-center justify-center font-mono text-[9px] text-cyan-400/40 tracking-[0.2em] uppercase select-none">
+      <div className="w-6 h-6 border border-cyan-400/20 border-t-cyan-400 rounded-full animate-spin mb-3" />
+      Syncing Constellation Array...
+    </div>
+  )
+});
 
 interface StoryItem {
   objectID: string;
@@ -63,13 +74,13 @@ export default function AiStories() {
 
   const leftColStories = stories.slice(0, 3);
   const rightColStories = stories.slice(3, 6);
-const renderCard = (story: StoryItem, globalIndex: number) => {
+
+  const renderCard = (story: StoryItem, globalIndex: number) => {
     const isTargeted = hoveredIdx === globalIndex;
 
     return (
-      // 🌟 FIX: The 'key' prop MUST be placed on this outer wrapper div element
       <div
-        key={story.objectID}
+        key={story.objectID} // 🌟 UNIQUE KEY FIX: Placed at top-level parent wrapper element
         onMouseEnter={() => setHoveredIdx(globalIndex)}
         onMouseLeave={() => setHoveredIdx(null)}
         className="w-full"
@@ -82,7 +93,6 @@ const renderCard = (story: StoryItem, globalIndex: number) => {
               : "bg-zinc-950/50 border-white/5 hover:border-purple-500/30"
           }`}
         >
-          {/* ... keeping your internal title meta layers exactly the same ... */}
           <div className="space-y-2.5 w-full text-left">
             <div className="flex justify-between items-center font-mono text-[9px] tracking-widest text-zinc-500">
               <span className={`flex items-center gap-1.5 uppercase font-bold transition-colors ${isTargeted ? "text-cyan-400" : "text-purple-400"}`}>
@@ -109,38 +119,39 @@ const renderCard = (story: StoryItem, globalIndex: number) => {
       </div>
     );
   };
+
   return (
     <div className="w-full relative overflow-visible py-4 font-sans max-w-[1450px] mx-auto">
-      
-      {/* Absolute 12-Column Spatial Grid Balance */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full">
         
-        {/* Left Wings: Cards 1, 2, 3 */}
+        {/* Left Wing Stream */}
         <div className="flex flex-col gap-4 lg:col-span-4 w-full z-20">
           {leftColStories.map((story, i) => renderCard(story, i))}
         </div>
 
-        {/* Center Space: High-Fi 3D Viewport Bounding Area */}
+        {/* Center Viewport Frame */}
         <div className="lg:col-span-4 w-full aspect-square flex items-center justify-center relative my-4 lg:my-0 h-[400px] lg:h-[450px]">
           <div className="absolute w-[130%] h-[130%] bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.04)_0%,transparent_70%)] pointer-events-none" />
           <div className="w-full h-full relative z-10 flex items-center justify-center overflow-visible">
-            <TrendsGlobe3D 
-              stories={stories} 
-              hoveredIdx={hoveredIdx} 
-              setHoveredIdx={setHoveredIdx} 
-              setActiveIdx={setActiveIdx}
-            />
+            <Suspense fallback={null}>
+              <TrendsGlobe3D 
+                stories={stories} 
+                hoveredIdx={hoveredIdx} 
+                setHoveredIdx={setHoveredIdx} 
+                setActiveIdx={setActiveIdx}
+              />
+            </Suspense>
           </div>
         </div>
 
-        {/* Right Wings: Cards 4, 5, 6 */}
+        {/* Right Wing Stream */}
         <div className="flex flex-col gap-4 lg:col-span-4 w-full z-20">
           {rightColStories.map((story, i) => renderCard(story, i + 3))}
         </div>
 
       </div>
 
-      {/* COMPREHENSIVE OVERLAY MODAL */}
+      {/* Overlay Drawer Modal */}
       <AnimatePresence>
         {activeIdx !== null && stories[activeIdx] && (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-12 bg-black/98 backdrop-blur-2xl">

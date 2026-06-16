@@ -21,7 +21,7 @@ function HologramModel() {
   const { scene } = useGLTF("/earth2.glb");
   const modelRef = useRef<THREE.Group>(null);
 
-  // 🌟 SYNTAX FIX: Restored the missing useMemo declaration wrapper wrapper down below
+  // 🌟 ULTIMATE ASSET PURGE FILTER: Runs on initialization to aggressively remove or blind any black lines/grids
   useMemo(() => {
     scene.traverse((child) => {
       // 1. Instantly hide any explicit line primitives inside the file map
