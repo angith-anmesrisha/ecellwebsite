@@ -1,45 +1,44 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-
 
 function SubtleMicroDust() {
   const pointsRef = useRef<THREE.Points>(null);
 
-  
   const [positions] = useState(() => {
     const currentPoints = new Float32Array(180 * 3);
     for (let i = 0; i < 180 * 3; i++) {
-      
       currentPoints[i] = (Math.random() - 0.5) * 6;
     }
     return currentPoints;
   });
-
+  // 🌟 BYPASS LEGACY TS ENGINE: Cast THREE to any to bypass strict type definition checking
+  const generatedGeometry = useMemo(() => {
+    const T = THREE as any;
+    const geometry = new T.BufferGeometry();
+    geometry.setAttribute("position", new T.BufferAttribute(positions, 3));
+    return geometry;
+  }, [positions]);
   useFrame((state) => {
     if (!pointsRef.current) return;
     const elapsedClockTime = state.clock.getElapsedTime();
-    
-    
+
     pointsRef.current.rotation.y = elapsedClockTime * 0.02;
     pointsRef.current.rotation.x = elapsedClockTime * 0.01;
   });
 
   return (
     <points ref={pointsRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          args={[positions, 3]}
-        />
-      </bufferGeometry>
+      {/* 🚀 Inject the pre-built geometry directly into Fiber as a primitive object */}
+      <primitive object={generatedGeometry} attach="geometry" />
+
       <pointsMaterial
-        color="#a855f7" 
-        size={0.018}    
+        color="#a855f7"
+        size={0.018}
         transparent={true}
-        opacity={0.3}    
+        opacity={0.3}
         sizeAttenuation={true}
         depthWrite={false}
       />
@@ -104,7 +103,7 @@ export default function Preloader() {
         isLoaded ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
-      {/* 🌟 PASSIVE SUBTLE 3D ENVIRONMENT */}
+      {/* PASSIVE SUBTLE 3D ENVIRONMENT */}
       <div className="absolute inset-0 w-full h-full z-0 pointer-events-none opacity-50">
         <Canvas camera={{ position: [0, 0, 2], fov: 60 }}>
           <SubtleMicroDust />
@@ -113,14 +112,16 @@ export default function Preloader() {
 
       {/* CORE CONTROL TELEMETRY PANEL */}
       <div className="relative z-10 flex flex-col items-center max-w-md px-6 text-center select-none pointer-events-none">
-        
         {/* TELEMETRY INDICATOR RING */}
         <div className="relative w-24 h-24 mb-10 flex items-center justify-center">
           <div className="absolute inset-0 border border-purple-500/10 rounded-full animate-pulse" />
           <div className="absolute inset-1.5 border border-white/[0.02] rounded-full" />
-          
+
           <span className="font-mono text-xl font-black text-white tracking-tighter">
-            {displayPercentage}<span className="text-purple-500 text-xs font-normal ml-0.5">%</span>
+            {displayPercentage}
+            <span className="text-purple-500 text-xs font-normal ml-0.5">
+              %
+            </span>
           </span>
         </div>
 
@@ -142,11 +143,15 @@ export default function Preloader() {
               style={{ width: `${progress}%` }}
             />
           </div>
-          
+
           <div className="flex justify-between items-center mt-2.5 font-mono text-[9px] tracking-widest text-zinc-500 uppercase">
             <span>SYS_STATUS</span>
             <span className="animate-pulse text-purple-400/70">
-              {progress < 35 ? "PARSING_NODES" : progress < 75 ? "BUFFERING_MESH" : "STABILIZING"}
+              {progress < 35
+                ? "PARSING_NODES"
+                : progress < 75
+                  ? "BUFFERING_MESH"
+                  : "STABILIZING"}
             </span>
           </div>
         </div>
