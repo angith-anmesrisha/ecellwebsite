@@ -23,6 +23,7 @@ export default function CrystallineParticleMatrix() {
 
     let animationFrameId: number;
     let lastTime = performance.now();
+    let resizeTimeout: NodeJS.Timeout;
     let particles: Array<{
       x: number;
       y: number;
@@ -38,22 +39,39 @@ export default function CrystallineParticleMatrix() {
     }> = [];
 
     const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = Math.max(
-        document.documentElement.scrollHeight,
-        document.body.scrollHeight,
-        window.innerHeight
-      );
-      initParticles();
+      const d = document.documentElement;
+      const b = document.body;
+      
+      const logicalWidth = window.innerWidth;
+      const logicalHeight = Math.max(d.scrollHeight, d.offsetHeight, b.scrollHeight, b.offsetHeight, window.innerHeight);
+      
+      const dpr = window.devicePixelRatio || 1;
+      
+      canvas.width = logicalWidth * dpr;
+      canvas.height = logicalHeight * dpr;
+      
+      canvas.style.width = `${logicalWidth}px`;
+      canvas.style.height = `${logicalHeight}px`;
+      
+      ctx.scale(dpr, dpr);
+      
+      initParticles(logicalWidth, logicalHeight);
     };
 
-    const initParticles = () => {
+    const initParticles = (w: number, h: number) => {
       particles = [];
-      const particleCount = Math.min(Math.floor((canvas.width * canvas.height) / 1600), 900);
+      
+      const densityMultiplier = 600; 
+      const maxCapLimit = 2500;       
+      
+      const particleCount = Math.min(
+        Math.floor((w * h) / densityMultiplier), 
+        maxCapLimit
+      );
       
       for (let i = 0; i < particleCount; i++) {
-        const x = Math.random() * canvas.width;
-        const y = Math.random() * canvas.height;
+        const x = Math.random() * w;
+        const y = Math.random() * h;
         
         const randomHue = Math.random() > 0.5 
           ? Math.floor(Math.random() * 40) + 260 
@@ -66,11 +84,11 @@ export default function CrystallineParticleMatrix() {
           originY: y,
           vx: (Math.random() - 0.5) * 0.4,
           vy: (Math.random() - 0.5) * 0.4,
-          size: Math.random() * 1.5 + 0.6,
+          size: Math.random() * 1.2 + 0.5, 
           hue: randomHue,
-          baseColor: `hsla(${randomHue}, 85%, 65%, ${Math.random() * 0.12 + 0.15})`,
+          baseColor: `hsla(${randomHue}, 90%, 65%, ${Math.random() * 0.15 + 0.2})`, 
           angle: Math.random() * Math.PI * 2,
-          speedFactor: Math.random() * 0.04 + 0.01
+          speedFactor: Math.random() * 0.05 + 0.01
         });
       }
     };
@@ -79,7 +97,12 @@ export default function CrystallineParticleMatrix() {
       const deltaTime = (currentTime - lastTime) * 0.001;
       lastTime = currentTime;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const d = document.documentElement;
+      const b = document.body;
+      const logicalWidth = window.innerWidth;
+      const logicalHeight = Math.max(d.scrollHeight, d.offsetHeight, b.scrollHeight, b.offsetHeight, window.innerHeight);
+
+      ctx.clearRect(0, 0, logicalWidth, logicalHeight);
       const mouse = mouseRef.current;
 
       const mDx = mouse.x - mouse.lastX;
@@ -103,8 +126,8 @@ export default function CrystallineParticleMatrix() {
         if (!mouse.active) {
           p.x += p.vx;
           p.y += p.vy;
-          if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-          if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+          if (p.x < 0 || p.x > logicalWidth) p.vx *= -1;
+          if (p.y < 0 || p.y > logicalHeight) p.vy *= -1;
           p.x += (p.originX - p.x) * 0.008;
           p.y += (p.originY - p.y) * 0.008;
         } else {
@@ -161,7 +184,7 @@ export default function CrystallineParticleMatrix() {
               }
               
               if (waveMath > 0.3) {
-                finalColor = `hsla(${p.hue}, 100%, 80%, ${0.5 * falloff * timeDecay})`;
+                finalColor = `hsla(${p.hue}, 100%, 82%, ${0.65 * falloff * timeDecay})`;
               }
             }
           }
@@ -173,7 +196,7 @@ export default function CrystallineParticleMatrix() {
         ctx.fill();
 
         if (mouse.velocity < 20) {
-          for (let j = i + 1; j < particles.length; j += 4) { 
+          for (let j = i + 1; j < particles.length; j += 6) { 
             const p2 = particles[j];
             const distx = renderX - p2.x;
             const disty = renderY - p2.y;
@@ -183,7 +206,7 @@ export default function CrystallineParticleMatrix() {
               ctx.beginPath();
               ctx.moveTo(renderX, renderY);
               ctx.lineTo(p2.x, p2.y);
-              ctx.strokeStyle = `rgba(139, 92, 246, ${0.04 * (1 - linkDist / 100)})`;
+              ctx.strokeStyle = `rgba(168, 85, 247, ${0.06 * (1 - linkDist / 100)})`;
               ctx.lineWidth = 0.4;
               ctx.stroke();
             }
@@ -239,11 +262,19 @@ export default function CrystallineParticleMatrix() {
       }
     };
 
+    const handleAdaptiveLayoutDelay = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(resizeCanvas, 400);
+    };
+
     window.addEventListener("resize", resizeCanvas);
     window.addEventListener("mousemove", handleGlobalMouseMove);
     window.addEventListener("click", handleGlobalClick);
     window.addEventListener("scroll", handleGlobalScroll, { passive: true });
     document.addEventListener("mouseleave", handleGlobalMouseLeave);
+    
+    window.addEventListener("load", resizeCanvas);
+    document.addEventListener("readystatechange", handleAdaptiveLayoutDelay);
 
     animationFrameId = requestAnimationFrame(animate);
 
@@ -252,7 +283,10 @@ export default function CrystallineParticleMatrix() {
       window.removeEventListener("mousemove", handleGlobalMouseMove);
       window.removeEventListener("click", handleGlobalClick);
       window.removeEventListener("scroll", handleGlobalScroll);
+      window.removeEventListener("load", resizeCanvas);
       document.removeEventListener("mouseleave", handleGlobalMouseLeave);
+      document.removeEventListener("readystatechange", handleAdaptiveLayoutDelay);
+      clearTimeout(resizeTimeout);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
