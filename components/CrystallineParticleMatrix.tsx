@@ -58,12 +58,12 @@ export default function CrystallineParticleMatrix() {
       initParticles(logicalWidth, logicalHeight);
     };
 
-    const initParticles = (w: number, h: number) => {
+   const initParticles = (w: number, h: number) => {
       particles = [];
       
-      const densityMultiplier = 600; 
-      const maxCapLimit = 2500;       
-      
+      // HIGH-PERFORMANCE SPARSE SETTINGS
+      const densityMultiplier = 1800; 
+      const maxCapLimit = 600;        
       const particleCount = Math.min(
         Math.floor((w * h) / densityMultiplier), 
         maxCapLimit
