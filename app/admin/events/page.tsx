@@ -74,18 +74,22 @@ export default function AdminEventsPanel() {
   };
 
   
-  const handleSecurityCheck = (e: React.FormEvent) => {
+ const handleSecurityCheck = (e: React.FormEvent) => {
     e.preventDefault();
     const globalMasterKey = process.env.NEXT_PUBLIC_ADMIN_MASTER_KEY;
 
-    if (passwordInput === globalMasterKey) {
+    // Added local fallback strings matching your main panel gates
+    if (
+      passwordInput === globalMasterKey || 
+      passwordInput === "ecelladmin2026" 
+     
+    ) {
       setIsAuthenticated(true);
       setSecurityError("");
     } else {
       setSecurityError("Invalid master key. Access denied.");
     }
   };
-
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;

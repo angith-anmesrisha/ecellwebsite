@@ -37,7 +37,6 @@ export default function AdvancedAdminHub() {
   const [activeTab, setActiveTab] = useState<"hub" | "analytics" | "recruitment">("hub");
   const [recruitmentSubTab, setRecruitmentSubTab] = useState<"gui_controls" | "audit" | "peer">("gui_controls");
 
-  
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [interviewScore, setInterviewScore] = useState("80");
@@ -45,14 +44,12 @@ export default function AdvancedAdminHub() {
   const [sectorData, setSectorData] = useState<DistributionItem[]>([]);
   const [funnelData, setFunnelData] = useState<FunnelItem[]>([]);
 
-  
   const [interviewerName, setInterviewerName] = useState("");
   const [techScore, setTechScore] = useState("80");
   const [commScore, setCommScore] = useState("80");
   const [solveScore, setSolveScore] = useState("80");
   const [reviewNotes, setReviewNotes] = useState("");
 
-  
   const [recruitmentPhase, setRecruitmentPhase] = useState("LOCKED");
   const [guiSearchQuery, setGuiSearchQuery] = useState("");
   const [guiTrackFilter, setGuiTrackFilter] = useState("ALL");
@@ -60,20 +57,17 @@ export default function AdvancedAdminHub() {
   const [transferTrackTarget, setTransferTrackTarget] = useState("ops");
   const [manualScheduleString, setManualScheduleString] = useState("");
 
-  
   const [stressScenario, setStressScenario] = useState("");
   const [isStressLoading, setIsStressLoading] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  
   const [allTerminalLogs, setAllTerminalLogs] = useState<LogEntry[]>([]);
   const [visibleLogs, setVisibleLogs] = useState<LogEntry[]>([]);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [cliInput, setCliInput] = useState("");
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const totalRowsCountRef = useRef<number>(0);
-  
   
   const sessionStartTimeRef = useRef<number>(Date.now());
   const lastFetchLatencyRef = useRef<number>(0);
@@ -110,12 +104,7 @@ export default function AdvancedAdminHub() {
   const handleSecurityCheck = (e: React.FormEvent) => {
     e.preventDefault();
     const masterKeyEnvValue = process.env.NEXT_PUBLIC_ADMIN_MASTER_KEY;
-    
-    if (
-      passwordInput === masterKeyEnvValue || 
-      passwordInput === "1234" || 
-      passwordInput === "ecelladmin2026"
-    ) {
+    if (passwordInput === masterKeyEnvValue || passwordInput === "1234" || passwordInput === "ecelladmin2026") {
       setIsAuthenticated(true);
       setSecurityError("");
     } else { 
@@ -167,10 +156,10 @@ export default function AdvancedAdminHub() {
       setIsDataLoading(false);
     }
   };
-useEffect(() => {
+
+  useEffect(() => {
     if (isAuthenticated) {
       setAllTerminalLogs([]);
-      
       logTerminalMsg("\n" +
         " ████████╗     ██████╗███████╗██╗     ██╗     \n" +
         " ██╔═════╝    ██╔════╝██╔════╝██║     ██║     \n" +
@@ -180,10 +169,8 @@ useEffect(() => {
         " ╚═══════╝     ╚═════╝╚══════╝╚══════╝╚══════╝ v1.0.0\n", 
         "success"
       );
-
       logTerminalMsg("System online.", "success");
       logTerminalMsg("CLI Core Interface engine activated cleanly.", "info");
-      
       
       const synchronizeMasterPhaseState = async () => {
         try {
@@ -195,7 +182,6 @@ useEffect(() => {
             logTerminalMsg(`Synchronized admin panel UI state with global server phase: [${data.phase}]`, "success");
           }
         } catch (err) {
-          
           const savedPhase = localStorage.getItem("ecell_recruitment_phase") || "LOCKED";
           setRecruitmentPhase(savedPhase);
         }
@@ -206,24 +192,17 @@ useEffect(() => {
     }
   }, [isAuthenticated]);
 
- 
   const handlePhaseChangeGUI = async (newPhase: string) => {
     setRecruitmentPhase(newPhase);
     localStorage.setItem("ecell_recruitment_phase", newPhase);
     logTerminalMsg(`Broadcasting phase mutation sequence [${newPhase}] to server cache...`, "exec");
-    
     try {
       const serverSync = await fetch("/api/recruitment/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          action: "update-global-phase", 
-          phase: newPhase 
-        })
+        body: JSON.stringify({ action: "update-global-phase", phase: newPhase })
       });
-      
       const syncResult = await serverSync.json();
-      
       if (syncResult.success) {
         logTerminalMsg(`Global portal phase completely locked to: [${newPhase}] across all student views.`, "success");
       } else {
@@ -233,12 +212,12 @@ useEffect(() => {
       logTerminalMsg("Failed to broadcast phase transition down the network pipeline.", "warn");
     }
   };
- const triggerBulkWaitlistGUI = async () => {
+
+  const triggerBulkWaitlistGUI = async () => {
     if (!confirm("Are you sure you want to shift all pending candidate records to WAITLISTED status?")) return;
     setIsSubmitting(true);
     logTerminalMsg("Running centralized bulk updates to transition pending candidates to waitlist staging...", "exec");
     try {
-      
       const res = await fetch("/api/recruitment/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -256,53 +235,41 @@ useEffect(() => {
   };
 
   const triggerStatusOverrideGUI = async (candidateId: string, statusTarget: string) => {
-  setIsSubmitting(true);
-  logTerminalMsg(`Updating candidate status to [${statusTarget}]...`, "exec");
-  
-  try {
-    
-    const dbResponse = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "update-shortlist", candidateId, score: parseInt(interviewScore) || 80, status: statusTarget })
-    });
-    
-    const dbResult = await dbResponse.json();
-
-    if (dbResult.success) {
-      logTerminalMsg(`Status successfully updated to ${statusTarget} for: ${candidateId}`, "success");
-      
-      
-      const candidateMatch = candidates.find(c => c.id === candidateId);
-      
-      if (candidateMatch) {
-        logTerminalMsg(`Automatically dispatching notification email to: ${candidateMatch.email}...`, "exec");
-        
-        
-        await fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "dispatch-email-notice",
-            email: candidateMatch.email,
-            name: candidateMatch.name,
-            status: statusTarget,
-            score: parseInt(interviewScore) || 80
-          })
-        });
-        
-        logTerminalMsg(`Notification email successfully sent from ecell@bimtech.ac.in!`, "success");
+    setIsSubmitting(true);
+    logTerminalMsg(`Updating candidate status to [${statusTarget}]...`, "exec");
+    try {
+      const dbResponse = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update-shortlist", candidateId, score: parseInt(interviewScore) || 80, status: statusTarget })
+      });
+      const dbResult = await dbResponse.json();
+      if (dbResult.success) {
+        logTerminalMsg(`Status successfully updated to ${statusTarget} for: ${candidateId}`, "success");
+        const candidateMatch = candidates.find(c => c.id === candidateId);
+        if (candidateMatch) {
+          logTerminalMsg(`Automatically dispatching notification email to: ${candidateMatch.email}...`, "exec");
+          await fetch(webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "dispatch-email-notice",
+              email: candidateMatch.email,
+              name: candidateMatch.name,
+              status: statusTarget,
+              score: parseInt(interviewScore) || 80
+            })
+          });
+          logTerminalMsg(`Notification email successfully sent from ecell@bimtech.ac.in!`, "success");
+        }
+        await runBackgroundDatabaseCheck(false, false);
       }
-      
-      
-      await runBackgroundDatabaseCheck(false, false);
+    } catch (e) {
+      logTerminalMsg("Failed to complete automated pipeline status and email operations.", "warn");
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (e) {
-    logTerminalMsg("Failed to complete automated pipeline status and email operations.", "warn");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   const triggerAppendQuickNoteGUI = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -372,7 +339,6 @@ useEffect(() => {
       logTerminalMsg("No entries available in cache memory to analyze.", "warn");
       return;
     }
-
     let sparseRows = 0;
     let duplicateMatches = 0;
     const emailTrackingMap = new Map<string, number>();
@@ -391,7 +357,6 @@ useEffect(() => {
         logTerminalMsg(`[DUPLICATE DETECTED] Email [${email}] has registered multiple forms (${count} rows).`, "warn");
       }
     });
-
     logTerminalMsg(`Scan finished. Found ${sparseRows} empty/short responses and ${duplicateMatches} duplicate email addresses.`, "success");
   };
 
@@ -465,7 +430,7 @@ useEffect(() => {
             logTerminalMsg(`  • Name: ${match.name} // Email: ${match.email}`, "info");
             logTerminalMsg(`  • Track Sector: ${match.domain} // Code Status: ${match.status}`, "info");
             logTerminalMsg(`  • Venture Brief Content: "${match.choices}"`, "info");
-          } else logTerminalMsg(`Identifier string reference '${arg}' not found.`, "warn");
+          } else logTerminalMsg(`Identifier string reference '${arg}' not found. `, "warn");
         }
         break;
 
@@ -652,18 +617,15 @@ useEffect(() => {
       });
       const data = await res.json();
       if (data.success) setStressScenario(data.scenario);
-    } catch (e) { logTerminalMsg(" Groq proxy route drop.", "warn"); }
+    } catch (e) { logTerminalMsg("Groq proxy route drop.", "warn"); }
     setIsStressLoading(false);
   };
 
- 
   const commitPanelReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCandidate || !interviewerName) return;
     setIsSubmitting(true);
-    
     logTerminalMsg(`Initializing score upload pipeline for candidate: ${selectedCandidate.id}...`, "info");
-    
     
     const validatedTech = Math.max(0, Math.min(100, parseInt(techScore) || 0));
     const validatedComm = Math.max(0, Math.min(100, parseInt(commScore) || 0));
@@ -672,7 +634,6 @@ useEffect(() => {
 
     try {
       logTerminalMsg(`Transmitting review data packet (Tech: ${validatedTech}, Comm: ${validatedComm}, Solve: ${validatedSolve}, Mean: ${calculatedMean})...`, "exec");
-      
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" }, 
@@ -686,13 +647,9 @@ useEffect(() => {
           notes: reviewNotes.trim() 
         })
       });
-
       const resData = await response.json();
-      
       if (response.ok && resData.success) {
         logTerminalMsg(`Panel interview scorecard successfully committed downstream for ${selectedCandidate.name}.`, "success");
-        logTerminalMsg(`Process complete. Peer reviews count updated: ${(selectedCandidate.peerReviews?.length || 0) + 1}`, "success");
-        
         setInterviewerName(""); 
         setReviewNotes("");
         await runBackgroundDatabaseCheck(false, false); 
@@ -706,11 +663,9 @@ useEffect(() => {
     }
   };
 
- 
   const processCandidateDecision = async (decision: "SELECTED" | "WAITLISTED") => {
     if (!selectedCandidate) return;
     setIsSubmitting(true);
-    
     logTerminalMsg(`Broadcasting final cohort decision parameter [${decision}] for candidate: ${selectedCandidate.id}...`, "exec");
     const targetBaseScore = parseInt(interviewScore) || 80;
 
@@ -718,20 +673,11 @@ useEffect(() => {
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({ 
-          action: "update-shortlist", 
-          candidateId: selectedCandidate.id, 
-          score: targetBaseScore, 
-          status: decision 
-        })
+        body: JSON.stringify({ action: "update-shortlist", candidateId: selectedCandidate.id, score: targetBaseScore, status: decision })
       });
-      
       const resData = await response.json();
-
       if (response.ok && resData.success) {
         logTerminalMsg(`Admissions matrix cell updated to status state [${decision}] successfully.`, "success");
-        logTerminalMsg(`Transaction closed. Candidate ${selectedCandidate.name} assigned baseline score: ${targetBaseScore}/100.`, "success");
-        
         setOutputLetter(`Decision updated successfully for ${selectedCandidate.name}.`);
         await runBackgroundDatabaseCheck(false, false); 
       } else {
@@ -756,6 +702,25 @@ useEffect(() => {
     return matchesSearch && matchesTrack;
   });
 
+  const generateScoreDistributionCurve = () => {
+    if (candidates.length === 0) return "M 0 100 L 300 100";
+    const scoringBuckets = Array(10).fill(0);
+    candidates.forEach(c => {
+      const bucketIdx = Math.min(Math.floor(c.score / 10), 9);
+      scoringBuckets[bucketIdx]++;
+    });
+    const maxBucketCount = Math.max(...scoringBuckets, 1);
+    const graphWidth = 500;
+    const graphHeight = 120;
+    const segmentWidth = graphWidth / 9;
+    
+    return scoringBuckets.map((count, idx) => {
+      const x = idx * segmentWidth;
+      const y = graphHeight - (count / maxBucketCount) * (graphHeight - 10);
+      return `${idx === 0 ? "M" : "L"} ${x} ${y}`;
+    }).join(" ");
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-black text-emerald-500 flex flex-col items-center justify-center p-4 font-mono">
@@ -777,7 +742,6 @@ useEffect(() => {
   return (
     <div className="min-h-screen bg-black text-emerald-400 flex flex-col font-mono antialiased text-xs">
       
-      {/* NAVBAR */}
       <header className="border-b border-emerald-500/20 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-3.5 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div onClick={() => setActiveTab("hub")} className="flex items-center gap-3 cursor-pointer group">
           <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400"><Cpu size={16} /></div>
@@ -787,15 +751,23 @@ useEffect(() => {
           </div>
         </div>
         <div className="flex items-center gap-2 bg-black border border-emerald-500/10 p-1 rounded-xl">
-          <button onClick={() => setActiveTab("hub")} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase transition ${activeTab === "hub" ? "bg-emerald-500 text-black font-bold" : "text-emerald-500/40 hover:text-emerald-400"}`}>Central Station</button>
-          <button onClick={() => setActiveTab("analytics")} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase transition ${activeTab === "analytics" ? "bg-emerald-500 text-black font-bold" : "text-emerald-500/40 hover:text-emerald-400"}`}>Data Studio</button>
-          <button onClick={() => setActiveTab("recruitment")} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase transition ${activeTab === "recruitment" ? "bg-emerald-500 text-black font-bold" : "text-emerald-500/40 hover:text-emerald-400"}`}>Shortlist Engine</button>
-        </div>
+  <button onClick={() => setActiveTab("hub")} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase transition ${activeTab === "hub" ? "bg-emerald-500 text-black font-bold" : "text-emerald-500/40 hover:text-emerald-400"}`}>Central Station</button>
+  <button onClick={() => setActiveTab("analytics")} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase transition ${activeTab === "analytics" ? "bg-emerald-500 text-black font-bold" : "text-emerald-500/40 hover:text-emerald-400"}`}>Data Studio</button>
+  <button onClick={() => setActiveTab("recruitment")} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase transition ${activeTab === "recruitment" ? "bg-emerald-500 text-black font-bold" : "text-emerald-500/40 hover:text-emerald-400"}`}>Shortlist Engine</button>
+  <button onClick={() => window.location.href = "/admin/evaluate"} className="px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase text-emerald-500/40 hover:text-emerald-400 hover:bg-white/5 transition">Evaluation Panel</button>
+  
+  {/* DIRECT ROUTE LINK TO PUBLIC EVENTS MANAGEMENT */}
+  <button 
+    onClick={() => window.location.href = "/admin/events"} 
+    className="px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase text-blue-400/50 hover:text-blue-400 hover:bg-white/5 border border-blue-500/10 transition"
+  >
+    Events Console ↗
+  </button>
+</div>
       </header>
 
       <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
         
-        {/* TAB 1: CENTRAL COMMAND AND TERMINAL LOGS FEED */}
         {activeTab === "hub" && (
           <div className="space-y-6 animate-fadeIn py-2">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-emerald-500/20 bg-zinc-950/60 p-5 rounded-xl">
@@ -808,7 +780,6 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* LIVE API METRICS GRID */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
               <div className="bg-black border border-emerald-500/20 rounded-xl p-4">
                 <span className="text-[8px] text-emerald-500/40 uppercase block font-bold">TOTAL APPLICANTS</span>
@@ -828,22 +799,18 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* TERMINAL EMULATOR */}
             <div className="border border-emerald-500/20 rounded-2xl overflow-hidden bg-zinc-950 flex flex-col h-[320px]">
               <div className="bg-black border-b border-emerald-500/10 px-4 py-2 flex justify-between items-center text-[9px] text-emerald-500/40 font-bold tracking-widest">
                 <span>LOCAL_MANAGEMENT_SHELL.sh</span>
                 <span className="text-emerald-400 animate-pulse">● FEED_ACTIVE</span>
               </div>
-              
-              {/* INDEPENDENT DEEP ACCENT COLOR ASSIGNMENTS PER EXPRESSION TYPE */}
               <div className="flex-1 p-4 overflow-y-auto font-mono text-[10px] space-y-1.5 bg-black/80 text-emerald-400/90 leading-relaxed scrollbar-thin scrollbar-thumb-emerald-500/20 scrollbar-track-transparent">
                 {visibleLogs.map((log, idx) => {
-                  let colorClass = "text-teal-500/90"; // Info style fallback
+                  let colorClass = "text-teal-500/90";
                   if (log.type === "exec") colorClass = "text-purple-400 font-bold";
                   if (log.type === "warn") colorClass = "text-amber-400 font-bold";
                   if (log.type === "success") colorClass = "text-cyan-400 font-bold";
                   if (log.type === "cli") colorClass = "text-white font-black bg-white/5 px-1 rounded";
-                  
                   return (
                     <p key={idx} className={`${colorClass} tracking-wide px-1 rounded whitespace-pre-wrap`}>
                       {log.text}
@@ -852,7 +819,6 @@ useEffect(() => {
                 })}
                 <div ref={terminalEndRef} />
               </div>
-              
               <form onSubmit={handleCliCommandSubmit} className="bg-black border-t border-emerald-500/10 px-4 py-2 flex items-center gap-2">
                 <span className="text-white/60 font-bold select-none">user@e-cell:$</span>
                 <input required type="text" value={cliInput} onChange={(e) => setCliInput(e.target.value)} className="flex-1 bg-transparent text-emerald-400 font-mono text-[11px] focus:outline-none placeholder-emerald-500/20" placeholder="Type an infrastructure operation command or 'help'..." autoComplete="off" />
@@ -861,7 +827,6 @@ useEffect(() => {
           </div>
         )}
 
-        {/* TAB 2: DATA STUDIO METRICS AND FUNNELS */}
         {activeTab === "analytics" && (
           <div className="space-y-6 animate-fadeIn">
             <div className="flex justify-between items-center border-b border-emerald-500/20 pb-4">
@@ -874,38 +839,100 @@ useEffect(() => {
                 <button onClick={handleCsvExport} className="px-3 py-1.5 bg-black border border-emerald-500/20 hover:bg-zinc-900 text-emerald-400 font-bold text-[10px] uppercase rounded-xl transition flex items-center gap-2 cursor-pointer"><Download size={12} /> Export CSV Ledger</button>
               </div>
             </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-7 bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-4">
-                <h3 className="text-[9px] font-bold text-emerald-500/40 uppercase">Recruitment Conversion Funnel</h3>
-                <div className="space-y-3.5 pt-2">
-                  {funnelData.map((item: any, idx) => (
-                    <div key={idx} className="space-y-1">
-                      <div className="flex justify-between text-[11px]"><span className="text-emerald-500/70">{item.stage}</span><span className="text-white font-bold">{item.value}</span></div>
-                      <div className="w-full h-1.5 bg-black rounded-full overflow-hidden border border-emerald-500/5"><div style={{ width: `${Math.min(100, (item.value / (funnelData[0] as any)?.value) * 100 || 10)}%` }} className="h-full bg-emerald-500/80 transition-all duration-500" /></div>
+              
+              {/* TELEMETRY GRAPHS SECTION GRID */}
+              <div className="lg:col-span-7 space-y-6">
+                <div className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-[11px] font-bold text-white uppercase tracking-wider">Candidate Score Overview (0 - 100)</h3>
+                    <span className="text-[8px] font-mono font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded">SPLINE LINE RENDER</span>
+                  </div>
+                  <div className="relative h-32 w-full bg-black/60 border border-emerald-500/5 rounded-xl flex items-end p-2 overflow-hidden">
+                    <div className="absolute inset-0 grid grid-cols-5 pointer-events-none">
+                      {Array(5).fill(0).map((_, i) => <div key={i} className="border-r border-emerald-500/[0.03] h-full" />)}
                     </div>
-                  ))}
+                    <svg className="w-full h-full overflow-visible" viewBox="0 0 500 120" preserveAspectRatio="none">
+                      <path d={generateScoreDistributionCurve()} fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" className="drop-shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
+                    </svg>
+                  </div>
+                  <div className="flex justify-between text-[8px] text-emerald-500/30 font-mono pt-1">
+                    <span>0 MARKS</span>
+                    <span>25% PERC</span>
+                    <span>50% MEAN</span>
+                    <span>75% PERC</span>
+                    <span>100 MARKS</span>
+                  </div>
+                </div>
+
+                <div className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-4">
+                  <h3 className="text-[9px] font-bold text-emerald-500/40 uppercase tracking-wider">// Recruitment Conversion Funnel</h3>
+                  <div className="space-y-3.5 pt-2">
+                    {funnelData.map((item: any, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex justify-between text-[11px]"><span className="text-emerald-500/70">{item.stage}</span><span className="text-white font-bold">{item.value}</span></div>
+                        <div className="w-full h-1.5 bg-black rounded-full overflow-hidden border border-emerald-500/5"><div style={{ width: `${Math.min(100, (item.value / (funnelData[0] as any)?.value) * 100 || 10)}%` }} className="h-full bg-emerald-500/80 transition-all duration-500" /></div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div className="lg:col-span-5 bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-4">
-                <h3 className="text-[9px] font-bold text-emerald-500/40 uppercase">Applicant Distribution Map</h3>
-                <div className="space-y-3 pt-1 max-h-[220px] overflow-y-auto">
-                  {sectorData.map((item: any, idx) => (
-                    <div key={idx} className="flex justify-between items-center border-b border-emerald-500/10 pb-2.5 last:border-0 last:pb-0">
-                      <span className="font-bold text-white truncate max-w-[70%]">{item.sector}</span>
-                      <span className="px-2 py-0.5 bg-black border border-emerald-500/20 rounded-lg text-emerald-400 font-bold">{item.count} rows</span>
-                    </div>
-                  ))}
-                </div>
+
+            <div className="lg:col-span-5 bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-5 flex flex-col justify-between">
+  <div>
+    <h3 className="text-[11px] font-bold text-white uppercase tracking-wider">Applicants Per Department Track</h3>
+    
+    <div className="space-y-4 pt-4">
+      {/* 1. Show this message if there is no data matching the sheet */}
+      {sectorData.length === 0 ? (
+        <p className="text-[10px] text-emerald-500/40 italic pt-4 leading-relaxed">
+          // Awaiting spreadsheet rows to populate track percentages...
+        </p>
+      ) : (
+        /* 2. Render the actual bars if data is present */
+        sectorData.map((item: any, idx) => {
+          const totalCount = sectorData.reduce((acc, curr) => acc + curr.count, 0) || 1;
+          const ratioPct = Math.round((item.count / totalCount) * 100);
+          return (
+            <div key={idx} className="space-y-1.5">
+              <div className="flex justify-between text-[11px] items-center">
+                <span className="font-bold text-white max-w-[70%] truncate font-mono text-xs">
+                  {item.sector.toUpperCase()}
+                </span>
+                <span className="text-emerald-400 font-bold bg-black px-2 py-0.5 rounded border border-emerald-500/10 text-[10px]">
+                  {item.count} rows ({ratioPct}%)
+                </span>
               </div>
+              <div className="w-full h-3 bg-black/40 border border-emerald-500/10 rounded overflow-hidden flex gap-0.5 p-0.5">
+                {Array(10).fill(0).map((_, blockIdx) => (
+                  <div 
+                    key={blockIdx} 
+                    className={`h-full flex-1 transition-all ${
+                      blockIdx < Math.round(ratioPct / 10) ? "bg-emerald-500" : "bg-emerald-950/20"
+                    }`} 
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })
+      )}
+    </div>
+  </div>
+
+  <div className="border-t border-emerald-500/10 pt-4 font-mono text-[9px] text-emerald-500/30 space-y-1 bg-black/30 p-3 rounded-xl mt-4">
+    <p>// SYNC METRIC FEED: GLOBAL STATUS STABLE</p>
+    <p>// PIPELINE NODE LATENCY: {lastFetchLatencyRef.current}ms</p>
+  </div>
+</div>
+
             </div>
           </div>
         )}
 
-        {/* TAB 3: UPGRADED SHORTLIST CONTROL PANEL WITH RECRUITMENT CONTROLS */}
         {activeTab === "recruitment" && (
           <div className="space-y-6 animate-fadeIn">
-            
-            {/* GRAPHICAL CONTROLS HEADER WORKSPACE */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-950 border border-emerald-500/20 p-4 rounded-xl gap-4 shadow-xl">
               <div className="flex items-center gap-3">
                 <Sliders size={16} className="text-emerald-400 animate-pulse" />
@@ -915,7 +942,6 @@ useEffect(() => {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {/* PORTAL PHASE SELECTION CONTROL DROPDOWN */}
                 <div className="flex items-center gap-2 bg-black border border-emerald-500/20 px-2 py-1.5 rounded-lg">
                   <span className="text-[9px] font-bold uppercase text-white/50">Active Website Portal Phase:</span>
                   <select value={recruitmentPhase} onChange={(e) => handlePhaseChangeGUI(e.target.value)} className="bg-transparent text-emerald-400 border-none text-[9px] font-bold focus:outline-none cursor-pointer font-mono uppercase">
@@ -924,14 +950,12 @@ useEffect(() => {
                     <option value="COMPLETED">COMPLETED (Show Results Link)</option>
                   </select>
                 </div>
-                <button onClick={triggerAuditComplianceScan} className="px-2.5 py-1.5 bg-black border border-emerald-500/20 hover:bg-zinc-900 rounded-lg text-emerald-400 font-bold flex items-center gap-1"><ClipboardList size={12} /> Compliance Scan</button>
+                <button onClick={triggerAuditComplianceScan} className="px-2.5 py-1.5 bg-black border border-emerald-500/20 rounded-lg text-emerald-400 font-bold flex items-center gap-1"><ClipboardList size={12} /> Compliance Scan</button>
                 <button onClick={triggerBulkWaitlistGUI} disabled={isSubmitting} className="px-2.5 py-1.5 border border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/15 text-amber-400 font-bold uppercase rounded-lg tracking-wide transition shadow-sm">⚠️ Bulk Post-Round 2 Waitlist</button>
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
-              {/* SIDEBAR NAVIGATION LIST ROSTER BLOCK */}
               <div className="lg:col-span-4 bg-zinc-950 border border-emerald-500/20 rounded-2xl p-4 space-y-3 max-h-[580px] overflow-hidden flex flex-col shadow-xl">
                 <div className="space-y-2 pb-2.5 border-b border-emerald-500/10">
                   <div className="relative flex items-center bg-black border border-emerald-500/20 rounded-lg px-2 py-1">
@@ -962,7 +986,6 @@ useEffect(() => {
                 </div>
               </div>
 
-              {/* ACTION MANAGEMENT WORKSPACE CONTAINER */}
               <div className="lg:col-span-8 space-y-5">
                 {selectedCandidate ? (
                   <>
@@ -972,22 +995,14 @@ useEffect(() => {
                       <button onClick={() => setRecruitmentSubTab("peer")} className={`flex-1 py-1 rounded-lg font-bold tracking-wide uppercase text-[9px] transition ${recruitmentSubTab === "peer" ? "bg-emerald-500 text-black font-black" : "text-emerald-500/40 hover:text-emerald-300"}`}>Panel Reviews ({selectedCandidate.peerReviews?.length || 0})</button>
                     </div>
 
-               {/* DUAL WORKSPACE TAB 1: GRAPHICAL PIPELINE FORM OVERRIDES */}
                     {recruitmentSubTab === "gui_controls" && (
                       <div className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-6 shadow-2xl animate-fadeIn">
                         <div className="border-b border-emerald-500/10 pb-3 flex justify-between items-start">
                           <div>
                             <span className="text-[8px] text-emerald-400 font-bold tracking-widest bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">{selectedCandidate.id}</span>
                             <h2 className="text-base font-black uppercase text-white tracking-tight mt-1.5">{selectedCandidate.name}</h2>
-                            
-                            {/* 🌟 LIVE RESUME ACCELERATOR ACCESSIBLE DIRECTLY IN THE UI LAYOUT 🌟 */}
                             {selectedCandidate.resumeUrl ? (
-                              <a 
-                                href={selectedCandidate.resumeUrl} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="inline-flex items-center gap-1 text-[10px] text-cyan-400 hover:text-cyan-300 hover:underline mt-2 font-mono transition-colors"
-                              >
+                              <a href={selectedCandidate.resumeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-cyan-400 hover:text-cyan-300 hover:underline mt-2 font-mono transition-colors">
                                 <FileSpreadsheet size={12} /> View Attached Resume (Google Drive) →
                               </a>
                             ) : (
@@ -997,7 +1012,6 @@ useEffect(() => {
                           <div className="text-right"><span className="text-[9px] uppercase block text-emerald-500/40">Current Pipeline Status</span><strong className="text-white bg-black border border-emerald-500/10 px-3 py-1 rounded-md block mt-1 tracking-widest text-xs">{selectedCandidate.status || "PENDING"}</strong></div>
                         </div>
 
-                        {/* STEPPED LIFE-CYCLE STATUS SELECTION NODES */}
                         <div className="space-y-1.5">
                           <label className="text-[9px] font-black uppercase tracking-wider text-emerald-500/40 flex items-center gap-1">Manual Shortlist Pipeline Updates</label>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
@@ -1016,7 +1030,6 @@ useEffect(() => {
                           </div>
                         </div>
 
-                        {/* INTERVIEW CALENDAR SLOT BOOKING FORM */}
                         <form onSubmit={triggerScheduleAssignmentGUI} className="grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-emerald-500/10 pt-5 items-end">
                           <div className="md:col-span-3 space-y-1">
                             <label className="text-[9px] uppercase font-bold text-emerald-500/40 flex items-center gap-1">Allocate Live Personal Interview Calendar Metadata</label>
@@ -1025,7 +1038,6 @@ useEffect(() => {
                           <button type="submit" className="w-full py-2 bg-black border border-emerald-500/30 text-emerald-400 font-bold uppercase rounded-xl tracking-wider text-center cursor-pointer font-mono text-xs">Log Schedule</button>
                         </form>
 
-                        {/* INTERVIEWER CELL QUICK NOTES INPUT FORM */}
                         <form onSubmit={triggerAppendQuickNoteGUI} className="grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-emerald-500/10 pt-5 items-end">
                           <div className="md:col-span-3 space-y-1">
                             <label className="text-[9px] uppercase font-bold text-emerald-500/40 flex items-center gap-1">Append Quick Interviewer Commentary Notation Text</label>
@@ -1034,7 +1046,6 @@ useEffect(() => {
                           <button type="submit" className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-black font-bold uppercase rounded-xl tracking-wider font-mono text-center cursor-pointer text-xs">Commit Note</button>
                         </form>
 
-                        {/* RE-ROUTING TRACK MOVEMENT CLUSTER FORM */}
                         <form onSubmit={triggerTrackTransferGUI} className="grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-emerald-500/10 pt-5 items-end">
                           <div className="md:col-span-3 space-y-1">
                             <label className="text-[9px] uppercase font-bold text-emerald-500/40 flex items-center gap-1">Reallocate Cohort Tracking Vertical Cluster</label>
@@ -1049,7 +1060,6 @@ useEffect(() => {
                       </div>
                     )}
 
-                    {/* VETTING PAYLOAD RENDER TRACK */}
                     {recruitmentSubTab === "audit" && (
                       <div className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-5 shadow-2xl">
                         <div className="border-b border-emerald-500/10 pb-3 flex justify-between items-start">
@@ -1085,25 +1095,60 @@ useEffect(() => {
                     )}
 
                     {/* PEER REVIEWS RENDER MATRIX */}
-                    {recruitmentSubTab === "peer" && (
-                      <div className="space-y-5 animate-fadeIn">
-                        <form onSubmit={commitPanelReview} className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-5 space-y-4 shadow-xl">
-                          <h3 className="text-[9px] font-bold tracking-widest text-emerald-500/40 uppercase flex items-center gap-1"><Award size={12} /> Append Panel Interview Scorecard</h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                            <div className="space-y-1 sm:col-span-1">
-                              <label className="text-[9px] uppercase text-emerald-500/40">Panelist Initials</label>
-                              <input required type="text" value={interviewerName} onChange={(e) => setInterviewerName(e.target.value)} placeholder="e.g., Prof. Bose" className="w-full bg-black border border-emerald-500/20 rounded-lg p-2 text-white focus:outline-none" />
-                            </div>
-                            <div className="space-y-1"><label className="text-[9px] uppercase text-emerald-500/40">Tech Skill (0-100)</label><input type="number" value={techScore} onChange={(e) => setTechScore(e.target.value)} className="w-full bg-black border border-emerald-500/20 rounded-lg p-2 text-emerald-400 focus:outline-none" /></div>
-                            <div className="space-y-1"><label className="text-[9px] uppercase text-emerald-500/40">Comm Capacity (0-100)</label><input type="number" value={commScore} onChange={(e) => setCommScore(e.target.value)} className="w-full bg-black border border-emerald-500/20 rounded-lg p-2 text-emerald-400 focus:outline-none" /></div>
-                            <div className="space-y-1"><label className="text-[9px] uppercase text-emerald-500/40">Problem Solving (0-100)</label><input type="number" value={solveScore} onChange={(e) => setSolveScore(e.target.value)} className="w-full bg-black border border-emerald-500/20 rounded-lg p-2 text-emerald-400 focus:outline-none" /></div>
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-[9px] uppercase text-emerald-500/40">Panelist Qualitative Notes</label>
-                            <textarea rows={2} value={reviewNotes} onChange={(e) => setReviewNotes(e.target.value)} placeholder="Note observations regarding candidate adaptability benchmarks..." className="w-full bg-black border border-emerald-500/20 rounded-lg p-3 text-white focus:outline-none resize-none" />
-                          </div>
-                          <button type="submit" disabled={isSubmitting} className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-black font-bold uppercase rounded-xl transition flex items-center justify-center gap-1 cursor-pointer shadow-md"><Plus size={12} /> Save Evaluation Scorecard</button>
-                        </form>
+{recruitmentSubTab === "peer" && (
+  <div className="space-y-5 animate-fadeIn">
+    <form onSubmit={commitPanelReview} className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-5 space-y-4 shadow-xl">
+      <h3 className="text-[9px] font-bold tracking-widest text-emerald-500/40 uppercase flex items-center gap-1"><Award size={12} /> Add Panel Scorecard</h3>
+      
+      {/* Dynamic Label Resolver Block */}
+      {(() => {
+        const domainLower = selectedCandidate.domain?.toLowerCase() || "";
+        let label1 = "Technical Skills";
+        let label2 = "Communication";
+        let label3 = "Problem Solving";
+
+        if (domainLower.includes("ops") || domainLower.includes("operations")) {
+          label1 = "Execution Speed";
+          label2 = "Team Coordination";
+          label3 = "Resource Planning";
+        } else if (domainLower.includes("media") || domainLower.includes("pr")) {
+          label1 = "Writing & Content";
+          label2 = "Design Quality";
+          label3 = "Audience Reach";
+        } else if (domainLower.includes("spons") || domainLower.includes("sponsorship")) {
+          label1 = "Pitch Clarity";
+          label2 = "Negotiation Skill";
+          label3 = "Deal Closing";
+        }
+
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div className="space-y-1 sm:col-span-1">
+              <label className="text-[9px] uppercase text-emerald-500/40">Interviewer Initials</label>
+              <input required type="text" value={interviewerName} onChange={(e) => setInterviewerName(e.target.value)} placeholder="e.g., AB" className="w-full bg-black border border-emerald-500/20 rounded-lg p-2 text-white focus:outline-none" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] uppercase text-emerald-500/40">{label1} (0-100)</label>
+              <input type="number" min="0" max="100" value={techScore} onChange={(e) => setTechScore(e.target.value)} className="w-full bg-black border border-emerald-500/20 rounded-lg p-2 text-emerald-400 focus:outline-none" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] uppercase text-emerald-500/40">{label2} (0-100)</label>
+              <input type="number" min="0" max="100" value={commScore} onChange={(e) => setCommScore(e.target.value)} className="w-full bg-black border border-emerald-500/20 rounded-lg p-2 text-emerald-400 focus:outline-none" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] uppercase text-emerald-500/40">{label3} (0-100)</label>
+              <input type="number" min="0" max="100" value={solveScore} onChange={(e) => setSolveScore(e.target.value)} className="w-full bg-black border border-emerald-500/20 rounded-lg p-2 text-emerald-400 focus:outline-none" />
+            </div>
+          </div>
+        );
+      })()}
+
+      <div className="space-y-1">
+        <label className="text-[9px] uppercase text-emerald-500/40">Interviewer Notes</label>
+        <textarea rows={2} value={reviewNotes} onChange={(e) => setReviewNotes(e.target.value)} placeholder="Write down your feedback using clear and simple language..." className="w-full bg-black border border-emerald-500/20 rounded-lg p-3 text-white focus:outline-none resize-none" />
+      </div>
+      <button type="submit" disabled={isSubmitting} className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-black font-bold uppercase rounded-xl transition flex items-center justify-center gap-1 cursor-pointer shadow-md"><Plus size={12} /> Save Scorecard</button>
+    </form>
                         <div className="space-y-2.5">
                           <h4 className="text-[9px] font-bold tracking-widest text-emerald-500/40 uppercase border-b border-emerald-500/10 pb-1">Committed Evaluation Audit History</h4>
                           {selectedCandidate.peerReviews && selectedCandidate.peerReviews.length > 0 ? (
