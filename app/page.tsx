@@ -101,10 +101,26 @@ export default function Home() {
   const containerRef = useRef(null);
   const [liveBannerText, setLiveBannerText] = useState<string | null>(null);
   const [bannerLink, setBannerLink] = useState<string>("/events");
-
-  useEffect(() => {
+useEffect(() => {
     async function checkLiveNodes() {
+      const CACHE_KEY = "ecell_live_banner_cache";
+      const CACHE_TIME_KEY = "ecell_live_banner_cache_timestamp";
+      const FIVE_MINUTES = 5 * 60 * 1000;
+
       try {
+        const cachedData = localStorage.getItem(CACHE_KEY);
+        const cachedTimestamp = localStorage.getItem(CACHE_TIME_KEY);
+        const now = Date.now();
+
+        if (cachedData && cachedTimestamp && now - Number(cachedTimestamp) < FIVE_MINUTES) {
+          const parsed = JSON.parse(cachedData);
+          if (parsed.text) {
+            setLiveBannerText(parsed.text);
+            setBannerLink(parsed.link);
+            return;
+          }
+        }
+
         const res = await fetch("/api/events?mode=events");
         const data = await res.json();
         
@@ -112,11 +128,22 @@ export default function Home() {
           const activeEvent = data.data.find((e: any) => e.status === "ACTIVE");
           
           if (activeEvent) {
-            setLiveBannerText(`EVENT LIVE: ${activeEvent.title.toUpperCase()} REGISTRATIONS ARE OPEN`);
-            setBannerLink("/events");
+            const bannerText = `EVENT LIVE: ${activeEvent.title.toUpperCase()} REGISTRATIONS ARE OPEN`;
+            const targetLink = "/events";
+
+            setLiveBannerText(bannerText);
+            setBannerLink(targetLink);
+
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ text: bannerText, link: targetLink }));
+            localStorage.setItem(CACHE_TIME_KEY, now.toString());
             return;
           }
         }
+
+        localStorage.removeItem(CACHE_KEY);
+        localStorage.removeItem(CACHE_TIME_KEY);
+        setLiveBannerText(null);
+
       } catch (err) {
         console.error("Failed to compile live system notification status matrices:", err);
       }
