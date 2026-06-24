@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import FractionalTextSplitter from "./FractionalTextSplitter";
 
 interface NavLinkProps {
@@ -15,6 +16,7 @@ interface NavLinkProps {
 function MagneticNavLink({ href, label, tagline }: NavLinkProps) {
   const linkRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const router = useRouter();
   
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -39,7 +41,6 @@ function MagneticNavLink({ href, label, tagline }: NavLinkProps) {
     y.set(0);
   };
 
-  
   const handleClick = (e: React.MouseEvent) => {
     if (href.startsWith("#")) {
       e.preventDefault();
@@ -49,11 +50,12 @@ function MagneticNavLink({ href, label, tagline }: NavLinkProps) {
       if (targetElement) {
         targetElement.scrollIntoView({ behavior: "smooth" });
         
-        
         if (window.history.pushState) {
           window.history.pushState(null, "", window.location.pathname);
         }
       }
+    } else {
+      router.push(href);
     }
   };
 
@@ -83,7 +85,6 @@ export default function Navbar() {
     <nav className="fixed top-0 inset-x-0 z-[100] px-6 py-4 md:px-10 bg-gradient-to-b from-black/80 via-black/20 to-transparent backdrop-blur-2xs select-none overflow-visible">
       <div className="max-w-7xl mx-auto w-full flex justify-between items-center overflow-visible">
         
-        {/* Official E-Cell Brand Logo Integration */}
         <Link href="/" className="flex items-center gap-3 group">
           <div className="relative w-8 h-8 flex items-center justify-center transition-all duration-300 group-hover:scale-105">
             <Image 
@@ -100,17 +101,16 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Magnetic Center Navigation Links */}
         <div className="hidden md:flex items-center gap-1 bg-zinc-950/40 border border-white/5 rounded-full px-4 py-1.5 backdrop-blur-md shadow-2xl overflow-visible">
           <MagneticNavLink href="#ai-feed" label="Trends" tagline="live//feed" />
           <MagneticNavLink href="#ecosystem" label="Ecosystem" tagline="network" />
+          <MagneticNavLink href="/results" label="Results" tagline="live//results" />
           <MagneticNavLink href="#team" label="The Board" tagline="architects" />
           <MagneticNavLink href="#simulator" label="Sandbox" tagline="model.test" />
         </div>
 
-        {/* Application Portal Entry Trigger */}
         <div className="flex items-center gap-4 overflow-visible">
-          <Link href="/recruitment">
+          <Link href="/recruitment" passHref legacyBehavior>
             <motion.button 
               onMouseEnter={() => setBtnHover(true)}
               onMouseLeave={() => setBtnHover(false)}

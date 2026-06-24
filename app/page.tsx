@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { motion, useSpring, useMotionValue } from "framer-motion";
+import { useRef, useState, useEffect } from "react";
+import { motion, useSpring, useMotionValue, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Sparkles, Users, Skull, Calendar } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -99,6 +99,31 @@ function MasterMagnet({
 
 export default function Home() {
   const containerRef = useRef(null);
+  const [liveBannerText, setLiveBannerText] = useState<string | null>(null);
+  const [bannerLink, setBannerLink] = useState<string>("/events");
+
+  useEffect(() => {
+    async function checkLiveNodes() {
+      try {
+        const res = await fetch("/api/events?mode=events");
+        const data = await res.json();
+        
+        if (data.success && Array.isArray(data.data)) {
+          const activeEvent = data.data.find((e: any) => e.status === "ACTIVE");
+          
+          if (activeEvent) {
+            setLiveBannerText(`EVENT LIVE: ${activeEvent.title.toUpperCase()} REGISTRATIONS ARE OPEN`);
+            setBannerLink("/events");
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to compile live system notification status matrices:", err);
+      }
+    }
+    
+    checkLiveNodes();
+  }, []);
 
   return (
     <>
@@ -116,15 +141,36 @@ export default function Home() {
 
           <div className="flex-1 flex flex-col lg:flex-row items-center justify-between px-6 md:px-10 max-w-7xl mx-auto w-full gap-16 relative z-10 pointer-events-none">
             <div className="flex-1 space-y-8 text-center lg:text-left z-20 w-full pointer-events-auto">
-              <motion.p
-                initial={{ opacity: 0, x: -25 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                className="text-purple-500 font-mono tracking-widest uppercase text-xs md:text-sm flex items-center justify-center lg:justify-start gap-2"
-              >
-                <span className="inline-block w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse" />
-                {"// Where Aspiration Meets Opportunity"}
-              </motion.p>
+              
+              <div className="flex flex-col gap-4 items-center lg:items-start">
+                <AnimatePresence>
+                  {liveBannerText && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      onClick={() => window.location.href = bannerLink}
+                      className="cursor-pointer inline-flex items-center gap-2 text-[10px] uppercase font-mono font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3.5 py-1.5 rounded-full shadow-lg hover:bg-emerald-500/20 transition-all select-none"
+                    >
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      <span>{liveBannerText}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <motion.p
+                  initial={{ opacity: 0, x: -25 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="text-purple-500 font-mono tracking-widest uppercase text-xs md:text-sm flex items-center justify-center lg:justify-start gap-2"
+                >
+                  <span className="inline-block w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse" />
+                  {"// Where Aspiration Meets Opportunity"}
+                </motion.p>
+              </div>
 
               <MasterMagnet radius={300} pull={0.4}>
                 <h1 className="text-6xl sm:text-8xl md:text-9xl font-black tracking-tighter leading-[0.85] block text-left uppercase pointer-events-none overflow-visible w-full select-none">
