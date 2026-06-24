@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, X, BarChart2, ListFilter, Users, Upload, Image as ImageIcon, Loader2, Lock } from "lucide-react";
+import { Plus, X, BarChart2, ListFilter, Users, Upload, Image as ImageIcon, Loader2, Lock, Camera } from "lucide-react";
+import GateScanner from "@/components/GateScanner";
 
 interface EventItem {
   id: string;
@@ -33,6 +34,7 @@ export default function AdminEventsPanel() {
   const [registrations, setRegistrations] = useState<RegistrationRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"create" | "history">("create");
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   
   const [newTitle, setNewTitle] = useState("");
@@ -78,7 +80,6 @@ export default function AdminEventsPanel() {
     e.preventDefault();
     const globalMasterKey = process.env.NEXT_PUBLIC_ADMIN_MASTER_KEY;
 
-    // Added local fallback strings matching your main panel gates
     if (
       passwordInput === globalMasterKey || 
       passwordInput === "ecelladmin2026" 
@@ -216,9 +217,17 @@ export default function AdminEventsPanel() {
             <h1 className="text-2xl font-black uppercase font-mono tracking-tight text-blue-500">E-Cell Event Console</h1>
             <p className="text-xs text-white/40">Manage dynamic event parameters and review multi-cohort data registration histories.</p>
           </div>
-          <div className="flex gap-2 bg-zinc-950 p-1 border border-white/10 rounded-xl">
-            <button onClick={() => setActiveTab("create")} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${activeTab === "create" ? "bg-white text-black" : "text-white/60 hover:text-white"}`}>Configure New Event</button>
-            <button onClick={() => setActiveTab("history")} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${activeTab === "history" ? "bg-white text-black" : "text-white/60 hover:text-white"}`}>Registration History Log</button>
+          <div className="flex flex-wrap gap-2 items-center">
+            <button 
+              onClick={() => setIsScannerOpen(true)}
+              className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+            >
+              <Camera size={12} /> Launch Gate Scanner
+            </button>
+            <div className="flex gap-2 bg-zinc-950 p-1 border border-white/10 rounded-xl">
+              <button onClick={() => setActiveTab("create")} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${activeTab === "create" ? "bg-white text-black" : "text-white/60 hover:text-white"}`}>Configure New Event</button>
+              <button onClick={() => setActiveTab("history")} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${activeTab === "history" ? "bg-white text-black" : "text-white/60 hover:text-white"}`}>Registration History Log</button>
+            </div>
           </div>
         </div>
 
@@ -252,7 +261,7 @@ export default function AdminEventsPanel() {
                     </div>
                   </div>
 
-                  {/* BANNER FILE UPLOAD */}
+                  
                   <div className="space-y-1">
                     <label className="text-white/50 uppercase tracking-wider text-[10px] font-bold">Event Banner Image</label>
                     <div className="border border-dashed border-white/20 rounded-xl p-4 bg-white/[0.02] flex flex-col items-center justify-center text-center hover:bg-white/[0.04] transition relative group">
@@ -333,68 +342,158 @@ export default function AdminEventsPanel() {
               </>
             )}
 
-            {/* REGISTRATION LOG TAB */}
-            {activeTab === "history" && (
-              <div className="lg:col-span-12 space-y-4 font-mono text-xs">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-zinc-950 p-4 border border-white/10 rounded-xl gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-white/60 font-bold uppercase text-[11px]">Filter Log by Event:</span>
-                    <select value={selectedEventFilter} onChange={(e) => setSelectedEventFilter(e.target.value)} className="bg-black border border-white/10 rounded-lg px-2 py-1 text-white text-[11px] focus:outline-none">
-                      <option value="all">Show All Historical Registrations</option>
-                      {events.map(e => (
-                        <option key={e.id} value={e.id}>{e.title}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="text-[11px] font-bold text-white/40 flex items-center gap-1.5">
-                    Synced Row Blocks: {filteredRegistrations.length} Entries
-                  </div>
-                </div>
+           
+            
+            {activeTab === "history" && (() => {
+              
+              const cohortCounts: Record<string, number> = {};
+              filteredRegistrations.forEach(r => {
+                const roll = r.rollNumber.toUpperCase();
+                let segment = "OTHER COHORTS";
+                
+                if (roll.includes("PGDM")) segment = "PGDM GENERAL";
+                else if (roll.includes("IB")) segment = "INTL. BUSINESS";
+                else if (roll.includes("RM")) segment = "RETAIL MGMT";
+                else if (roll.includes("INS")) segment = "INSURANCE";
+                
+                cohortCounts[segment] = (cohortCounts[segment] || 0) + 1;
+              });
 
-                <div className="border border-white/10 rounded-xl overflow-hidden bg-zinc-950 shadow-2xl">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse min-w-[700px]">
-                      <thead>
-                        <tr className="bg-white/5 border-b border-white/10 text-[10px] text-white/40 uppercase tracking-wider">
-                          <th className="p-3">Pass ID</th>
-                          <th className="p-3">Target Event</th>
-                          <th className="p-3">Candidate</th>
-                          <th className="p-3">Email</th>
-                          <th className="p-3">Roll Number</th>
-                          <th className="p-3">Custom Form Responses</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5 text-[11px] text-white/80">
-                        {filteredRegistrations.map((rec) => (
-                          <tr key={rec.regId} className="hover:bg-white/[0.02] transition">
-                            <td className="p-3 font-bold text-blue-400">{rec.regId}</td>
-                            <td className="p-3 font-sans font-bold text-white max-w-[150px] truncate">{rec.eventTitle}</td>
-                            <td className="p-3 font-sans text-white/90">{rec.name}</td>
-                            <td className="p-3 text-white/60">{rec.email}</td>
-                            <td className="p-3 text-white/60">{rec.rollNumber}</td>
-                            <td className="p-3">
-                              <div className="space-y-1 text-[10px]">
-                                {Object.entries(rec.customAnswers).map(([key, val]) => (
-                                  <div key={key} className="text-white/40">
-                                    <strong className="text-blue-300 font-medium">{key}:</strong> <span className="text-white/70">{val}</span>
-                                  </div>
-                                ))}
-                                {Object.keys(rec.customAnswers).length === 0 && <span className="text-white/20 italic">None required</span>}
+              return (
+                <div className="lg:col-span-12 space-y-6 font-mono text-xs">
+                  
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
+                    
+                    
+                    <div className="bg-zinc-950 border border-white/10 rounded-xl p-5 space-y-4">
+                      <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                        <h3 className="text-[11px] font-bold uppercase tracking-wider text-blue-400">// COHORT DISTRIBUTION RATIOS</h3>
+                        <span className="text-[9px] text-white/30">MAPPED SUBMISSIONS</span>
+                      </div>
+                      
+                      <div className="space-y-3.5">
+                        {Object.entries(cohortCounts).map(([cohort, count]) => {
+                          const total = filteredRegistrations.length || 1;
+                          const percentage = Math.round((count / total) * 100);
+                          return (
+                            <div key={cohort} className="space-y-1">
+                              <div className="flex justify-between text-[10px]">
+                                <span className="text-white/70 font-bold">{cohort}</span>
+                                <span className="text-blue-400 font-bold">{count} Pass Issued ({percentage}%)</span>
                               </div>
-                            </td>
-                          </tr>
+                              <div className="w-full h-2.5 bg-black border border-white/5 rounded overflow-hidden p-0.5 flex gap-0.5">
+                                {Array(10).fill(0).map((_, barIdx) => (
+                                  <div 
+                                    key={barIdx}
+                                    className={`h-full flex-1 transition-all duration-300 rounded-sm ${
+                                      barIdx < Math.round(percentage / 10) ? "bg-blue-500" : "bg-zinc-900"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {Object.keys(cohortCounts).length === 0 && (
+                          <p className="text-[10px] text-white/30 italic py-2">// Awaiting registration matrix records to compile metrics...</p>
+                        )}
+                      </div>
+                    </div>
+
+                    
+                    <div className="bg-zinc-950 border border-white/10 rounded-xl p-5 flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-4">
+                          <h3 className="text-[11px] font-bold uppercase tracking-wider text-blue-400">// SYSTEM VELOCITY MATRIX</h3>
+                          <span className="text-[9px] text-emerald-400 font-bold animate-pulse">● LIVE CHANNEL</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-center font-mono">
+                          <div className="bg-black border border-white/5 p-4 rounded-xl">
+                            <p className="text-[9px] text-white/40 uppercase">Total Tickets</p>
+                            <p className="text-2xl font-black text-white mt-1">{filteredRegistrations.length}</p>
+                          </div>
+                          <div className="bg-black border border-white/5 p-4 rounded-xl">
+                            <p className="text-[9px] text-white/40 uppercase">Open Pipelines</p>
+                            <p className="text-2xl font-black text-white mt-1">{events.filter(e => e.status === "ACTIVE").length}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-black border border-white/5 rounded-lg p-3 text-[9px] text-white/30 space-y-0.5 mt-4">
+                        <p>// LINK IDENTITY SYSTEM STATUS : ACTIVE</p>
+                        <p>// PIPELINE SOURCE COMPILING : REG_ROLL_FIELD_AXIS</p>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-zinc-950 p-4 border border-white/10 rounded-xl gap-4 mt-6">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white/60 font-bold uppercase text-[11px]">Filter Log by Event:</span>
+                      <select value={selectedEventFilter} onChange={(e) => setSelectedEventFilter(e.target.value)} className="bg-black border border-white/10 rounded-lg px-2 py-1 text-white text-[11px] focus:outline-none">
+                        <option value="all">Show All Historical Registrations</option>
+                        {events.map(e => (
+                          <option key={e.id} value={e.id}>{e.title}</option>
                         ))}
-                      </tbody>
-                    </table>
+                      </select>
+                    </div>
+                    <div className="text-[11px] font-bold text-white/40 flex items-center gap-1.5">
+                      Synced Row Blocks: {filteredRegistrations.length} Entries
+                    </div>
+                  </div>
+
+                  
+                  <div className="border border-white/10 rounded-xl overflow-hidden bg-zinc-950 shadow-2xl">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse min-w-[700px]">
+                        <thead>
+                          <tr className="bg-white/5 border-b border-white/10 text-[10px] text-white/40 uppercase tracking-wider">
+                            <th className="p-3">Pass ID</th>
+                            <th className="p-3">Target Event</th>
+                            <th className="p-3">Candidate</th>
+                            <th className="p-3">Email</th>
+                            <th className="p-3">Roll Number</th>
+                            <th className="p-3">Custom Form Responses</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5 text-[11px] text-white/80">
+                          {filteredRegistrations.map((rec) => (
+                            <tr key={rec.regId} className="hover:bg-white/[0.02] transition">
+                              <td className="p-3 font-bold text-blue-400">{rec.regId}</td>
+                              <td className="p-3 font-sans font-bold text-white max-w-[150px] truncate">{rec.eventTitle}</td>
+                              <td className="p-3 font-sans text-white/90">{rec.name}</td>
+                              <td className="p-3 text-white/60">{rec.email}</td>
+                              <td className="p-3 text-white/60">{rec.rollNumber}</td>
+                              <td className="p-3">
+                                <div className="space-y-1 text-[10px]">
+                                  {Object.entries(rec.customAnswers).map(([key, val]) => (
+                                    <div key={key} className="text-white/40">
+                                      <strong className="text-blue-300 font-medium">{key}:</strong> <span className="text-white/70">{val}</span>
+                                    </div>
+                                  ))}
+                                  {Object.keys(rec.customAnswers).length === 0 && <span className="text-white/20 italic">None required</span>}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
           </div>
         )}
 
       </div>
+      {isScannerOpen && (
+        <GateScanner onClose={() => setIsScannerOpen(false)} />
+      )}
     </div>
   );
 }

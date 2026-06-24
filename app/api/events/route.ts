@@ -1,6 +1,5 @@
-export const runtime = "edge";
-
 import { NextResponse } from "next/server";
+import { sendEventPassEmail } from "@/lib/mailer";
 
 const TARGET_URL = process.env.SHEET_WEBHOOK_URL;
 
@@ -45,6 +44,17 @@ export async function POST(request: Request) {
     });
 
     const data = await response.json();
+
+    if (data.success && body.action === "submit-registration") {
+      sendEventPassEmail({
+        toEmail: body.email,
+        studentName: body.name,
+        eventTitle: body.eventTitle,
+        eventDate: body.eventDate || "2026-06-30",
+        passId: data.registrationId || "PENDING",
+      }).catch((err) => console.error(err));
+    }
+
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(

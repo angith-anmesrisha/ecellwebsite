@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { User, Mail, FileText, Loader2, Download, CheckCircle } from "lucide-react";
+import { User, Mail, FileText, Loader2, Download, CheckCircle, Calendar } from "lucide-react";
 
 interface EventItem {
   id: string;
@@ -153,9 +153,27 @@ export default function RegistrationForm({
 
         <canvas ref={canvasRef} width={450} height={250} className="hidden" />
 
-        <div className="flex gap-2">
-          <button onClick={downloadTicketAsImage} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wider text-[10px] rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md">
+        {/* RECONFIGURED GRID ACTION ROW */}
+        <div className="flex flex-col gap-2">
+          <button onClick={downloadTicketAsImage} className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wider text-[10px] rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md">
             <Download size={12} /> Download Pass Card
+          </button>
+          
+          <button 
+            type="button"
+            onClick={() => {
+              const eventDateRaw = selectedEvent.date || "2026-06-30"; 
+              const formattedDate = eventDateRaw.replace(/-/g, "");
+              const titleToken = encodeURIComponent(`E-Cell: ${selectedEvent.title}`);
+              const descToken = encodeURIComponent(`Your entry pass ID is: ${registeredPassId}. Please keep your downloaded pass card ready at the entrance!`);
+              const locationToken = encodeURIComponent("BIMTECH Campus, Greater Noida");
+              
+              const gCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${titleToken}&dates=${formattedDate}/${formattedDate}&details=${descToken}&location=${locationToken}&sf=true&output=xml`;
+              window.open(gCalUrl, "_blank");
+            }}
+            className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white border border-white/10 font-bold uppercase tracking-wider text-[10px] rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+          >
+            <Calendar size={12} /> Add to Google Calendar
           </button>
         </div>
       </div>
