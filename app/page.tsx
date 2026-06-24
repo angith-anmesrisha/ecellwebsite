@@ -105,14 +105,14 @@ useEffect(() => {
     async function checkLiveNodes() {
       const CACHE_KEY = "ecell_live_banner_cache";
       const CACHE_TIME_KEY = "ecell_live_banner_cache_timestamp";
-      const FIVE_MINUTES = 5 * 60 * 1000;
+      const ONE_HOUR = 60 * 60 * 1000;
 
       try {
         const cachedData = localStorage.getItem(CACHE_KEY);
         const cachedTimestamp = localStorage.getItem(CACHE_TIME_KEY);
         const now = Date.now();
 
-        if (cachedData && cachedTimestamp && now - Number(cachedTimestamp) < FIVE_MINUTES) {
+        if (cachedData && cachedTimestamp && now - Number(cachedTimestamp) < ONE_HOUR) {
           const parsed = JSON.parse(cachedData);
           if (parsed.text) {
             setLiveBannerText(parsed.text);
@@ -149,7 +149,11 @@ useEffect(() => {
       }
     }
     
-    checkLiveNodes();
+    const timer = setTimeout(() => {
+      checkLiveNodes();
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
