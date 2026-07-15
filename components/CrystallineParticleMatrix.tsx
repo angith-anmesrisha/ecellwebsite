@@ -25,7 +25,6 @@ export default function CrystallineParticleMatrix() {
     let lastTime = performance.now();
     let resizeTimeout: NodeJS.Timeout;
     
-    // Check if device is mobile
     const isMobileDevice = window.innerWidth < 768;
 
     let particles: Array<{
@@ -49,7 +48,6 @@ export default function CrystallineParticleMatrix() {
       const logicalWidth = window.innerWidth;
       const logicalHeight = Math.max(d.scrollHeight, d.offsetHeight, b.scrollHeight, b.offsetHeight, window.innerHeight);
       
-      // Limit high-DPR screens on mobile to save processing loops
       const dpr = isMobileDevice ? 1 : (window.devicePixelRatio || 1);
       
       canvas.width = logicalWidth * dpr;
@@ -66,9 +64,9 @@ export default function CrystallineParticleMatrix() {
     const initParticles = (w: number, h: number) => {
       particles = [];
       
-      // HIGH-PERFORMANCE SPARSE SETTINGS FOR MOBILE
-      const densityMultiplier = isMobileDevice ? 4500 : 1800; 
-      const maxCapLimit = isMobileDevice ? 100 : 600;        
+      // HIGH-VISIBILITY DENSITY SETTINGS
+      const densityMultiplier = isMobileDevice ? 2000 : 800; 
+      const maxCapLimit = isMobileDevice ? 250 : 1000;        
       const particleCount = Math.min(
         Math.floor((w * h) / densityMultiplier), 
         maxCapLimit
@@ -89,9 +87,11 @@ export default function CrystallineParticleMatrix() {
           originY: y,
           vx: (Math.random() - 0.5) * 0.3,
           vy: (Math.random() - 0.5) * 0.3,
-          size: Math.random() * 1.0 + 0.4, 
+          // Boosted sizes for better visibility
+          size: Math.random() * 1.6 + 1.2, 
           hue: randomHue,
-          baseColor: `hsla(${randomHue}, 90%, 65%, ${Math.random() * 0.12 + 0.15})`, 
+          // Stronger base opacity so they pop
+          baseColor: `hsla(${randomHue}, 95%, 70%, ${Math.random() * 0.25 + 0.40})`, 
           angle: Math.random() * Math.PI * 2,
           speedFactor: Math.random() * 0.04 + 0.01
         });
@@ -120,7 +120,7 @@ export default function CrystallineParticleMatrix() {
 
       ripplesRef.current.forEach((ripple, idx) => {
         ripple.time += deltaTime;
-        if (ripple.time > 1.2) { // Shorter ripple lifetime on mobile
+        if (ripple.time > 1.2) {
           ripplesRef.current.splice(idx, 1);
         }
       });
@@ -139,7 +139,7 @@ export default function CrystallineParticleMatrix() {
           const dx = mouse.x - p.x;
           const dy = mouse.y - p.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          const activeRadius = isMobileDevice ? 150 : 350; // Reduce interaction radius on touchscreens
+          const activeRadius = isMobileDevice ? 150 : 350;
 
           if (distance < activeRadius) {
             const force = (activeRadius - distance) / activeRadius;
@@ -200,7 +200,6 @@ export default function CrystallineParticleMatrix() {
         ctx.fillStyle = finalColor;
         ctx.fill();
 
-        // Reduce connection-line calculations on mobile to avoid CPU lag
         const connectionInterval = isMobileDevice ? 15 : 6;
         if (mouse.velocity < 20) {
           for (let j = i + 1; j < particles.length; j += connectionInterval) { 
@@ -209,12 +208,13 @@ export default function CrystallineParticleMatrix() {
             const disty = renderY - p2.y;
             const linkDist = Math.sqrt(distx * distx + disty * disty);
 
-            if (linkDist < 80) {
+            if (linkDist < 90) {
               ctx.beginPath();
               ctx.moveTo(renderX, renderY);
               ctx.lineTo(p2.x, p2.y);
-              ctx.strokeStyle = `rgba(168, 85, 247, ${0.04 * (1 - linkDist / 80)})`;
-              ctx.lineWidth = 0.3;
+              // Clearer neon link webs
+              ctx.strokeStyle = `rgba(168, 85, 247, ${0.18 * (1 - linkDist / 90)})`;
+              ctx.lineWidth = 0.5;
               ctx.stroke();
             }
           }
@@ -226,7 +226,7 @@ export default function CrystallineParticleMatrix() {
 
     resizeCanvas();
     
-   const triggerRipple = (clientX: number, clientY: number, strength: number) => {
+    const triggerRipple = (clientX: number, clientY: number, strength: number) => {
       ripplesRef.current.push({
         x: clientX + window.scrollX,
         y: clientY + window.scrollY,
@@ -237,7 +237,7 @@ export default function CrystallineParticleMatrix() {
       if (ripplesRef.current.length > (isMobileDevice ? 4 : 8)) ripplesRef.current.shift();
     };
 
-    // FIX: Define functions BEFORE they are registered as event listeners
+    // --- INTERACTION HANDLERS (Declared safely before listener attachment) ---
     const handleGlobalMouseLeave = () => {
       mouseRef.current.active = false;
     };
@@ -287,7 +287,7 @@ export default function CrystallineParticleMatrix() {
       resizeTimeout = setTimeout(resizeCanvas, 400);
     };
 
-    // --- REGISTER EVENT LISTENERS ---
+    // --- REGISTRATION ---
     window.addEventListener("resize", resizeCanvas);
     window.addEventListener("scroll", handleGlobalScroll, { passive: true });
     window.addEventListener("load", resizeCanvas);
