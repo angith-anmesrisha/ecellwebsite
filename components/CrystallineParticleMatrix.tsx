@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 
+// Define the interface so the TypeScript compiler resolves the ref type cleanly
 interface WaterRipple {
   x: number;
   y: number;
@@ -10,10 +12,18 @@ interface WaterRipple {
   strength: number;
 }
 
-export default function CrystallineParticleMatrix() {
+interface CrystallineParticleMatrixProps {
+  isSparse?: boolean; // Manual override option to force sparse layout
+}
+
+export default function CrystallineParticleMatrix({ isSparse: manualSparse = false }: CrystallineParticleMatrixProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: 0, y: 0, lastX: 0, lastY: 0, active: false, velocity: 0 });
   const ripplesRef = useRef<WaterRipple[]>([]);
+  const pathname = usePathname();
+
+  // Automatically switch to sparse mode on admin and evaluation dashboards
+  const isSparse = manualSparse || pathname?.includes("/admin") || pathname?.includes("/evaluation");
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -64,9 +74,15 @@ export default function CrystallineParticleMatrix() {
     const initParticles = (w: number, h: number) => {
       particles = [];
       
-      // HIGH-VISIBILITY DENSITY SETTINGS
-      const densityMultiplier = isMobileDevice ? 2000 : 800; 
-      const maxCapLimit = isMobileDevice ? 250 : 1000;        
+      // Dynamic spacing calculations based on route and device
+      let densityMultiplier = isMobileDevice ? 2000 : 800; 
+      let maxCapLimit = isMobileDevice ? 250 : 1000;        
+
+      if (isSparse) {
+        densityMultiplier = isMobileDevice ? 5000 : 3500;
+        maxCapLimit = isMobileDevice ? 40 : 120;
+      }
+      
       const particleCount = Math.min(
         Math.floor((w * h) / densityMultiplier), 
         maxCapLimit
@@ -80,18 +96,25 @@ export default function CrystallineParticleMatrix() {
           ? Math.floor(Math.random() * 40) + 260 
           : Math.floor(Math.random() * 40) + 160;
 
+        // Visual properties adapt dynamically to prevent dashboard clutter
+        const particleSize = isSparse
+          ? (Math.random() * 0.8 + 0.6)  
+          : (Math.random() * 1.6 + 1.2); 
+
+        const baseAlpha = isSparse
+          ? (Math.random() * 0.10 + 0.15) 
+          : (Math.random() * 0.25 + 0.40); 
+
         particles.push({
           x,
           y,
           originX: x,
           originY: y,
-          vx: (Math.random() - 0.5) * 0.3,
-          vy: (Math.random() - 0.5) * 0.3,
-          // Boosted sizes for better visibility
-          size: Math.random() * 1.6 + 1.2, 
+          vx: (Math.random() - 0.5) * (isSparse ? 0.15 : 0.3), 
+          vy: (Math.random() - 0.5) * (isSparse ? 0.15 : 0.3),
+          size: particleSize, 
           hue: randomHue,
-          // Stronger base opacity so they pop
-          baseColor: `hsla(${randomHue}, 95%, 70%, ${Math.random() * 0.25 + 0.40})`, 
+          baseColor: `hsla(${randomHue}, 95%, 70%, ${baseAlpha})`, 
           angle: Math.random() * Math.PI * 2,
           speedFactor: Math.random() * 0.04 + 0.01
         });
@@ -212,8 +235,9 @@ export default function CrystallineParticleMatrix() {
               ctx.beginPath();
               ctx.moveTo(renderX, renderY);
               ctx.lineTo(p2.x, p2.y);
-              // Clearer neon link webs
-              ctx.strokeStyle = `rgba(168, 85, 247, ${0.18 * (1 - linkDist / 90)})`;
+              
+              const linkOpacity = isSparse ? 0.05 : 0.18;
+              ctx.strokeStyle = `rgba(168, 85, 247, ${linkOpacity * (1 - linkDist / 90)})`;
               ctx.lineWidth = 0.5;
               ctx.stroke();
             }
@@ -227,6 +251,8 @@ export default function CrystallineParticleMatrix() {
     resizeCanvas();
     
     const triggerRipple = (clientX: number, clientY: number, strength: number) => {
+      if (isSparse) return; // Disable hover ripple creation in sparse modes to prevent performance lag
+
       ripplesRef.current.push({
         x: clientX + window.scrollX,
         y: clientY + window.scrollY,
@@ -237,7 +263,8 @@ export default function CrystallineParticleMatrix() {
       if (ripplesRef.current.length > (isMobileDevice ? 4 : 8)) ripplesRef.current.shift();
     };
 
-    // --- INTERACTION HANDLERS (Declared safely before listener attachment) ---
+    // --- INTERACTION EVENT HANDLERS ---
+    // Safely declared before listener attachments to prevent scoping compiler issues
     const handleGlobalMouseLeave = () => {
       mouseRef.current.active = false;
     };
@@ -287,7 +314,7 @@ export default function CrystallineParticleMatrix() {
       resizeTimeout = setTimeout(resizeCanvas, 400);
     };
 
-    // --- REGISTRATION ---
+    // --- BIND EVENT LISTENERS ---
     window.addEventListener("resize", resizeCanvas);
     window.addEventListener("scroll", handleGlobalScroll, { passive: true });
     window.addEventListener("load", resizeCanvas);
@@ -304,7 +331,7 @@ export default function CrystallineParticleMatrix() {
 
     animationFrameId = requestAnimationFrame(animate);
 
-    // --- CLEANUP ---
+    // --- REMOVE LISTENERS ON UNMOUNT ---
     return () => {
       window.removeEventListener("resize", resizeCanvas);
       window.removeEventListener("scroll", handleGlobalScroll);
@@ -322,7 +349,7 @@ export default function CrystallineParticleMatrix() {
       clearTimeout(resizeTimeout);
       cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [isSparse]); // Recalculates canvas dimensions and matrix values when changing routes
 
   return (
     <canvas 

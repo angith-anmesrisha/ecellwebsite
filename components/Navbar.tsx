@@ -62,13 +62,12 @@ function MagneticNavLink({ href, label, tagline, onClick }: NavLinkProps) {
   };
 
   return (
-    <Link href={href} passHref legacyBehavior>
+    <Link href={href} onClick={handleClick}>
       <motion.div
         ref={linkRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onMouseEnter={() => setIsHovered(true)}
-        onClick={handleClick}
         style={{ x: springX, y: springY }}
         className="relative px-5 py-3 cursor-pointer group flex items-center justify-center overflow-visible"
       >
@@ -99,7 +98,7 @@ export default function Navbar() {
                 height={32}
                 className="object-contain"
                 priority
-            />
+              />
             </div>
             <span className="font-mono text-xs font-black tracking-[0.3em] uppercase text-white">
               E-Cell
@@ -116,7 +115,7 @@ export default function Navbar() {
 
           <div className="flex items-center gap-2 overflow-visible">
             <div className="hidden sm:block overflow-visible">
-              <Link href="/recruitment" passHref legacyBehavior>
+              <Link href="/recruitment">
                 <motion.button 
                   onMouseEnter={() => setBtnHover(true)}
                   onMouseLeave={() => setBtnHover(false)}
