@@ -30,18 +30,16 @@ interface Candidate {
   name: string;
   email: string;
   dept: "ops" | "media" | "spons";
+  status?: string;
 }
 
 export default function RecruitmentPortal() {
   const [hasMounted, setHasMounted] = useState(false);
-  const [portalPhase, setPortalPhase] = useState<
-    "LOCKED" | "REGISTRATION_OPEN" | "COMPLETED"
-  >("LOCKED");
+  const [portalPhase, setPortalPhase] = useState<"LOCKED" | "OPEN" | "STANDBY" | "COMPLETED">("LOCKED");
   const [isBypassed, setIsBypassed] = useState(false);
+  const [isHoldReleased, setIsHoldReleased] = useState(false);
 
-  const [activeCandidate, setActiveCandidate] = useState<Candidate | null>(
-    null,
-  );
+  const [activeCandidate, setActiveCandidate] = useState<Candidate | null>(null);
   const [currentRound, setCurrentRound] = useState<1 | 2>(1);
   const [quizFinished, setQuizFinished] = useState(false);
   const [round1Passed, setRound1Passed] = useState(false);
@@ -51,43 +49,29 @@ export default function RecruitmentPortal() {
 
     const checkLockStatus = async () => {
       if (isBypassed) {
-        setPortalPhase("REGISTRATION_OPEN");
+        setPortalPhase("OPEN");
         return;
       }
 
-      let serverPhase = "LOCKED";
       try {
         const res = await fetch("/api/recruitment/admin");
         const data = await res.json();
-        if (data.success) {
-          serverPhase = data.phase;
-          if (serverPhase === "OPEN" || serverPhase === "REGISTRATION_OPEN") {
-            setPortalPhase("REGISTRATION_OPEN");
-            return;
-          }
-          if (serverPhase === "COMPLETED") {
-            setPortalPhase("COMPLETED");
-            return;
-          }
+        if (data.success && data.phase) {
+          setPortalPhase(data.phase.toUpperCase() as any);
+          setIsHoldReleased(data.holdReleased || false);
         }
       } catch (err) {}
-
-      setPortalPhase("LOCKED");
     };
 
     checkLockStatus();
     const intervalNode = setInterval(checkLockStatus, 1000);
 
-    const cachedUserRaw = localStorage.getItem(
-      "ecell_active_candidate_session",
-    );
+    const cachedUserRaw = localStorage.getItem("ecell_active_candidate_session");
     if (cachedUserRaw) {
       const parsedCandidate = JSON.parse(cachedUserRaw) as Candidate;
       setActiveCandidate(parsedCandidate);
 
-      const progressCache = localStorage.getItem(
-        `ecell_progress_${parsedCandidate.id}`,
-      );
+      const progressCache = localStorage.getItem(`ecell_progress_${parsedCandidate.id}`);
       if (progressCache) {
         const parsedProgress = JSON.parse(progressCache);
         setQuizFinished(true);
@@ -99,7 +83,7 @@ export default function RecruitmentPortal() {
     }
 
     return () => clearInterval(intervalNode);
-  }, [currentRound, isBypassed]);
+  }, [isBypassed]);
 
   if (!hasMounted) return <div className="min-h-screen bg-black" />;
 
@@ -115,6 +99,30 @@ export default function RecruitmentPortal() {
 
   if (portalPhase === "COMPLETED") {
     return <PortalCompleted />;
+  }
+
+  if ((portalPhase === "STANDBY" || !isHoldReleased) && activeCandidate && !isBypassed) {
+    return (
+      <div className="min-h-screen w-full bg-black text-amber-500 flex flex-col items-center justify-center p-4 font-mono fixed inset-0 z-50">
+        <div className="w-full max-w-md bg-zinc-950 border border-amber-500/20 rounded-2xl p-8 space-y-6 text-center shadow-2xl relative z-10">
+          <div className="absolute top-3 right-4 text-[8px] text-amber-500/30 animate-pulse">● INITIALIZED</div>
+          <div className="w-12 h-12 rounded-full border border-amber-500/20 bg-amber-500/5 flex items-center justify-center mx-auto text-amber-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><circle cx="12" cy="12" r="10" strokeDasharray="30 10"/></svg>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-sm font-black uppercase text-white tracking-wider">Application Under Review</h2>
+            <p className="text-[11px] text-amber-500/60 leading-relaxed">
+              Hello {activeCandidate.name}, your recruitment profile has been successfully submitted. You are currently in the queue.
+            </p>
+          </div>
+          <div className="bg-black/40 border border-white/5 p-4 rounded-xl text-left text-[10px] space-y-1.5 text-zinc-400">
+            <p>• <strong className="text-zinc-200">Staging Status:</strong> Standby Lock Active</p>
+            <p>• <strong className="text-zinc-200">Requirement:</strong> The E-Cell administration needs to verify your entry before the quiz opens.</p>
+          </div>
+          <p className="text-[9px] text-zinc-600 animate-pulse">// The dashboard updates automatically when the admin releases your hold...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

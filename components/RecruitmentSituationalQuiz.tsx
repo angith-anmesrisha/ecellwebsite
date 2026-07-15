@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 
@@ -68,46 +68,14 @@ export default function RecruitmentSituationalQuiz({
     },
   ];
 
-  useEffect(() => {
-    const savedQuizIndex = localStorage.getItem(
-      `ecell_quiz_index_${activeCandidate.id}`,
-    );
-    const savedQuizChoices = localStorage.getItem(
-      `ecell_quiz_choices_${activeCandidate.id}`,
-    );
-    if (
-      savedQuizIndex &&
-      savedQuizChoices &&
-      !localStorage.getItem(`ecell_progress_${activeCandidate.id}`)
-    ) {
-      setCurrentQuestionIdx(parseInt(savedQuizIndex));
-      setSelectedIndices(JSON.parse(savedQuizChoices));
-    }
-  }, [activeCandidate.id]);
-
   const handleAnswerSelection = async (selectedOptionIdx: number) => {
     const updatedIndices = [...selectedIndices, selectedOptionIdx];
     setSelectedIndices(updatedIndices);
 
     if (currentQuestionIdx + 1 < quizQuestions.length) {
-      const nextIdx = currentQuestionIdx + 1;
-      setCurrentQuestionIdx(nextIdx);
-      localStorage.setItem(
-        `ecell_quiz_index_${activeCandidate.id}`,
-        nextIdx.toString(),
-      );
-      localStorage.setItem(
-        `ecell_quiz_choices_${activeCandidate.id}`,
-        JSON.stringify(updatedIndices),
-      );
+      setCurrentQuestionIdx(currentQuestionIdx + 1);
     } else {
       setIsSubmitting(true);
-      const base64String =
-        localStorage.getItem(`ecell_resume_file_${activeCandidate.id}`) || "";
-      const selectedFileName =
-        localStorage.getItem(`ecell_resume_name_${activeCandidate.id}`) ||
-        "Candidate_Resume.pdf";
-
       try {
         const response = await fetch("/api/recruitment/submit", {
           method: "POST",
@@ -117,8 +85,6 @@ export default function RecruitmentSituationalQuiz({
             email: activeCandidate.email,
             dept: activeCandidate.dept,
             round1Choices: updatedIndices,
-            resumeFileBase64: base64String,
-            resumeFileName: selectedFileName,
           }),
         });
 
@@ -126,26 +92,16 @@ export default function RecruitmentSituationalQuiz({
         if (auditData.success) {
           setRunningScore(auditData.score);
           setQuizFinished(true);
-          localStorage.setItem(
-            `ecell_progress_${activeCandidate.id}`,
-            JSON.stringify({
-              score: auditData.score,
-              passed: auditData.passedRound1,
-            }),
-          );
-
-          localStorage.removeItem(`ecell_quiz_index_${activeCandidate.id}`);
-          localStorage.removeItem(`ecell_quiz_choices_${activeCandidate.id}`);
 
           if (auditData.passedRound1) {
             setRound1Passed(true);
             setCurrentRound(2);
           }
         } else {
-          alert(auditData.error || "Submission rejected by the server.");
+          alert(auditData.error || "Submission rejected by server.");
         }
       } catch (err) {
-        alert("Connection timeout. Please check your internet and try again.");
+        alert("Server validation failure. Re-querying database state nodes.");
       } finally {
         setIsSubmitting(false);
       }
@@ -165,10 +121,8 @@ export default function RecruitmentSituationalQuiz({
             Evaluation Threshold Not Met
           </h3>
           <p className="text-xs text-white/40">
-            Your final score is:{" "}
-            {runningScore !== null ? `${runningScore}/100` : "CALCULATING..."}.
-            The minimum qualification requirement to pass this round is 40
-            points.
+            Your final score is: {runningScore !== null ? `${runningScore}/100` : "0/100"}. 
+            The minimum qualification requirement to pass this round is 40 points.
           </p>
         </div>
       </motion.div>

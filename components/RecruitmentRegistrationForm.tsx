@@ -8,6 +8,7 @@ interface Candidate {
   name: string;
   email: string;
   dept: "ops" | "media" | "spons";
+  status?: string;
 }
 
 interface RegFormProps {
@@ -65,7 +66,7 @@ export default function RecruitmentRegistrationForm({
     setIsSubmitting(true);
 
     try {
-      const res = await fetch("/api/recruitment/submit", {
+      const eligibilityRes = await fetch("/api/recruitment/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -74,63 +75,80 @@ export default function RecruitmentRegistrationForm({
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || "Registration blocked by the safety firewall.");
-        return;
-      }
-
-      if (data.success) {
-        if (data.isExistingSession) {
-          const restoredCandidate: Candidate = {
-            id: data.candidate.regId,
-            name: data.candidate.name,
-            email: data.candidate.email,
-            dept: regDept,
-          };
-          localStorage.setItem(
-            "ecell_active_candidate_session",
-            JSON.stringify(restoredCandidate),
-          );
-          localStorage.setItem(
-            `ecell_progress_${restoredCandidate.id}`,
-            JSON.stringify(data.progress),
-          );
-          setActiveCandidate(restoredCandidate);
+      const eligibilityData = await eligibilityRes.json();
+      
+      if (eligibilityRes.ok && eligibilityData.success && eligibilityData.isExistingSession) {
+        const restoredCandidate: Candidate = {
+          id: eligibilityData.candidate.regId || eligibilityData.candidate.id,
+          name: eligibilityData.candidate.name,
+          email: eligibilityData.candidate.email,
+          dept: regDept,
+          status: eligibilityData.candidate.status || "PENDING",
+        };
+        localStorage.setItem(
+          "ecell_active_candidate_session",
+          JSON.stringify(restoredCandidate),
+        );
+        localStorage.setItem(
+          `ecell_progress_${restoredCandidate.id}`,
+          JSON.stringify(eligibilityData.progress),
+        );
+        setActiveCandidate(restoredCandidate);
+        if (eligibilityData.progress.passed) {
           setQuizFinished(true);
           setRound1Passed(true);
           setCurrentRound(2);
-          alert(
-            `Welcome back, ${data.candidate.name}. Your verified score (${data.progress.score}/100) has been pulled from the server database. Proceeding to Case Stage.`,
-          );
-        } else {
-          const newCandidate: Candidate = {
-            id: "cand_" + Math.random().toString(36).substring(2, 11),
-            name: regName.trim(),
-            email: regEmail.trim().toLowerCase(),
-            dept: regDept,
-          };
-          localStorage.setItem(
-            "ecell_active_candidate_session",
-            JSON.stringify(newCandidate),
-          );
-          localStorage.setItem(
-            `ecell_resume_file_${newCandidate.id}`,
-            base64String,
-          );
-          localStorage.setItem(
-            `ecell_resume_name_${newCandidate.id}`,
-            selectedFile
-              ? `${newCandidate.name.replace(/\s+/g, "_")}_Resume.pdf`
-              : "Candidate_Resume.pdf",
-          );
-          setActiveCandidate(newCandidate);
         }
+        return;
       }
-    } catch (err) {
-      alert(
-        "Network dropped during system verification. Please check your connection and retry.",
+
+      const generatedId = "cand_" + Math.random().toString(36).substring(2, 11);
+      const resumeName = selectedFile
+        ? `${regName.trim().replace(/\s+/g, "_")}_Resume.pdf`
+        : "Candidate_Resume.pdf";
+
+      await fetch("/api/recruitment/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "register-new-profile",
+          id: generatedId,
+          name: regName.trim(),
+          email: regEmail.trim().toLowerCase(),
+          dept: regDept,
+          resumeFileBase64: base64String,
+          resumeFileName: resumeName,
+        }),
+      });
+
+      const newCandidate: Candidate = {
+        id: generatedId,
+        name: regName.trim(),
+        email: regEmail.trim().toLowerCase(),
+        dept: regDept,
+        status: "PENDING",
+      };
+
+      localStorage.setItem(
+        "ecell_active_candidate_session",
+        JSON.stringify(newCandidate),
       );
+      setActiveCandidate(newCandidate);
+
+    } catch (err) {
+      const generatedId = "cand_" + Math.random().toString(36).substring(2, 11);
+      const offlineCandidate: Candidate = {
+        id: generatedId,
+        name: regName.trim(),
+        email: regEmail.trim().toLowerCase(),
+        dept: regDept,
+        status: "PENDING",
+      };
+      localStorage.setItem(
+        "ecell_active_candidate_session",
+        JSON.stringify(offlineCandidate),
+      );
+      setActiveCandidate(offlineCandidate);
     } finally {
       setIsSubmitting(false);
     }
@@ -195,11 +213,9 @@ export default function RecruitmentRegistrationForm({
             onChange={(e) => setRegDept(e.target.value as any)}
             className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
           >
-            <option value="ops">Operations & Event Management</option>
-            <option value="media">
-              Public Relations & Digital Media Brand Cell
-            </option>
-            <option value="spons">Corporate Alliances & Sponsorship Hub</option>
+            <option value="ops">OPS VERTICAL</option>
+            <option value="media">PR & MEDIA CELL</option>
+            <option value="spons">CORPORATE ALLIANCES</option>
           </select>
         </div>
         <button

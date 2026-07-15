@@ -1,24 +1,31 @@
 import { NextResponse } from "next/server";
 
-
 let globalPortalPhase = "LOCKED";
+let globalHoldReleased = false;
 
 export async function GET() {
-  
-  return NextResponse.json({ success: true, phase: globalPortalPhase });
+  return NextResponse.json({ 
+    success: true, 
+    phase: globalPortalPhase,
+    holdReleased: globalHoldReleased 
+  });
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
-    
+
     if (body.action === "update-global-phase") {
-      globalPortalPhase = body.phase; 
-      return NextResponse.json({ success: true, phase: globalPortalPhase });
+      if (body.phase) globalPortalPhase = body.phase;
+      if (body.holdReleased !== undefined) globalHoldReleased = body.holdReleased;
+      
+      return NextResponse.json({ 
+        success: true, 
+        phase: globalPortalPhase,
+        holdReleased: globalHoldReleased 
+      });
     }
 
-    
     const { passkey } = body;
     if (!passkey) {
       return NextResponse.json({ error: "Missing authorization token parameter." }, { status: 400 });
