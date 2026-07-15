@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useMemo, useEffect } from "react";
+import React, { useRef, useMemo, useEffect, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Center, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
@@ -10,17 +10,13 @@ function LocalGlbModel() {
   const groupRef = useRef<THREE.Group>(null);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
 
-  
   const clone = useMemo(() => scene.clone(true), [scene]);
 
-  
   useEffect(() => {
     if (clone && animations && animations.length > 0) {
-      
       const mixer = new THREE.AnimationMixer(clone);
       mixerRef.current = mixer;
 
-      
       const action = mixer.clipAction(animations[0]);
       action.setLoop(THREE.LoopRepeat, Infinity); 
       action.clampWhenFinished = false;
@@ -39,21 +35,19 @@ function LocalGlbModel() {
 
     const scrollY = typeof window !== "undefined" ? window.scrollY : 0;
     const scrollFactor = Math.min(scrollY / 700, 1);
-    const { x, y } = state.pointer;
-
     
-    groupRef.current.position.x = (x * 0.4);
-    groupRef.current.position.y = (y * 0.4);
+    // Fix: Fallback to 0 if pointer is NaN/Undefined (common on mobile initiation)
+    const pointerX = state.pointer?.x || 0;
+    const pointerY = state.pointer?.y || 0;
+
+    groupRef.current.position.x = (pointerX * 0.4);
+    groupRef.current.position.y = (pointerY * 0.4);
     groupRef.current.position.z = (scrollFactor * -2);
 
-    
-    
     const baseRotationY = 0.5; 
-    groupRef.current.rotation.y = baseRotationY + (x * 0.1);
+    groupRef.current.rotation.y = baseRotationY + (pointerX * 0.1);
     groupRef.current.rotation.x = 0; 
 
-    
-    
     if (mixerRef.current) {
       mixerRef.current.update(delta);
     }
@@ -78,11 +72,26 @@ function SceneLighting() {
 }
 
 export default function HeroCanvas3D() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Do not render resource-heavy 3D canvas on small screens
+  if (isMobile) return null;
+
   return (
     <div className="absolute inset-0 w-full h-full z-0 pointer-events-none opacity-80">
       <Canvas
         camera={{ position: [0, 0, 5.5], fov: 45 }}
-        gl={{ antialias: true, alpha: true }}
+        // Disable antialias to save massive mobile processing pipeline
+        gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
         style={{ pointerEvents: "none" }}
       >
         <SceneLighting />

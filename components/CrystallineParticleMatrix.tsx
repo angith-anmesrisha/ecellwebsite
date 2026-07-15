@@ -24,6 +24,10 @@ export default function CrystallineParticleMatrix() {
     let animationFrameId: number;
     let lastTime = performance.now();
     let resizeTimeout: NodeJS.Timeout;
+    
+    // Check if device is mobile
+    const isMobileDevice = window.innerWidth < 768;
+
     let particles: Array<{
       x: number;
       y: number;
@@ -45,7 +49,8 @@ export default function CrystallineParticleMatrix() {
       const logicalWidth = window.innerWidth;
       const logicalHeight = Math.max(d.scrollHeight, d.offsetHeight, b.scrollHeight, b.offsetHeight, window.innerHeight);
       
-      const dpr = window.devicePixelRatio || 1;
+      // Limit high-DPR screens on mobile to save processing loops
+      const dpr = isMobileDevice ? 1 : (window.devicePixelRatio || 1);
       
       canvas.width = logicalWidth * dpr;
       canvas.height = logicalHeight * dpr;
@@ -58,12 +63,12 @@ export default function CrystallineParticleMatrix() {
       initParticles(logicalWidth, logicalHeight);
     };
 
-   const initParticles = (w: number, h: number) => {
+    const initParticles = (w: number, h: number) => {
       particles = [];
       
-      // HIGH-PERFORMANCE SPARSE SETTINGS
-      const densityMultiplier = 1800; 
-      const maxCapLimit = 600;        
+      // HIGH-PERFORMANCE SPARSE SETTINGS FOR MOBILE
+      const densityMultiplier = isMobileDevice ? 4500 : 1800; 
+      const maxCapLimit = isMobileDevice ? 100 : 600;        
       const particleCount = Math.min(
         Math.floor((w * h) / densityMultiplier), 
         maxCapLimit
@@ -82,13 +87,13 @@ export default function CrystallineParticleMatrix() {
           y,
           originX: x,
           originY: y,
-          vx: (Math.random() - 0.5) * 0.4,
-          vy: (Math.random() - 0.5) * 0.4,
-          size: Math.random() * 1.2 + 0.5, 
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          size: Math.random() * 1.0 + 0.4, 
           hue: randomHue,
-          baseColor: `hsla(${randomHue}, 90%, 65%, ${Math.random() * 0.15 + 0.2})`, 
+          baseColor: `hsla(${randomHue}, 90%, 65%, ${Math.random() * 0.12 + 0.15})`, 
           angle: Math.random() * Math.PI * 2,
-          speedFactor: Math.random() * 0.05 + 0.01
+          speedFactor: Math.random() * 0.04 + 0.01
         });
       }
     };
@@ -115,7 +120,7 @@ export default function CrystallineParticleMatrix() {
 
       ripplesRef.current.forEach((ripple, idx) => {
         ripple.time += deltaTime;
-        if (ripple.time > 1.5) {
+        if (ripple.time > 1.2) { // Shorter ripple lifetime on mobile
           ripplesRef.current.splice(idx, 1);
         }
       });
@@ -134,18 +139,18 @@ export default function CrystallineParticleMatrix() {
           const dx = mouse.x - p.x;
           const dy = mouse.y - p.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-          const activeRadius = 350;
+          const activeRadius = isMobileDevice ? 150 : 350; // Reduce interaction radius on touchscreens
 
           if (distance < activeRadius) {
             const force = (activeRadius - distance) / activeRadius;
             if (mouse.velocity > 15) {
-              p.x -= (dx / distance) * force * (mouse.velocity * 0.4);
-              p.y -= (dy / distance) * force * (mouse.velocity * 0.4);
+              p.x -= (dx / distance) * force * (mouse.velocity * 0.3);
+              p.y -= (dy / distance) * force * (mouse.velocity * 0.3);
             } else {
-              p.x += (dx / distance) * force * 5.0;
-              p.y += (dy / distance) * force * 5.0;
-              p.x += Math.sin(p.angle) * 0.4;
-              p.y += Math.cos(p.angle) * 0.4;
+              p.x += (dx / distance) * force * 4.0;
+              p.y += (dy / distance) * force * 4.0;
+              p.x += Math.sin(p.angle) * 0.3;
+              p.y += Math.cos(p.angle) * 0.3;
               p.angle += p.speedFactor;
             }
           } else {
@@ -163,20 +168,20 @@ export default function CrystallineParticleMatrix() {
           const rDy = p.y - ripple.y;
           const rDistance = Math.sqrt(rDx * rDx + rDy * rDy);
           
-          const waveSpeed = 240; 
+          const waveSpeed = 200; 
           const currentWaveFront = ripple.time * waveSpeed;
           
           if (rDistance < ripple.maxRadius && rDistance < currentWaveFront) {
             const waveFrequency = 0.09; 
-            const waveWidth = 40; 
+            const waveWidth = 30; 
             const distFromFront = Math.abs(rDistance - currentWaveFront);
             
             if (distFromFront < waveWidth) {
               const waveMath = Math.sin((rDistance - currentWaveFront) * waveFrequency);
               const falloff = (1.0 - distFromFront / waveWidth) * (1.0 - rDistance / ripple.maxRadius);
-              const timeDecay = Math.max(0, 1.0 - ripple.time / 1.5);
+              const timeDecay = Math.max(0, 1.0 - ripple.time / 1.2);
               
-              const pushScale = waveMath * 16 * ripple.strength * falloff * timeDecay;
+              const pushScale = waveMath * 12 * ripple.strength * falloff * timeDecay;
               
               if (rDistance > 0) {
                 renderX += (rDx / rDistance) * pushScale;
@@ -184,7 +189,7 @@ export default function CrystallineParticleMatrix() {
               }
               
               if (waveMath > 0.3) {
-                finalColor = `hsla(${p.hue}, 100%, 82%, ${0.65 * falloff * timeDecay})`;
+                finalColor = `hsla(${p.hue}, 100%, 82%, ${0.5 * falloff * timeDecay})`;
               }
             }
           }
@@ -195,19 +200,21 @@ export default function CrystallineParticleMatrix() {
         ctx.fillStyle = finalColor;
         ctx.fill();
 
+        // Reduce connection-line calculations on mobile to avoid CPU lag
+        const connectionInterval = isMobileDevice ? 15 : 6;
         if (mouse.velocity < 20) {
-          for (let j = i + 1; j < particles.length; j += 6) { 
+          for (let j = i + 1; j < particles.length; j += connectionInterval) { 
             const p2 = particles[j];
             const distx = renderX - p2.x;
             const disty = renderY - p2.y;
             const linkDist = Math.sqrt(distx * distx + disty * disty);
 
-            if (linkDist < 100) {
+            if (linkDist < 80) {
               ctx.beginPath();
               ctx.moveTo(renderX, renderY);
               ctx.lineTo(p2.x, p2.y);
-              ctx.strokeStyle = `rgba(168, 85, 247, ${0.06 * (1 - linkDist / 100)})`;
-              ctx.lineWidth = 0.4;
+              ctx.strokeStyle = `rgba(168, 85, 247, ${0.04 * (1 - linkDist / 80)})`;
+              ctx.lineWidth = 0.3;
               ctx.stroke();
             }
           }
@@ -219,19 +226,24 @@ export default function CrystallineParticleMatrix() {
 
     resizeCanvas();
     
-    const triggerRipple = (clientX: number, clientY: number, strength: number) => {
+   const triggerRipple = (clientX: number, clientY: number, strength: number) => {
       ripplesRef.current.push({
         x: clientX + window.scrollX,
         y: clientY + window.scrollY,
         time: 0,
-        maxRadius: 240, 
+        maxRadius: isMobileDevice ? 150 : 240, 
         strength: strength
       });
-      if (ripplesRef.current.length > 8) ripplesRef.current.shift();
+      if (ripplesRef.current.length > (isMobileDevice ? 4 : 8)) ripplesRef.current.shift();
+    };
+
+    // FIX: Define functions BEFORE they are registered as event listeners
+    const handleGlobalMouseLeave = () => {
+      mouseRef.current.active = false;
     };
 
     const handleGlobalClick = (e: MouseEvent) => {
-      triggerRipple(e.clientX, e.clientY, 1.5);
+      triggerRipple(e.clientX, e.clientY, 1.2);
     };
 
     const handleGlobalMouseMove = (e: MouseEvent) => {
@@ -243,17 +255,25 @@ export default function CrystallineParticleMatrix() {
       const dy = mouseRef.current.y - mouseRef.current.lastY;
       const moveSpeed = Math.sqrt(dx * dx + dy * dy);
 
-      if (moveSpeed > 35) {
-        triggerRipple(e.clientX, e.clientY, Math.min(0.7, moveSpeed * 0.008));
+      if (moveSpeed > 45) {
+        triggerRipple(e.clientX, e.clientY, Math.min(0.5, moveSpeed * 0.006));
       }
     };
 
-    const handleGlobalMouseLeave = () => {
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 0) return;
+      const touch = e.touches[0];
+      mouseRef.current.x = touch.clientX + window.scrollX;
+      mouseRef.current.y = touch.clientY + window.scrollY;
+      mouseRef.current.active = true;
+    };
+
+    const handleTouchEnd = () => {
       mouseRef.current.active = false;
     };
 
     const handleGlobalScroll = () => {
-      if (Math.random() > 0.75) {
+      if (!isMobileDevice && Math.random() > 0.75) {
         triggerRipple(
           window.innerWidth / 2 + (Math.random() - 0.5) * 300, 
           window.innerHeight / 2 + (Math.random() - 0.5) * 300, 
@@ -267,25 +287,38 @@ export default function CrystallineParticleMatrix() {
       resizeTimeout = setTimeout(resizeCanvas, 400);
     };
 
+    // --- REGISTER EVENT LISTENERS ---
     window.addEventListener("resize", resizeCanvas);
-    window.addEventListener("mousemove", handleGlobalMouseMove);
-    window.addEventListener("click", handleGlobalClick);
     window.addEventListener("scroll", handleGlobalScroll, { passive: true });
-    document.addEventListener("mouseleave", handleGlobalMouseLeave);
-    
     window.addEventListener("load", resizeCanvas);
     document.addEventListener("readystatechange", handleAdaptiveLayoutDelay);
 
+    if (!isMobileDevice) {
+      window.addEventListener("mousemove", handleGlobalMouseMove);
+      window.addEventListener("click", handleGlobalClick);
+      document.addEventListener("mouseleave", handleGlobalMouseLeave);
+    } else {
+      window.addEventListener("touchmove", handleTouchMove, { passive: true });
+      window.addEventListener("touchend", handleTouchEnd);
+    }
+
     animationFrameId = requestAnimationFrame(animate);
 
+    // --- CLEANUP ---
     return () => {
       window.removeEventListener("resize", resizeCanvas);
-      window.removeEventListener("mousemove", handleGlobalMouseMove);
-      window.removeEventListener("click", handleGlobalClick);
       window.removeEventListener("scroll", handleGlobalScroll);
       window.removeEventListener("load", resizeCanvas);
-      document.removeEventListener("mouseleave", handleGlobalMouseLeave);
       document.removeEventListener("readystatechange", handleAdaptiveLayoutDelay);
+      
+      if (!isMobileDevice) {
+        window.removeEventListener("mousemove", handleGlobalMouseMove);
+        window.removeEventListener("click", handleGlobalClick);
+        document.removeEventListener("mouseleave", handleGlobalMouseLeave);
+      } else {
+        window.removeEventListener("touchmove", handleTouchMove);
+        window.removeEventListener("touchend", handleTouchEnd);
+      }
       clearTimeout(resizeTimeout);
       cancelAnimationFrame(animationFrameId);
     };
