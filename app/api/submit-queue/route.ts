@@ -95,18 +95,7 @@ export async function POST(request: Request) {
     const problemTextClean = (problemStatement || "").trim().toLowerCase();
     const titleTextClean = (startupTitle || "").trim().toLowerCase();
 
-    const complianceBlockTerms = ["scam", "exploit", "illegal", "hack", "bypass", "fraud", "slavery", "slave"];
-    const hasComplianceViolation = complianceBlockTerms.some(
-      term => problemTextClean.includes(term) || titleTextClean.includes(term)
-    );
-
-    if (hasComplianceViolation) {
-      return NextResponse.json({ 
-        success: false, 
-        isViolation: true,
-        error: "CRITICAL COMPLIANCE REFUSAL: This concept triggers automatic regulatory filters. The E-Cell algorithmic sandbox completely blocks architectures promoting illegal frameworks, human rights violations, or unethical business models." 
-      }, { status: 403 });
-    }
+    
 
     try {
       await fetch(targetUrl, {
