@@ -143,7 +143,7 @@ export async function POST(request: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-oss-20b", 
+        model: "openai/gpt-oss-120b", 
         response_format: { type: "json_object" }, 
         temperature: 0.3,
         messages: [
