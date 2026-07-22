@@ -12,11 +12,28 @@ interface TeamMember {
 }
 
 const TEAM_MEMBERS: TeamMember[] = [
-  { id: 1, name: "Don Joe", role: "Technical Head", image: "/team/a.jpg" },
-  { id: 2, name: "Jane Doe", role: "President", image: "/team/jane.jpg" },
-  { id: 3, name: "John Smith", role: "Operations Head", image: "/team/john.jpg" },
-  { id: 4, name: "Anne Marie", role: "Strategic Relations", image: "/team/arnab.jpg" },
-  { id: 5, name: "Jaqueline Fernandez", role: "Venture Lead", image: "/team/ankit.jpg" },
+  { id: 1, name: "Angith V Shaji", role: "Tech/Operations/Finance", image: "/team/a.jpg" },
+  { id: 2, name: "Aditi Jain", role: "People & Team Coordinator", image: "/team/jane.jpg" },
+  { id: 3, name: "Vishnu J", role: "Media and Communications", image: "/team/john.jpg" },
+  { id: 4, name: "Rishi Agrawal", role: "Media and Communications", image: "/team/arnab.jpg" },
+  { id: 5, name: "Anoushka Singh", role: "Sponsorship and Strategic Relations", image: "/team/ankit.jpg" },
+  { id: 6, name: "Pranav Pahuja", role: "Operations/Finance", image: "/team/arnab.jpg" },
+  { id: 7, name: "Dharmik Patel", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg" },
+  { id: 8, name: "Shambu Monga", role: "Media and Communications", image: "/team/arnab.jpg" },
+  { id: 9, name: "Aditya Vats", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg" },
+  { id: 10, name: "Koushal Ostwald", role: "Media and Communications", image: "/team/arnab.jpg" },
+  { id: 11, name: "ThirumalaiRajan", role: "Operations/Finance", image: "/team/arnab.jpg" },
+  { id: 12, name: "Harshit Kothari Jain", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg" },
+  { id: 13, name: "Gautam Khandelwal", role: "Media and Communications", image: "/team/arnab.jpg" },
+  { id: 14, name: "Anirudh Topaz Banerjee", role: "Tech/Operations", image: "/team/arnab.jpg" },
+  { id: 15, name: "Naman Kurkeja", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg" },
+  { id: 16, name: "Mayank Handa", role: "People & Team Coordinator", image: "/team/arnab.jpg" },
+  { id: 17, name: "Madhur Kala", role: "Operations/Finance", image: "/team/arnab.jpg" }
+  
+  
+  
+
+  
 ];
 
 
