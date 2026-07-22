@@ -13,23 +13,24 @@ interface TeamMember {
 }
 
 const TEAM_MEMBERS: TeamMember[] = [
-  { id: 1, name: "Angith V Shaji", role: "Tech/Operations/Finance", image: "/team/a.jpg", linkedin: "https://www.linkedin.com/in/angith-v-shaji/" },
-  { id: 2, name: "Aditi Jain", role: "People & Team Coordinator", image: "/team/jane.jpg", linkedin: "https://www.linkedin.com/in/aditi-jain-812848305/" },
-  { id: 3, name: "Vishnu J", role: "Media and Communications", image: "/team/john.jpg", linkedin: "https://www.linkedin.com/in/viisshnu-j/" },
-  { id: 4, name: "Rishi Agrawal", role: "Media and Communications", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/rishiagrawalin/" },
-  { id: 5, name: "Anoushka Singh", role: "Sponsorship and Strategic Relations", image: "/team/ankit.jpg", linkedin: "https://www.linkedin.com/in/anoushkasinghh/" },
-  { id: 6, name: "Pranav Pahuja", role: "Operations/Finance", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/pranav-pahuja-b660691bb/" },
-  { id: 7, name: "Dharmik Patel", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/dharmik-patel-a8ba64195" },
-  { id: 8, name: "Shambu Monga", role: "Media and Communications", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/shambhu-monga" },
-  { id: 9, name: "Aditya Vats", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/aditya-vats-53b94521a" },
-  { id: 10, name: "Koushal Ostwal", role: "Media and Communications", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/koushal-ostwal/" },
-  { id: 11, name: "ThirumalaiRajan", role: "Operations/Finance", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/thirumalai-rajan-73267720a/" },
-  { id: 12, name: "Harshit Kothari Jain", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/harshit-kothari-jain-b53503267/" },
-  { id: 13, name: "Gautam Khandelwal", role: "Media and Communications", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/gautam-khandelwal/" },
-  { id: 14, name: "Aniruddh Topaz Banerjee", role: "Tech/Operations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/aniruddhbanerjee31" },
-  { id: 15, name: "Naman Kurkeja", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/naman-kukreja-a753461a7/" },
-  { id: 16, name: "Mayank Handa", role: "People & Team Coordinator", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/mayank-handa-13b650166" },
-  { id: 17, name: "Madhur Kala", role: "Operations/Finance", image: "/team/arnab.jpg", linkedin: "https://linkedin.com/in/madhur-kala" }
+  { id: 1, name: "Dr. Shalini Singh", role: "Mentor - E-Cell", image: "/team/a.jpg", linkedin: "https://www.linkedin.com/in/dr-shalini-singh/" },
+  { id: 2, name: "Angith V Shaji", role: "Tech/Operations/Finance", image: "/team/a.jpg", linkedin: "https://www.linkedin.com/in/angith-v-shaji/" },
+  { id: 3, name: "Aditi Jain", role: "People & Team Coordinator", image: "/team/jane.jpg", linkedin: "https://www.linkedin.com/in/aditi-jain-812848305/" },
+  { id: 4, name: "Vishnu J", role: "Media and Communications", image: "/team/john.jpg", linkedin: "https://www.linkedin.com/in/viisshnu-j/" },
+  { id: 5, name: "Rishi Agrawal", role: "Media and Communications", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/rishiagrawalin/" },
+  { id: 6, name: "Anoushka Singh", role: "Sponsorship and Strategic Relations", image: "/team/ankit.jpg", linkedin: "https://www.linkedin.com/in/anoushkasinghh/" },
+  { id: 7, name: "Pranav Pahuja", role: "Operations/Finance", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/pranav-pahuja-b660691bb/" },
+  { id: 8, name: "Dharmik Patel", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/dharmik-patel-a8ba64195" },
+  { id: 9, name: "Shambu Monga", role: "Media and Communications", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/shambhu-monga" },
+  { id: 10, name: "Aditya Vats", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/aditya-vats-53b94521a" },
+  { id: 11, name: "Koushal Ostwal", role: "Media and Communications", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/koushal-ostwal/" },
+  { id: 12, name: "ThirumalaiRajan", role: "Operations/Finance", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/thirumalai-rajan-73267720a/" },
+  { id: 13, name: "Harshit Kothari Jain", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/harshit-kothari-jain-b53503267/" },
+  { id: 14, name: "Gautam Khandelwal", role: "Media and Communications", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/gautam-khandelwal/" },
+  { id: 15, name: "Aniruddh Topaz Banerjee", role: "Tech/Operations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/aniruddhbanerjee31" },
+  { id: 16, name: "Naman Kurkeja", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/naman-kukreja-a753461a7/" },
+  { id: 17, name: "Mayank Handa", role: "People & Team Coordinator", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/mayank-handa-13b650166" },
+  { id: 18, name: "Madhur Kala", role: "Operations/Finance", image: "/team/arnab.jpg", linkedin: "https://linkedin.com/in/madhur-kala" }
 ];
 
 
