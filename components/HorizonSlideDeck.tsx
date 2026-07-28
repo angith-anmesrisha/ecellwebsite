@@ -13,36 +13,49 @@ export default function HorizonSlideDeck() {
   const [isPast, setIsPast] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
+    let ticking = false;
+
+    const updateScrollState = () => {
       if (!containerRef.current) return;
 
       const rect = containerRef.current.getBoundingClientRect();
       const containerHeight = containerRef.current.offsetHeight;
       const windowHeight = window.innerHeight;
 
-      
-      const totalScrollableDistance = containerHeight - windowHeight;
+      // Failsafe to prevent zero-division during initial rapid DOM paints
+      const totalScrollableDistance = Math.max(1, containerHeight - windowHeight);
       const currentScrollPosition = -rect.top;
-      const progress = Math.max(0, Math.min(1, currentScrollPosition / totalScrollableDistance));
       
+      const progress = Math.max(0, Math.min(1, currentScrollPosition / totalScrollableDistance));
       setScrollProgress(progress);
 
-      
+      // We explicitly check the previous state before updating to prevent the 
+      // "Maximum update depth exceeded" layout shift infinite loop
       if (rect.top <= 0 && -rect.top <= totalScrollableDistance) {
-        setIsFixed(true);
-        setIsPast(false);
+        setIsFixed((prev) => (prev !== true ? true : prev));
+        setIsPast((prev) => (prev !== false ? false : prev));
       } else if (-rect.top > totalScrollableDistance) {
-        setIsFixed(false);
-        setIsPast(true); 
+        setIsFixed((prev) => (prev !== false ? false : prev));
+        setIsPast((prev) => (prev !== true ? true : prev));
       } else {
-        setIsFixed(false);
-        setIsPast(false); 
+        setIsFixed((prev) => (prev !== false ? false : prev));
+        setIsPast((prev) => (prev !== false ? false : prev));
+      }
+
+      ticking = false;
+    };
+
+    const handleScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        window.requestAnimationFrame(updateScrollState);
       }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     
-    handleScroll();
+    // Initial evaluation trigger
+    updateScrollState();
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -55,7 +68,7 @@ export default function HorizonSlideDeck() {
       ref={containerRef} 
       className="relative h-[300vh] w-full bg-transparent"
     >
-      {/* 🌟 THE DIRECT VIEWPORT LOCK LAYER */}
+      {/* 🌟 RESTORED DIRECT VIEWPORT LOCK LAYER */}
       <div 
         className={`w-full h-screen overflow-hidden flex items-center border-t border-b border-white/10 bg-zinc-950/20 backdrop-blur-3xl transition-shadow duration-300 ${
           isFixed 
@@ -103,7 +116,6 @@ export default function HorizonSlideDeck() {
                 <span className="text-white/20">// CORE COMMAND CONTROL ARRAY</span>
               </div>
               <div className="w-full overflow-hidden max-h-[460px] flex items-center justify-center relative">
-                {/* 🌟 UPGRADE: Pass down the live timeline tracker state progress into the component */}
                 <TeamCarousel3D progress={scrollProgress} />
               </div>
             </div>

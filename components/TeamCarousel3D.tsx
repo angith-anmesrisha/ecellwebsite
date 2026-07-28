@@ -9,28 +9,28 @@ interface TeamMember {
   name: string;
   role: string;
   image: string;
-  linkedin: string; // Added linkedin property
+  linkedin: string; 
 }
 
 const TEAM_MEMBERS: TeamMember[] = [
-  { id: 1, name: "Dr. Shalini Singh", role: "Mentor - E-Cell", image: "/team/a.jpg", linkedin: "https://www.linkedin.com/in/dr-shalini-singh/" },
-  { id: 2, name: "Angith V Shaji", role: "Tech/Operations/Finance", image: "/team/a.jpg", linkedin: "https://www.linkedin.com/in/angith-v-shaji/" },
-  { id: 3, name: "Aditi Jain", role: "People & Team Coordinator", image: "/team/jane.jpg", linkedin: "https://www.linkedin.com/in/aditi-jain-812848305/" },
-  { id: 4, name: "Vishnu J", role: "Media and Communications", image: "/team/john.jpg", linkedin: "https://www.linkedin.com/in/viisshnu-j/" },
+  { id: 1, name: "Dr. Shalini Singh", role: "Mentor - E-Cell", image: "/team/Shalini.jpeg", linkedin: "https://www.linkedin.com/in/dr-shalini-singh/" },
+  { id: 2, name: "Angith V Shaji", role: "Tech/Operations/Finance", image: "/team/Angith.jpg", linkedin: "https://www.linkedin.com/in/angith-v-shaji/" },
+  { id: 3, name: "Aditi Jain", role: "People & Team Coordinator", image: "/team/Aditi.jpg", linkedin: "https://www.linkedin.com/in/aditi-jain-812848305/" },
+  { id: 4, name: "Vishnu J", role: "Media and Communications", image: "/team/vishnu.jpg", linkedin: "https://www.linkedin.com/in/viisshnu-j/" },
   { id: 5, name: "Rishi Agrawal", role: "Media and Communications", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/rishiagrawalin/" },
   { id: 6, name: "Anoushka Singh", role: "Sponsorship and Strategic Relations", image: "/team/ankit.jpg", linkedin: "https://www.linkedin.com/in/anoushkasinghh/" },
-  { id: 7, name: "Pranav Pahuja", role: "Operations/Finance", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/pranav-pahuja-b660691bb/" },
-  { id: 8, name: "Dharmik Patel", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/dharmik-patel-a8ba64195" },
-  { id: 9, name: "Shambu Monga", role: "Media and Communications", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/shambhu-monga" },
-  { id: 10, name: "Aditya Vats", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/aditya-vats-53b94521a" },
-  { id: 11, name: "Koushal Ostwal", role: "Media and Communications", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/koushal-ostwal/" },
-  { id: 12, name: "ThirumalaiRajan", role: "Operations/Finance", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/thirumalai-rajan-73267720a/" },
+  { id: 7, name: "Pranav Pahuja", role: "Operations/Finance", image: "/team/Pranav.jpg", linkedin: "https://www.linkedin.com/in/pranav-pahuja-b660691bb/" },
+  { id: 8, name: "Dharmik Patel", role: "Sponsorship and Strategic Relations", image: "/team/Dharmik.jpg", linkedin: "https://www.linkedin.com/in/dharmik-patel-a8ba64195" },
+  { id: 9, name: "Shambu Monga", role: "Media and Communications", image: "/team/Shambu.jpg", linkedin: "https://www.linkedin.com/in/shambhu-monga" },
+  { id: 10, name: "Aditya Vats", role: "Sponsorship and Strategic Relations", image: "/team/Aditya.jpg", linkedin: "https://www.linkedin.com/in/aditya-vats-53b94521a" },
+  { id: 11, name: "Koushal Ostwal", role: "Media and Communications", image: "/team/Koushal.jpg", linkedin: "https://www.linkedin.com/in/koushal-ostwal/" },
+  { id: 12, name: "ThirumalaiRajan", role: "Operations/Finance", image: "/team/Thiru.jpeg", linkedin: "https://www.linkedin.com/in/thirumalai-rajan-73267720a/" },
   { id: 13, name: "Harshit Kothari Jain", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/harshit-kothari-jain-b53503267/" },
   { id: 14, name: "Gautam Khandelwal", role: "Media and Communications", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/gautam-khandelwal/" },
   { id: 15, name: "Aniruddh Topaz Banerjee", role: "Tech/Operations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/aniruddhbanerjee31" },
   { id: 16, name: "Naman Kurkeja", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/naman-kukreja-a753461a7/" },
-  { id: 17, name: "Mayank Handa", role: "People & Team Coordinator", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/mayank-handa-13b650166" },
-  { id: 18, name: "Madhur Kala", role: "Operations/Finance", image: "/team/arnab.jpg", linkedin: "https://linkedin.com/in/madhur-kala" }
+  { id: 17, name: "Mayank Handa", role: "People & Team Coordinator", image: "/team/Mayank.jpg", linkedin: "https://www.linkedin.com/in/mayank-handa-13b650166" },
+  { id: 18, name: "Madhur Kala", role: "Operations/Finance", image: "/team/Madhur.jpg", linkedin: "https://linkedin.com/in/madhur-kala" }
 ];
 
 
@@ -107,12 +107,14 @@ export default function TeamCarousel3D({ progress }: TeamCarousel3DProps) {
                 }}
                 className="absolute w-[290px] h-[400px] bg-zinc-950 border border-white/10 rounded-2xl p-4 flex flex-col justify-between overflow-hidden group shadow-2xl backdrop-blur-md cursor-grab active:cursor-grabbing"
               >
-                {/* Visual Content Frame */}
+                {/* Visual Content Frame - Updated to show image */}
                 <div className="w-full h-2/3 bg-zinc-900 rounded-xl relative overflow-hidden border border-white/5">
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent z-10 opacity-60" />
-                  <div className="w-full h-full flex items-center justify-center text-zinc-800 uppercase text-[10px] font-mono font-bold tracking-widest">
-                    Profile Frame
-                  </div>
+                  <img 
+                    src={member.image} 
+                    alt={member.name} 
+                    className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent z-10 opacity-90" />
                 </div>
 
                 {/* Profile Meta Info Info Rows */}
@@ -127,12 +129,12 @@ export default function TeamCarousel3D({ progress }: TeamCarousel3DProps) {
                       </p>
                     </div>
                     
-                    {/* Updated Anchor Tag for LinkedIn */}
+                    {/* LinkedIn Anchor Tag */}
                     <a 
                       href={member.linkedin}
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="p-2 bg-white/5 border border-white/10 rounded-full text-zinc-400 hover:text-white hover:bg-purple-500 transition-all duration-300"
+                      className="p-2 bg-white/5 border border-white/10 rounded-full text-zinc-400 hover:text-white hover:bg-purple-500 transition-all duration-300 z-30"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
