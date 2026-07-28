@@ -66,7 +66,7 @@ export default function HorizonSlideDeck() {
   return (
     <div 
       ref={containerRef} 
-      className="relative h-[300vh] w-full bg-transparent"
+      className="relative h-[650vh] w-full bg-transparent"
     >
       {/* 🌟 RESTORED DIRECT VIEWPORT LOCK LAYER */}
       <div 
