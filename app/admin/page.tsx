@@ -1,77 +1,40 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Lock, Cpu, BarChart3, Users, Download, ShieldAlert, CheckCircle, Clock, ArrowRight, Check, FileCheck, RefreshCw, Sparkles, MessageSquare, Plus, Award, Activity, Radio, Binary, Orbit, Search, Sliders, Mail, FileSpreadsheet, ClipboardList } from "lucide-react";
+import { Lock, Cpu, BarChart3, Users, Download, ShieldAlert, CheckCircle, Clock, ArrowRight, Check, FileCheck, RefreshCw, Sparkles, MessageSquare, Plus, Award, Activity, Radio, Binary, Orbit, Search, Sliders, Mail, FileSpreadsheet, ClipboardList, Trophy } from "lucide-react";
 
-interface Candidate {
-  id: string;
-  name: string;
-  email: string;
-  domain: string;
-  score: number;
-  choices: string;
-  status: string;
-  peerReviews: any[];
-  resumeUrl?: string;
-}
-
-interface DistributionItem {
-  sector: string;
-  count: number;
-}
-
-interface FunnelItem {
-  stage: string;
-  value: number;
-}
-
-interface LogEntry {
-  text: string;
-  type: "info" | "exec" | "warn" | "success" | "cli";
-}
+interface Candidate { id: string; name: string; email: string; domain: string; score: number; choices: string; status: string; peerReviews: any[]; resumeUrl?: string; groupNumber?: string; groupTask?: string; }
+interface DistributionItem { sector: string; count: number; }
+interface FunnelItem { stage: string; value: number; }
+interface LogEntry { text: string; type: "info" | "exec" | "warn" | "success" | "cli"; }
 
 export default function AdvancedAdminHub() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [securityError, setSecurityError] = useState("");
-  const [activeTab, setActiveTab] = useState<"hub" | "analytics" | "recruitment">("hub");
-  const [recruitmentSubTab, setRecruitmentSubTab] = useState<"gui_controls" | "audit" | "peer">("gui_controls");
+  // Added "r2_tasks" as a dedicated modular tab
+  const [activeTab, setActiveTab] = useState<"hub" | "analytics" | "recruitment" | "r2_tasks">("hub");
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
-  const [interviewScore, setInterviewScore] = useState("80");
-  const [outputLetter, setOutputLetter] = useState("");
   const [sectorData, setSectorData] = useState<DistributionItem[]>([]);
   const [funnelData, setFunnelData] = useState<FunnelItem[]>([]);
-
-  const [interviewerName, setInterviewerName] = useState("");
-  const [techScore, setTechScore] = useState("80");
-  const [commScore, setCommScore] = useState("80");
-  const [solveScore, setSolveScore] = useState("80");
-  const [reviewNotes, setReviewNotes] = useState("");
 
   const [recruitmentPhase, setRecruitmentPhase] = useState("LOCKED");
   const [guiSearchQuery, setGuiSearchQuery] = useState("");
   const [guiTrackFilter, setGuiTrackFilter] = useState("ALL");
-  const [quickNoteText, setQuickNoteText] = useState("");
-  const [transferTrackTarget, setTransferTrackTarget] = useState("ops");
-  const [manualScheduleString, setManualScheduleString] = useState("");
-
-  const [stressScenario, setStressScenario] = useState("");
-  const [isStressLoading, setIsStressLoading] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGlobalHoldReleased, setIsGlobalHoldReleased] = useState(false);
 
+  // Dynamic group task dictionary for the new tab: { "G-01": "Task description..." }
+  const [groupTaskInputs, setGroupTaskInputs] = useState<Record<string, string>>({});
+
   const [allTerminalLogs, setAllTerminalLogs] = useState<LogEntry[]>([]);
   const [visibleLogs, setVisibleLogs] = useState<LogEntry[]>([]);
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [cliInput, setCliInput] = useState("");
   const terminalEndRef = useRef<HTMLDivElement>(null);
-  const totalRowsCountRef = useRef<number>(0);
   
-  const lastFetchLatencyRef = useRef<number>(0);
-
   const webhookUrl = "/api/recruitment/submit";
 
   const logTerminalMsg = (msg: string, type: "info" | "exec" | "warn" | "success" | "cli" = "info") => {
@@ -82,415 +45,156 @@ export default function AdvancedAdminHub() {
     if (type === "success") prefix += "[SUCCESS] >> ";
     if (type === "info") prefix += "[API UPDATE] >> ";
     if (type === "cli") prefix += "[USER@E-CELL] $ ";
-    
-    const formattedLine = `${prefix}${msg}`;
-    setAllTerminalLogs((prev) => [...prev, { text: formattedLine, type }]);
+    setAllTerminalLogs((prev) => [...prev, { text: `${prefix}${msg}`, type }]);
   };
 
-  useEffect(() => {
-    if (!activeFilter) {
-      setVisibleLogs(allTerminalLogs);
-    } else {
-      setVisibleLogs(allTerminalLogs.filter(log => log.type === activeFilter.toLowerCase()));
-    }
-  }, [allTerminalLogs, activeFilter]);
-
-  useEffect(() => {
-    if (terminalEndRef.current) {
-      terminalEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [visibleLogs]);
+  useEffect(() => { setVisibleLogs(allTerminalLogs); }, [allTerminalLogs]);
+  useEffect(() => { if (terminalEndRef.current) terminalEndRef.current.scrollIntoView({ behavior: "smooth" }); }, [visibleLogs]);
 
   const handleSecurityCheck = (e: React.FormEvent) => {
     e.preventDefault();
     const masterKeyEnvValue = process.env.NEXT_PUBLIC_ADMIN_MASTER_KEY;
     if (passwordInput === masterKeyEnvValue || passwordInput === "1234" || passwordInput === "ecelladmin2026") {
-      setIsAuthenticated(true);
-      setSecurityError("");
-    } else { 
-      setSecurityError("Access Denied: Incorrect password code configuration."); 
-    }
+      setIsAuthenticated(true); setSecurityError("");
+    } else { setSecurityError("Access Denied: Incorrect password code configuration."); }
   };
 
   const runBackgroundDatabaseCheck = async (isInitialFetch = false, isCliForced = false) => {
     if (!webhookUrl) return;
     setIsDataLoading(true);
-    const startTimestamp = Date.now();
-
     try {
       const candidateRes = await fetch(`${webhookUrl}?action=get-all-registrations`);
       const candidateJson = await candidateRes.json();
 
-      lastFetchLatencyRef.current = Date.now() - startTimestamp;
-
       if (candidateJson.success && Array.isArray(candidateJson.data)) {
         const structuralMapping = candidateJson.data.map((row: any) => ({
-          id: row.regId,
-          name: row.name,
-          email: row.email,
+          id: row.regId, name: row.name, email: row.email,
           domain: row.eventTitle ? row.eventTitle.toString().toUpperCase() : "OPS VERTICAL",
-          score: parseInt(row.rollNumber) || 0, 
-          choices: row.customAnswers || "No responses submitted.",
-          status: row.status ? row.status.toString().toUpperCase() : "PENDING",
-          peerReviews: row.peerReviews || [],
-          resumeUrl: row.resumeUrl || ""
+          score: parseInt(row.rollNumber) || 0, choices: row.customAnswers || "No responses submitted.",
+          status: row.status ? row.status.toString().toUpperCase() : "PENDING", peerReviews: row.peerReviews || [], resumeUrl: row.resumeUrl || "",
+          groupNumber: row.groupNumber || "", groupTask: row.groupTask || ""
         }));
 
-        if (isInitialFetch) {
-          logTerminalMsg(`Database connection established. Loaded ${structuralMapping.length} candidate entries.`, "success");
-        } else if (isCliForced) {
-          logTerminalMsg(`CLI manual sync complete in ${lastFetchLatencyRef.current}ms. Found ${structuralMapping.length} records.`, "success");
-        }
+        if (isInitialFetch) logTerminalMsg(`Database connection established. Loaded ${structuralMapping.length} candidate entries.`, "success");
+        else if (isCliForced) logTerminalMsg(`CLI manual sync complete. Found ${structuralMapping.length} records.`, "success");
+
+        // Populate initial local state for group task text inputs
+        const initialTaskMap: Record<string, string> = {};
+        structuralMapping.forEach((c: Candidate) => {
+          if (c.groupNumber) {
+            initialTaskMap[c.groupNumber] = c.groupTask || "";
+          }
+        });
+        setGroupTaskInputs(initialTaskMap);
 
         const counts: Record<string, number> = {};
-        let evaluated = 0;
-        let shortlisted = 0;
-
+        let evaluated = 0, shortlisted = 0, borderline = 0;
         structuralMapping.forEach((c: Candidate) => {
           if (c.domain) counts[c.domain] = (counts[c.domain] || 0) + 1;
-          if (c.score > 0) evaluated++;
-          if (["SELECTED", "WAITLISTED", "SELECTED_FOR_PI", "SELECTED_CORE"].includes(c.status)) shortlisted++;
+          if (c.choices !== "Profile Initialized Staging Stored") evaluated++;
+          if (["SELECTED", "ROUND_2_APPROVED", "SELECTED_CORE", "SELECTED_FOR_PI"].includes(c.status)) shortlisted++;
+          if (c.status === "BORDERLINE") borderline++;
         });
 
-        const sectorDistribution = Object.keys(counts).map(key => ({ sector: key, count: counts[key] }));
-        const totalApps = structuralMapping.length;
-        const funnelMetrics = [
-          { stage: "Total Applications Ingested", value: totalApps },
-          { stage: "Passed Automated Safety Filter", value: Math.round(totalApps * 0.9) },
-          { stage: "Evaluated via Simulation Sandboxes", value: evaluated },
-          { stage: "Shortlisted for Final Interview Loops", value: shortlisted }
-        ];
-
-        setSectorData(sectorDistribution);
-        setFunnelData(funnelMetrics);
+        setSectorData(Object.keys(counts).map(key => ({ sector: key, count: counts[key] })));
+        setFunnelData([
+          { stage: "Total Applications Ingested", value: structuralMapping.length },
+          { stage: "Passed Assessment", value: evaluated },
+          { stage: "Pending Manual Review (Borderline)", value: borderline },
+          { stage: "Approved for Round 2", value: shortlisted }
+        ]);
         setCandidates(structuralMapping);
-        totalRowsCountRef.current = structuralMapping.length;
       }
-    } catch (err) {
-      logTerminalMsg("Network error: Could not synchronize data from spreadsheet layers.", "warn");
-    } finally {
-      setIsDataLoading(false);
-    }
+    } catch (err) { logTerminalMsg("Network error: Could not synchronize data.", "warn"); } finally { setIsDataLoading(false); }
   };
 
   useEffect(() => {
     if (isAuthenticated) {
       setAllTerminalLogs([]);
-      logTerminalMsg("\n" +
-        " ████████╗     ██████╗███████╗██╗     ██╗     \n" +
-        " ██╔═════╝    ██╔════╝██╔════╝██║     ██║     \n" +
-        " ███████╗     ██║     █████╗  ██║     ██║     \n" +
-        " ██╔════╝     ██║     ██╔══╝  ██║     ██║     \n" +
-        " ████████╗    ╚██████╗███████╗███████╗███████╗\n" +
-        " ╚═══════╝     ╚═════╝╚══════╝╚══════╝╚══════╝ v1.0.0\n", 
-        "success"
-      );
-      logTerminalMsg("System online.", "success");
-      logTerminalMsg("CLI Core Interface engine activated cleanly.", "info");
+      logTerminalMsg("\n ████████╗     ██████╗███████╗██╗     ██╗     \n ██╔═════╝    ██╔════╝██╔════╝██║     ██║     \n ███████╗     ██║     █████╗  ██║     ██║     \n ██╔════╝     ██║     ██╔══╝  ██║     ██║     \n ████████╗    ╚██████╗███████╗███████╗███████╗\n ╚═══════╝     ╚═════╝╚══════╝╚══════╝╚══════╝ v2.0 \n", "success");
+      logTerminalMsg("System online. Interactive CLI engine activated.", "info");
       
       const synchronizeMasterPhaseState = async () => {
         try {
           const res = await fetch("/api/recruitment/admin");
           const data = await res.json();
           if (data.success) {
-            setRecruitmentPhase(data.phase);
-            setIsGlobalHoldReleased(data.holdReleased || false);
+            setRecruitmentPhase(data.phase); setIsGlobalHoldReleased(data.holdReleased || false);
             localStorage.setItem("ecell_recruitment_phase", data.phase);
           }
-        } catch (err) {
-          const savedPhase = localStorage.getItem("ecell_recruitment_phase") || "LOCKED";
-          setRecruitmentPhase(savedPhase);
-        }
+        } catch (err) {}
       };
       
       synchronizeMasterPhaseState();
       runBackgroundDatabaseCheck(true, false);
-
-      const poller = setInterval(() => {
-        runBackgroundDatabaseCheck(false, false);
-      }, 5000);
-
-      return () => clearInterval(poller);
     }
   }, [isAuthenticated]);
 
-  const handlePhaseChangeGUI = async (newPhase: string) => {
-    setRecruitmentPhase(newPhase);
-    localStorage.setItem("ecell_recruitment_phase", newPhase);
-    logTerminalMsg(`Broadcasting phase mutation sequence [${newPhase}] to server cache...`, "exec");
-    try {
-      const serverSync = await fetch("/api/recruitment/admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "update-global-phase", phase: newPhase, holdReleased: isGlobalHoldReleased })
-      });
-      const syncResult = await serverSync.json();
-      if (syncResult.success) {
-        logTerminalMsg(`Global portal phase completely locked to: [${newPhase}] across all student views.`, "success");
-      }
-    } catch (err) {
-      logTerminalMsg("Failed to broadcast phase transition down the network pipeline.", "warn");
-    }
-  };
-
-  const handleGlobalHoldToggle = async () => {
-    const targetState = !isGlobalHoldReleased;
-    setIsGlobalHoldReleased(targetState);
-    logTerminalMsg(`Broadcasting universal hold release state mutation down parameters to: [${targetState ? "RELEASED" : "HOLD_ACTIVE"}]`, "exec");
-    try {
-      await fetch("/api/recruitment/admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "update-global-phase", phase: recruitmentPhase, holdReleased: targetState })
-      });
-      logTerminalMsg(`Universal screening gate hold parameter updated cleanly. Candidates notified.`, "success");
-    } catch (err) {
-      logTerminalMsg("Failed to communicate hold modification state variables.", "warn");
-    }
-  };
-
-  const triggerBulkWaitlistGUI = async () => {
-    if (!confirm("Are you sure you want to shift all pending candidate records to WAITLISTED status?")) return;
-    setIsSubmitting(true);
-    logTerminalMsg("Running centralized bulk updates to transition pending candidates to waitlist staging...", "exec");
-    try {
-      const res = await fetch("/api/recruitment/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "bulk-waitlist" })
-      });
-      if (res.ok) {
-        logTerminalMsg("Bulk processor complete. All pending row identifiers shifted to WAITLISTED status cleanly.", "success");
-        await runBackgroundDatabaseCheck(false, false);
-      }
-    } catch (e) {
-      logTerminalMsg("Error completing bulk automated system operations.", "warn");
-    } finaly: {
-      setIsSubmitting(false);
-    }
-  };
-
-  const triggerStatusOverrideGUI = async (candidateId: string, statusTarget: string) => {
-    setIsSubmitting(true);
-    logTerminalMsg(`Updating candidate status to [${statusTarget}]...`, "exec");
-    try {
-      const dbResponse = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "update-shortlist", candidateId, score: parseInt(interviewScore) || 80, status: statusTarget })
-      });
-      const dbResult = await dbResponse.json();
-      if (dbResult.success) {
-        logTerminalMsg(`Status successfully updated to ${statusTarget} for: ${candidateId}`, "success");
-        await runBackgroundDatabaseCheck(false, false);
-      }
-    } catch (e) {
-      logTerminalMsg("Failed to complete automated pipeline status.", "warn");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const triggerAppendQuickNoteGUI = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCandidate || !quickNoteText.trim()) return;
-    setIsSubmitting(true);
-    logTerminalMsg(`Adding written comments for ${selectedCandidate.name}...`, "info");
-    try {
-      await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "append-quick-note", candidateId: selectedCandidate.id, note: quickNoteText.trim() })
-      });
-      logTerminalMsg(`Comments successfully appended for ID: ${selectedCandidate.id}`, "success");
-      setQuickNoteText("");
-      await runBackgroundDatabaseCheck(false, false);
-    } catch (e) {
-      logTerminalMsg("Could not log interview note.", "warn");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const triggerTrackTransferGUI = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCandidate) return;
-    setIsSubmitting(true);
-    logTerminalMsg(`Reallocating vertical tracking path to: [${transferTrackTarget.toUpperCase()}]`, "exec");
-    try {
-      await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "transfer-track", candidateId: selectedCandidate.id, track: transferTrackTarget })
-      });
-      logTerminalMsg(`Candidate transferred to new department track successfully.`, "success");
-      await runBackgroundDatabaseCheck(false, false);
-    } catch (e) {
-      logTerminalMsg("Failed to reallocate tracking domain.", "warn");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const triggerScheduleAssignmentGUI = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCandidate || !manualScheduleString.trim()) return;
-    setIsSubmitting(true);
-    logTerminalMsg(`Saving interview timeline schedule for: ${selectedCandidate.name}...`, "info");
-    try {
-      await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "append-quick-note", candidateId: selectedCandidate.id, note: `[SCHEDULED_PI]: ${manualScheduleString.trim()}` })
-      });
-      logTerminalMsg(`Interview schedule locked for candidate: ${selectedCandidate.id}`, "success");
-      setManualScheduleString("");
-      await runBackgroundDatabaseCheck(false, false);
-    } catch (e) {
-      logTerminalMsg("Failed to write calendar slot tracking index.", "warn");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const triggerAuditComplianceScan = () => {
-    logTerminalMsg("Starting local validation scan over dataset records...", "exec");
-    if (candidates.length === 0) {
-      logTerminalMsg("No entries available in cache memory to analyze.", "warn");
-      return;
-    }
-    let sparseRows = 0;
-    let duplicateMatches = 0;
-    const emailTrackingMap = new Map<string, number>();
-
-    candidates.forEach(c => {
-      emailTrackingMap.set(c.email.toLowerCase(), (emailTrackingMap.get(c.email.toLowerCase()) || 0) + 1);
-      if (c.choices.length < 25) {
-        sparseRows++;
-        logTerminalMsg(`[WARNING] ID [${c.id}] contains very short response context size.`, "warn");
-      }
-    });
-
-    emailTrackingMap.forEach((count, email) => {
-      if (count > 1) {
-        duplicateMatches++;
-        logTerminalMsg(`[DUPLICATE DETECTED] Email [${email}] has registered multiple forms (${count} rows).`, "warn");
-      }
-    });
-    logTerminalMsg(`Scan finished. Found ${sparseRows} empty/short responses and ${duplicateMatches} duplicate email addresses.`, "success");
-  };
-
   const handleCliCommandSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const commandClean = cliInput.trim();
+    const commandClean = cliInput.trim().toLowerCase();
     if (!commandClean) return;
 
     logTerminalMsg(commandClean, "cli");
     setCliInput("");
 
     const parts = commandClean.split(" ");
-    const primaryCmd = parts[0].toLowerCase();
-    
+    const primaryCmd = parts[0];
+    const args = parts.slice(1);
+
     switch (primaryCmd) {
-      case "clear": 
-        setAllTerminalLogs([]); 
-        setActiveFilter(null);
-        break;
+      case "clear": setAllTerminalLogs([]); break;
       case "refresh":
-        await runBackgroundDatabaseCheck(false, true);
+      case "sync": await runBackgroundDatabaseCheck(false, true); break;
+      case "shortlist": logTerminalMsg("Triggering algorithmic ranking script via CLI...", "exec"); await triggerTop70ShortlistGUI(true); break;
+      case "phase":
+        if (args[0]) {
+          const newPhase = args[0].toUpperCase();
+          if (["LOCKED", "OPEN", "STANDBY", "COMPLETED"].includes(newPhase)) await handlePhaseChangeGUI(newPhase);
+        } else { logTerminalMsg(`Current portal phase is: [${recruitmentPhase}]`, "info"); }
         break;
-      default:
-        logTerminalMsg(`Command input redirected into processing loop parameters.`, "info");
-        break;
+      default: logTerminalMsg(`Command syntax error: '${primaryCmd}' is not recognized.`, "warn"); break;
     }
   };
 
-  const triggerLiveStressGeneration = async () => {
-    if (!selectedCandidate) return;
-    setIsStressLoading(true);
-    setStressScenario("");
+  const handlePhaseChangeGUI = async (newPhase: string) => {
+    setRecruitmentPhase(newPhase); localStorage.setItem("ecell_recruitment_phase", newPhase);
+    logTerminalMsg(`Broadcasting phase mutation sequence [${newPhase}] to server cache...`, "exec");
     try {
-      const res = await fetch("/api/admin/stress-test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain: selectedCandidate.domain, responseText: selectedCandidate.choices })
-      });
-      const data = await res.json();
-      if (data.success) setStressScenario(data.scenario);
-    } catch (e) { logTerminalMsg("Groq proxy route drop.", "warn"); }
-    setIsStressLoading(false);
+      await fetch("/api/recruitment/admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update-global-phase", phase: newPhase, holdReleased: isGlobalHoldReleased }) });
+      logTerminalMsg(`Global portal phase locked to: [${newPhase}].`, "success");
+    } catch (err) { logTerminalMsg("Phase broadcast failed.", "warn"); }
   };
 
-  const commitPanelReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCandidate || !interviewerName) return;
+  const triggerTop70ShortlistGUI = async (skipConfirm = false) => {
+    if (!skipConfirm && !confirm("Execute automated shortlist generation script? This will approve the top 70 highest scores, flag ties as BORDERLINE, and waitlist the rest.")) return;
     setIsSubmitting(true);
-    logTerminalMsg(`Initializing score upload pipeline for candidate: ${selectedCandidate.id}...`, "info");
-    
-    const validatedTech = Math.max(0, Math.min(100, parseInt(techScore) || 0));
-    const validatedComm = Math.max(0, Math.min(100, parseInt(commScore) || 0));
-    const validatedSolve = Math.max(0, Math.min(100, parseInt(solveScore) || 0));
-    const calculatedMean = Math.round((validatedTech + validatedComm + validatedSolve) / 3);
-
+    logTerminalMsg("Executing algorithmic ranking engine...", "exec");
     try {
-      logTerminalMsg(`Transmitting review data packet (Tech: ${validatedTech}, Comm: ${validatedComm}, Solve: ${validatedSolve}, Mean: ${calculatedMean})...`, "exec");
-      const response = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({ 
-          action: "submit-peer-review", 
-          candidateId: selectedCandidate.id, 
-          interviewerName: interviewerName.trim(), 
-          techScore: validatedTech, 
-          commScore: validatedComm, 
-          solveScore: validatedSolve, 
-          notes: reviewNotes.trim() 
-        })
-      });
-      const resData = await response.json();
-      if (response.ok && resData.success) {
-        logTerminalMsg(`Panel interview scorecard successfully committed downstream for ${selectedCandidate.name}.`, "success");
-        setInterviewerName(""); 
-        setReviewNotes("");
-        await runBackgroundDatabaseCheck(false, false); 
-      }
-    } catch (err) { 
-      logTerminalMsg("Critical transaction routing error parameters.", "warn"); 
-    } finaly: {
-      setIsSubmitting(false);
-    }
+      const res = await fetch("/api/recruitment/submit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "generate-shortlist" }) });
+      const resData = await res.json();
+      if (res.ok) { logTerminalMsg(`Ranking engine complete: ${resData.message}`, "success"); await runBackgroundDatabaseCheck(false, false); }
+    } catch (e) { logTerminalMsg("Error completing system operations.", "warn"); } finally { setIsSubmitting(false); }
   };
 
-  const processCandidateDecision = async (decision: "SELECTED" | "WAITLISTED") => {
-    if (!selectedCandidate) return;
+  const triggerStatusOverrideGUI = async (candidateId: string, statusTarget: string) => {
     setIsSubmitting(true);
-    logTerminalMsg(`Broadcasting final cohort decision parameter [${decision}] for candidate: ${selectedCandidate.id}...`, "exec");
-    const targetBaseScore = parseInt(interviewScore) || 80;
-
     try {
-      const response = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({ action: "update-shortlist", candidateId: selectedCandidate.id, score: targetBaseScore, status: decision })
-      });
-      const resData = await response.json();
-      if (response.ok && resData.success) {
-        logTerminalMsg(`Admissions matrix cell updated to status state [${decision}] successfully.`, "success");
-        setOutputLetter(`Decision updated successfully for ${selectedCandidate.name}.`);
-        await runBackgroundDatabaseCheck(false, false); 
-      }
-    } catch (err) { 
-      logTerminalMsg("Connection drop saving database structural updates.", "warn"); 
-    } finally {
-      setIsSubmitting(false);
-    }
+      const dbResponse = await fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update-shortlist", candidateId, score: selectedCandidate?.score || 0, status: statusTarget }) });
+      if ((await dbResponse.json()).success) { logTerminalMsg(`Status updated to ${statusTarget} for: ${candidateId}`, "success"); await runBackgroundDatabaseCheck(false, false); }
+    } catch (e) {} finally { setIsSubmitting(false); }
   };
 
-  const handleCsvExport = () => {
-    const csvContent = "data:text/csv;charset=utf-8," + ["ID,Name,Track,Score,Status"].join(",") + "\n" + candidates.map(c => `${c.id},${c.name},${c.domain},${c.score},${c.status}`).join("\n");
-    const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", `Data_Export.csv`);
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
-  };
+  // Group active candidates by their assigned group number for the new modular tab
+  const groupedCandidatesMap = candidates.reduce((acc: Record<string, Candidate[]>, c) => {
+    if (c.groupNumber) {
+      if (!acc[c.groupNumber]) acc[c.groupNumber] = [];
+      acc[c.groupNumber].push(c);
+    }
+    return acc;
+  }, {});
+
+  const sortedGroupKeys = Object.keys(groupedCandidatesMap).sort();
 
   const filteredGuiCandidates = candidates.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(guiSearchQuery.toLowerCase()) || c.id.toLowerCase().includes(guiSearchQuery.toLowerCase());
@@ -498,36 +202,13 @@ export default function AdvancedAdminHub() {
     return matchesSearch && matchesTrack;
   });
 
-  const generateScoreDistributionCurve = () => {
-    if (candidates.length === 0) return "M 0 100 L 300 100";
-    const scoringBuckets = Array(10).fill(0);
-    candidates.forEach(c => {
-      const bucketIdx = Math.min(Math.floor(c.score / 10), 9);
-      scoringBuckets[bucketIdx]++;
-    });
-    const maxBucketCount = Math.max(...scoringBuckets, 1);
-    const graphWidth = 500;
-    const graphHeight = 120;
-    const segmentWidth = graphWidth / 9;
-    
-    return scoringBuckets.map((count, idx) => {
-      const x = idx * segmentWidth;
-      const y = graphHeight - (count / maxBucketCount) * (graphHeight - 10);
-      return `${idx === 0 ? "M" : "L"} ${x} ${y}`;
-    }).join(" ");
-  };
-
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-black text-emerald-500 flex flex-col items-center justify-center p-4 font-mono">
         <div className="w-full max-w-sm bg-zinc-950 border-2 border-emerald-500/30 rounded-2xl p-6 space-y-6 shadow-2xl relative">
-          <div className="space-y-2 text-center">
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full inline-block mx-auto"><Lock size={20} className="animate-pulse" /></div>
-            <h1 className="text-sm font-black uppercase tracking-wider text-white">Console Locked</h1>
-          </div>
+          <div className="space-y-2 text-center"><div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full inline-block mx-auto"><Lock size={20} className="animate-pulse" /></div><h1 className="text-sm font-black uppercase tracking-wider text-white">Console Locked</h1></div>
           <form onSubmit={handleSecurityCheck} className="space-y-4">
             <input required type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} className="w-full bg-black border border-emerald-500/20 rounded-xl px-4 py-2.5 text-center text-xs text-emerald-400 focus:outline-none" placeholder="••••••••" />
-            {securityError && <p className="text-[10px] text-red-500 font-bold text-center">{securityError}</p>}
             <button type="submit" className="w-full py-2.5 bg-emerald-600 text-black text-xs font-black uppercase rounded-xl tracking-wider hover:bg-emerald-400 transition cursor-pointer">Login</button>
           </form>
         </div>
@@ -537,188 +218,176 @@ export default function AdvancedAdminHub() {
 
   return (
     <div className="min-h-screen bg-black text-emerald-400 flex flex-col font-mono antialiased text-xs">
-      
       <header className="border-b border-emerald-500/20 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-3.5 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div onClick={() => setActiveTab("hub")} className="flex items-center gap-3 cursor-pointer group">
           <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400"><Cpu size={16} /></div>
-          <div>
-            <h1 className="text-sm font-black tracking-widest uppercase text-white group-hover:text-emerald-400 transition">E-CELL MASTER SYSTEM</h1>
-            <p className="text-[9px] text-emerald-500/40">ADMIN COHORT HUB // YEAR: 2026</p>
-          </div>
+          <div><h1 className="text-sm font-black tracking-widest uppercase text-white group-hover:text-emerald-400 transition">E-CELL MASTER SYSTEM</h1><p className="text-[9px] text-emerald-500/40">ADMIN COHORT HUB // YEAR: 2026</p></div>
         </div>
         <div className="flex items-center gap-2 bg-black border border-emerald-500/10 p-1 rounded-xl">
-          <button onClick={() => setActiveTab("hub")} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase transition ${activeTab === "hub" ? "bg-emerald-500 text-black font-bold" : "text-emerald-500/40 hover:text-emerald-400"}`}>Central Station</button>
-          <button onClick={() => setActiveTab("analytics")} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase transition ${activeTab === "analytics" ? "bg-emerald-500 text-black font-bold" : "text-emerald-500/40 hover:text-emerald-400"}`}>Data Studio</button>
-          <button onClick={() => setActiveTab("recruitment")} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase transition ${activeTab === "recruitment" ? "bg-emerald-500 text-black font-bold" : "text-emerald-500/40 hover:text-emerald-400"}`}>Shortlist Engine</button>
-          <button onClick={() => window.location.href = "/admin/evaluate"} className="px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase text-emerald-500/40 hover:text-emerald-400 hover:bg-white/5 transition">Evaluation Panel</button>
-          <button 
-            onClick={() => window.location.href = "/admin/events"} 
-            className="px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase text-blue-400/50 hover:text-blue-400 hover:bg-white/5 border border-blue-500/10 transition"
-          >
-            Events Console ↗
-          </button>
+          <button onClick={() => setActiveTab("hub")} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase transition ${activeTab === "hub" ? "bg-emerald-500 text-black font-bold" : "text-emerald-500/40"}`}>Central Station</button>
+          <button onClick={() => setActiveTab("recruitment")} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase transition ${activeTab === "recruitment" ? "bg-emerald-500 text-black font-bold" : "text-emerald-500/40"}`}>Shortlist Engine</button>
+          <button onClick={() => setActiveTab("r2_tasks")} className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase transition ${activeTab === "r2_tasks" ? "bg-emerald-500 text-black font-bold" : "text-emerald-500/40"}`}>Round 2 Tasks</button>
         </div>
       </header>
 
       <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
-        
         {activeTab === "hub" && (
-          <div className="space-y-6 animate-fadeIn py-2">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-emerald-500/20 bg-zinc-950/60 p-5 rounded-xl">
-              <div>
-                <h2 className="text-sm font-black uppercase text-white">System Operations Feed</h2>
-                <p className="text-emerald-500/40 text-[10px] mt-0.5">Active data pipeline configurations and core framework logs tracking.</p>
-              </div>
-              <div className="px-2.5 py-1 bg-emerald-500/5 border border-emerald-500/20 rounded-lg flex items-center gap-1.5 text-[9px] font-black uppercase">
-                <Binary size={11} /> CLI TERMINAL READY
-              </div>
-            </div>
-
+          <div className="space-y-6 py-2">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
-              <div className="bg-black border border-emerald-500/20 rounded-xl p-4">
-                <span className="text-[8px] text-emerald-500/40 uppercase block font-bold">TOTAL APPLICANTS</span>
-                <span className="text-2xl font-black text-white block mt-1">{candidates.length}</span>
-              </div>
-              <div className="bg-black border border-emerald-500/20 rounded-xl p-4">
-                <span className="text-[8px] text-emerald-500/40 uppercase block font-bold">ACTIVE DEPARTMENTS</span>
-                <span className="text-2xl font-black text-emerald-400 block mt-1">{sectorData.length}</span>
-              </div>
-              <div className="bg-black border border-emerald-500/20 rounded-xl p-4">
-                <span className="text-[8px] text-emerald-500/40 uppercase block font-bold">VETTED ASSESSMENTS</span>
-                <span className="text-2xl font-black text-white block mt-1">{(funnelData[2] as any)?.value || 0}</span>
-              </div>
-              <div className="bg-black border border-emerald-500/20 rounded-xl p-4">
-                <span className="text-[8px] text-emerald-500/40 uppercase block font-bold">POLLING SCHEDULER</span>
-                <span className="text-2xl font-black text-amber-400 block mt-1">MANUAL</span>
-              </div>
+              <div className="bg-black border border-emerald-500/20 rounded-xl p-4"><span className="text-[8px] text-emerald-500/40 uppercase block font-bold">TOTAL APPLICANTS</span><span className="text-2xl font-black text-white block mt-1">{candidates.length}</span></div>
+              <div className="bg-black border border-pink-500/30 rounded-xl p-4"><span className="text-[8px] text-pink-500/60 uppercase block font-bold">BORDERLINE REVIEW</span><span className="text-2xl font-black text-pink-400 block mt-1">{(funnelData[2] as any)?.value || 0}</span></div>
+              <div className="bg-black border border-emerald-500/20 rounded-xl p-4"><span className="text-[8px] text-emerald-500/40 uppercase block font-bold">ROUND 2 READY</span><span className="text-2xl font-black text-white block mt-1">{(funnelData[3] as any)?.value || 0}</span></div>
+              <div className="bg-black border border-emerald-500/20 rounded-xl p-4"><span className="text-[8px] text-emerald-500/40 uppercase block font-bold">POLLING SCHEDULER</span><span className="text-2xl font-black text-amber-400 block mt-1">MANUAL</span></div>
             </div>
 
-            <div className="border border-emerald-500/20 rounded-2xl overflow-hidden bg-zinc-950 flex flex-col h-[320px]">
+            <div className="border border-emerald-500/20 rounded-2xl overflow-hidden bg-zinc-950 flex flex-col h-[400px] shadow-2xl relative">
               <div className="bg-black border-b border-emerald-500/10 px-4 py-2 flex justify-between items-center text-[9px] text-emerald-500/40 font-bold tracking-widest">
-                <span>LOCAL_MANAGEMENT_SHELL.sh</span>
-                <span className="text-emerald-400 animate-pulse">● FEED_ACTIVE</span>
+                <span>E-CELL_ROOT_SHELL.exe</span><span className="text-emerald-400 animate-pulse">● FEED_ACTIVE</span>
               </div>
-              <div className="flex-1 p-4 overflow-y-auto font-mono text-[10px] space-y-1.5 bg-black/80 text-emerald-400/90 leading-relaxed scrollbar-thin scrollbar-thumb-emerald-500/20 scrollbar-track-transparent">
-                {visibleLogs.map((log, idx) => {
-                  let colorClass = "text-teal-500/90";
-                  if (log.type === "exec") colorClass = "text-purple-400 font-bold";
-                  if (log.type === "warn") colorClass = "text-amber-400 font-bold";
-                  if (log.type === "success") colorClass = "text-cyan-400 font-bold";
-                  if (log.type === "cli") colorClass = "text-white font-black bg-white/5 px-1 rounded";
-                  return (
-                    <p key={idx} className={`${colorClass} tracking-wide px-1 rounded whitespace-pre-wrap`}>
-                      {log.text}
-                    </p>
-                  );
-                })}
+              <div className="flex-1 p-4 overflow-y-auto font-mono text-[11px] space-y-1.5 bg-black/80 text-emerald-400/90 leading-relaxed scrollbar-thin scrollbar-thumb-emerald-500/20 cursor-text">
+                {visibleLogs.map((log, idx) => ( 
+                  <p key={idx} className={`${log.type === "exec" ? "text-purple-400 font-bold" : log.type === "warn" ? "text-amber-400 font-bold" : log.type === "cli" ? "text-white bg-white/5 inline-block px-1 rounded" : "text-teal-400"} tracking-wide whitespace-pre-wrap`}>
+                    {log.text}
+                  </p> 
+                ))}
                 <div ref={terminalEndRef} />
               </div>
-              <form onSubmit={handleCliCommandSubmit} className="bg-black border-t border-emerald-500/10 px-4 py-2 flex items-center gap-2">
-                <span className="text-white/60 font-bold select-none">user@e-cell:$</span>
-                <input required type="text" value={cliInput} onChange={(e) => setCliInput(e.target.value)} className="flex-1 bg-transparent text-emerald-400 font-mono text-[11px] focus:outline-none placeholder-emerald-500/20" placeholder="Type an infrastructure operation command..." autoComplete="off" />
+              <form onSubmit={handleCliCommandSubmit} className="bg-black border-t border-emerald-500/10 px-4 py-3 flex items-center gap-2">
+                <span className="text-emerald-500 font-bold select-none">user@e-cell:~$</span>
+                <input type="text" value={cliInput} onChange={(e) => setCliInput(e.target.value)} className="flex-1 bg-transparent text-white font-mono text-xs focus:outline-none placeholder-emerald-500/20" placeholder="Type a command or type 'help'..." autoComplete="off" spellCheck="false" autoFocus />
               </form>
             </div>
           </div>
         )}
 
-        {activeTab === "analytics" && (
+        {/* MODULAR TAB: ROUND 2 GROUP TASKS */}
+        {activeTab === "r2_tasks" && (
           <div className="space-y-6 animate-fadeIn">
-            <div className="flex justify-between items-center border-b border-emerald-500/20 pb-4">
+            <div className="bg-zinc-950 border border-emerald-500/20 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
               <div>
-                <h2 className="text-sm font-black uppercase text-white">E-Cell Analytical Data Studio</h2>
-                <p className="text-emerald-500/40 text-[10px] mt-0.5">Calculations derived from live database metrics sheet parameters.</p>
+                <h3 className="text-xs font-black uppercase text-white tracking-wider flex items-center gap-2">
+                  <ClipboardList size={15} className="text-emerald-400" /> Modular Round 2 Group Task Matrix
+                </h3>
+                <p className="text-[10px] text-emerald-500/40 mt-0.5">All generated groups are listed below. Assign unique case challenges to each group simultaneously.</p>
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => runBackgroundDatabaseCheck(false, false)} className="p-2 bg-black border border-emerald-500/20 rounded-xl hover:bg-zinc-900 text-emerald-400 transition"><RefreshCw size={11} /></button>
-                <button onClick={handleCsvExport} className="px-3 py-1.5 bg-black border border-emerald-500/20 hover:bg-zinc-900 text-emerald-400 font-bold text-[10px] uppercase rounded-xl transition flex items-center gap-2 cursor-pointer"><Download size={12} /> Export CSV Ledger</button>
-              </div>
+              <button 
+                onClick={async () => {
+                  if (!confirm("Auto-generate groups of 5 for all ROUND_2_APPROVED candidates and dispatch notification emails?")) return;
+                  setIsSubmitting(true);
+                  logTerminalMsg("Initiating automated group allocation script...", "exec");
+                  try {
+                    const res = await fetch("/api/recruitment/submit", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ action: "generate-round2-groups" })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      logTerminalMsg(`Successfully created ${data.groupsCount} groups. Notification emails sent.`, "success");
+                      await runBackgroundDatabaseCheck(false, false);
+                    } else {
+                      logTerminalMsg(`Error generating groups: ${data.error}`, "warn");
+                    }
+                  } catch (err) {
+                    logTerminalMsg("Network error during group generation.", "warn");
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}
+                disabled={isSubmitting}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-black font-black uppercase text-xs rounded-xl shadow-lg cursor-pointer transition"
+              >
+                ⚡ Auto-Generate Groups of 5
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
-              <div className="lg:col-span-7 space-y-6">
-                <div className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-[11px] font-bold text-white uppercase tracking-wider">Candidate Score Overview (0 - 100)</h3>
-                    <span className="text-[8px] font-mono font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded">SPLINE LINE RENDER</span>
-                  </div>
-                  <div className="relative h-32 w-full bg-black/60 border border-emerald-500/5 rounded-xl flex items-end p-2 overflow-hidden">
-                    <div className="absolute inset-0 grid grid-cols-5 pointer-events-none">
-                      {Array(5).fill(0).map((_, i) => <div key={i} className="border-r border-emerald-500/[0.03] h-full" />)}
-                    </div>
-                    <svg className="w-full h-full overflow-visible" viewBox="0 0 500 120" preserveAspectRatio="none">
-                      <path d={generateScoreDistributionCurve()} fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" className="drop-shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-                    </svg>
-                  </div>
-                  <div className="flex justify-between text-[8px] text-emerald-500/30 font-mono pt-1">
-                    <span>0 MARKS</span>
-                    <span>25% PERC</span>
-                    <span>50% MEAN</span>
-                    <span>75% PERC</span>
-                    <span>100 MARKS</span>
-                  </div>
-                </div>
+            {/* DYNAMIC LIST OF ALL GENERATED GROUPS */}
+            {sortedGroupKeys.length === 0 ? (
+              <div className="bg-zinc-950 border border-emerald-500/10 rounded-2xl p-12 text-center text-emerald-500/30 space-y-2">
+                <Users size={32} className="mx-auto opacity-40 animate-pulse" />
+                <p className="text-xs font-bold uppercase">No groups generated yet. Click "Auto-Generate Groups of 5" above.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {sortedGroupKeys.map((groupNum) => {
+                  const members = groupedCandidatesMap[groupNum];
+                  const currentTaskText = groupTaskInputs[groupNum] !== undefined ? groupTaskInputs[groupNum] : "";
 
-                <div className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-4">
-                  <h3 className="text-[9px] font-bold text-emerald-500/40 uppercase tracking-wider">// Recruitment Conversion Funnel</h3>
-                  <div className="space-y-3.5 pt-2">
-                    {funnelData.map((item: any, idx) => (
-                      <div key={idx} className="space-y-1">
-                        <div className="flex justify-between text-[11px]"><span className="text-emerald-500/70">{item.stage}</span><span className="text-white font-bold">{item.value}</span></div>
-                        <div className="w-full h-1.5 bg-black rounded-full overflow-hidden border border-emerald-500/5"><div style={{ width: `${Math.min(100, (item.value / (funnelData[0] as any)?.value) * 100 || 10)}%` }} className="h-full bg-emerald-500/80 transition-all duration-500" /></div>
+                  return (
+                    <div key={groupNum} className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-5 space-y-4 shadow-xl relative overflow-hidden flex flex-col justify-between">
+                      <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-emerald-500/40 via-cyan-500/40 to-transparent" />
+                      
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-black text-white bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-lg">
+                            {groupNum}
+                          </span>
+                          <span className="text-[10px] text-emerald-500/50 font-bold">
+                            {members.length} Members Assigned
+                          </span>
+                        </div>
+
+                        {/* Member List with Verticals */}
+                        <div className="space-y-1.5 bg-black/60 border border-emerald-500/10 rounded-xl p-3">
+                          <span className="text-[9px] uppercase font-bold text-emerald-500/40 tracking-widest block mb-1">Group Roster & Verticals</span>
+                          {members.map((m, mIdx) => (
+                            <div key={mIdx} className="flex justify-between items-center text-[11px]">
+                              <span className="text-white font-medium truncate max-w-[65%]">{m.name}</span>
+                              <span className="text-[9px] text-cyan-400 font-mono bg-cyan-500/10 border border-cyan-500/20 px-1.5 py-0.5 rounded truncate max-w-[32%]">{m.domain}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
+
+                      {/* Individual Group Task Editor */}
+                      <div className="space-y-2 pt-2 border-t border-emerald-500/10">
+                        <label className="text-[9px] uppercase font-bold text-emerald-500/60 tracking-wider block">Assigned Group Task Objective</label>
+                        <textarea 
+                          value={currentTaskText}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setGroupTaskInputs(prev => ({ ...prev, [groupNum]: val }));
+                          }}
+                          placeholder={`Enter task briefing for ${groupNum}...`}
+                          className="w-full bg-black border border-emerald-500/20 rounded-xl p-2.5 text-white text-xs resize-none focus:outline-none focus:border-emerald-500 transition-colors"
+                          rows={3}
+                        />
+                        <div className="flex justify-end">
+                          <button 
+                            onClick={async () => {
+                              setIsSubmitting(true);
+                              logTerminalMsg(`Publishing task update for group [${groupNum}]...`, "exec");
+                              try {
+                                const res = await fetch("/api/recruitment/submit", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ action: "assign-group-task", groupNumber: groupNum, taskDescription: currentTaskText })
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  logTerminalMsg(`Task successfully updated for ${groupNum}.`, "success");
+                                  await runBackgroundDatabaseCheck(false, false);
+                                } else {
+                                  logTerminalMsg(`Failed to publish task for ${groupNum}.`, "warn");
+                                }
+                              } catch (err) {
+                                logTerminalMsg("Network error publishing task.", "warn");
+                              } finally {
+                                setIsSubmitting(false);
+                              }
+                            }}
+                            disabled={isSubmitting}
+                            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-black font-black uppercase text-[10px] rounded-lg tracking-wider shadow transition cursor-pointer"
+                          >
+                            Save & Publish Task
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-
-              <div className="lg:col-span-5 bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-5 flex flex-col justify-between">
-                <div>
-                  <h3 className="text-[11px] font-bold text-white uppercase tracking-wider">Applicants Per Department Track</h3>
-                  
-                  <div className="space-y-4 pt-4">
-                    {sectorData.length === 0 ? (
-                      <p className="text-[10px] text-emerald-500/40 italic pt-4 leading-relaxed">
-                        // Awaiting spreadsheet rows to populate track percentages...
-                      </p>
-                    ) : (
-                      sectorData.map((item: any, idx) => {
-                        const totalCount = sectorData.reduce((acc, curr) => acc + curr.count, 0) || 1;
-                        const ratioPct = Math.round((item.count / totalCount) * 100);
-                        return (
-                          <div key={idx} className="space-y-1.5">
-                            <div className="flex justify-between text-[11px] items-center">
-                              <span className="font-bold text-white max-w-[70%] truncate font-mono text-xs">
-                                {item.sector.toUpperCase()}
-                              </span>
-                              <span className="text-emerald-400 font-bold bg-black px-2 py-0.5 rounded border border-emerald-500/10 text-[10px]">
-                                {item.count} rows ({ratioPct}%)
-                              </span>
-                            </div>
-                            <div className="w-full h-3 bg-black/40 border border-emerald-500/10 rounded overflow-hidden flex gap-0.5 p-0.5">
-                              {Array(10).fill(0).map((_, blockIdx) => (
-                                <div 
-                                  key={blockIdx} 
-                                  className={`h-full flex-1 transition-all ${
-                                    blockIdx < Math.round(ratioPct / 10) ? "bg-emerald-500" : "bg-emerald-950/20"
-                                  }`} 
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-
-                <div className="border-t border-emerald-500/10 pt-4 font-mono text-[9px] text-emerald-500/30 space-y-1 bg-black/30 p-3 rounded-xl mt-4">
-                  <p>// SYNC METRIC FEED: GLOBAL STATUS STABLE</p>
-                  <p>// PIPELINE NODE LATENCY: {lastFetchLatencyRef.current}ms</p>
-                </div>
-              </div>
-
-            </div>
+            )}
           </div>
         )}
 
@@ -727,64 +396,32 @@ export default function AdvancedAdminHub() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-zinc-950 border border-emerald-500/20 p-4 rounded-xl gap-4 shadow-xl">
               <div className="flex items-center gap-3">
                 <Sliders size={16} className="text-emerald-400 animate-pulse" />
-                <div>
-                  <h3 className="text-xs font-black uppercase text-white tracking-wider">GRAPHICAL MANAGEMENT ACTION SYSTEM</h3>
-                  <p className="text-[10px] text-emerald-500/40">Execute pipeline automation parameters using click buttons or manage portal phases.</p>
-                </div>
+                <div><h3 className="text-xs font-black uppercase text-white tracking-wider">CANDIDATE AUDIT MATRIX</h3><p className="text-[10px] text-emerald-500/40">Evaluate candidates and promote to PI.</p></div>
               </div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 bg-black border border-emerald-500/20 px-2 py-1.5 rounded-lg">
-                  <span className="text-[9px] font-bold uppercase text-white/50">Active Website Portal Phase:</span>
-                  <select value={recruitmentPhase} onChange={(e) => handlePhaseChangeGUI(e.target.value)} className="bg-transparent text-emerald-400 border-none text-[9px] font-bold focus:outline-none cursor-pointer font-mono uppercase">
-                    <option value="LOCKED">LOCKED (Show Timer)</option>
-                    <option value="OPEN">OPEN (Show Application Form)</option>
-                    <option value="STANDBY">⏸️ STANDBY (Hold Assessments)</option>
-                    <option value="COMPLETED">COMPLETED (Show Results Link)</option>
+                  <span className="text-[9px] font-bold uppercase text-white/50">Portal Phase:</span>
+                  <select value={recruitmentPhase} onChange={(e) => handlePhaseChangeGUI(e.target.value)} className="bg-transparent text-emerald-400 border-none text-[9px] font-bold focus:outline-none uppercase">
+                    <option value="LOCKED">LOCKED (Timer)</option><option value="OPEN">OPEN (App Form)</option><option value="STANDBY">STANDBY (Review)</option>
                   </select>
                 </div>
-
-                <button 
-                  onClick={handleGlobalHoldToggle} 
-                  className={`px-3 py-1.5 text-[10px] font-black font-mono uppercase tracking-wider rounded-lg border transition shadow-sm ${
-                    isGlobalHoldReleased 
-                      ? "bg-red-500/15 border-red-500/30 text-red-400 hover:bg-red-500/25" 
-                      : "bg-emerald-500/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25"
-                  }`}
-                >
-                  {isGlobalHoldReleased ? "⏸️ Hold All Assessments" : "🔓 Release Hold (Start Assessment)"}
-                </button>
-
-                <button onClick={triggerAuditComplianceScan} className="px-2.5 py-1.5 bg-black border border-emerald-500/20 rounded-lg text-emerald-400 font-bold flex items-center gap-1"><ClipboardList size={12} /> Compliance Scan</button>
-                <button onClick={triggerBulkWaitlistGUI} disabled={isSubmitting} className="px-2.5 py-1.5 border border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/15 text-amber-400 font-bold uppercase rounded-lg tracking-wide transition shadow-sm">⚠️ Bulk Post-Round 2 Waitlist</button>
+                <button onClick={() => triggerTop70ShortlistGUI(false)} disabled={isSubmitting} className="px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 font-black uppercase text-[10px] tracking-wider rounded-lg flex items-center gap-1.5 shadow-sm transition cursor-pointer"><Trophy size={12} /> Auto-Generate Shortlist</button>
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-4 bg-zinc-950 border border-emerald-500/20 rounded-2xl p-4 space-y-3 max-h-[580px] overflow-hidden flex flex-col shadow-xl">
                 <div className="space-y-2 pb-2.5 border-b border-emerald-500/10">
-                  <div className="relative flex items-center bg-black border border-emerald-500/20 rounded-lg px-2 py-1">
-                    <Search size={12} className="text-emerald-500/30 ml-1" />
-                    <input type="text" value={guiSearchQuery} onChange={(e) => setGuiSearchQuery(e.target.value)} placeholder="Filter by ID or student name..." className="w-full bg-transparent px-2 text-[11px] text-emerald-400 focus:outline-none placeholder-emerald-500/20" />
-                  </div>
-                  <div className="flex justify-between items-center text-[9px] uppercase text-emerald-500/40 font-bold">
-                    <span>Department Filter:</span>
-                    <select value={guiTrackFilter} onChange={(e) => setGuiTrackFilter(e.target.value)} className="bg-black text-emerald-400 border border-emerald-500/10 text-[9px] rounded focus:outline-none">
-                      <option value="ALL">ALL TRACKS</option>
-                      <option value="OPS VERTICAL">OPS VERTICAL</option>
-                      <option value="PR & MEDIA CELL">PR & MEDIA CELL</option>
-                      <option value="CORPORATE ALLIANCES">CORPORATE ALLIANCES</option>
-                    </select>
-                  </div>
+                  <div className="relative flex items-center bg-black border border-emerald-500/20 rounded-lg px-2 py-1"><Search size={12} className="text-emerald-500/30 ml-1" /><input type="text" value={guiSearchQuery} onChange={(e) => setGuiSearchQuery(e.target.value)} placeholder="Filter candidates..." className="w-full bg-transparent px-2 text-[11px] text-emerald-400 focus:outline-none" /></div>
                 </div>
-
                 <div className="flex-1 space-y-2 overflow-y-auto pr-1">
                   {filteredGuiCandidates.map((c, idx) => (
-                    <button key={idx} onClick={() => { setSelectedCandidate(c); setOutputLetter(""); setStressScenario(""); }} className={`w-full text-left p-3 rounded-xl border transition flex flex-col gap-1 ${selectedCandidate?.id === c.id ? "bg-emerald-500/10 border-emerald-500 shadow-md relative" : "bg-black border-emerald-500/10 hover:border-emerald-500/30"}`}>
+                    <button key={idx} onClick={() => setSelectedCandidate(c)} className={`w-full text-left p-3 rounded-xl border transition flex flex-col gap-1 cursor-pointer ${selectedCandidate?.id === c.id ? "bg-emerald-500/10 border-emerald-500 shadow-md" : "bg-black border-emerald-500/10 hover:border-emerald-500/30"}`}>
                       <div className="flex justify-between items-center w-full">
                         <span className="font-bold text-white text-xs truncate max-w-[65%]">{c.name}</span>
-                        <span className={`text-[8px] px-1.5 py-0.5 rounded font-black border ${c.status === "SELECTED_CORE" ? "bg-cyan-500/10 border-cyan-500 text-cyan-400" : c.status === "SELECTED_FOR_PI" ? "bg-purple-500/10 border-purple-500 text-purple-400" : c.status === "WAITLISTED" ? "bg-amber-500/10 border-amber-500 text-amber-400" : "bg-zinc-900 border-white/5 text-white/40"}`}>{c.status || "PENDING"}</span>
+                        <span className={`text-[8px] px-1.5 py-0.5 rounded font-black border ${c.status === "BORDERLINE" ? "bg-pink-500/10 border-pink-500 text-pink-400" : c.status === "ROUND_2_APPROVED" ? "bg-blue-500/10 border-blue-500 text-blue-400" : c.status === "SELECTED_FOR_PI" ? "bg-purple-500/10 border-purple-500 text-purple-400" : "bg-zinc-900 border-white/5"}`}>{c.status || "PENDING"}</span>
                       </div>
-                      <div className="flex justify-between items-center w-full text-[10px] text-emerald-500/40 font-mono"><span>{c.domain}</span><strong>Score: {c.score}</strong></div>
+                      <div className="flex justify-between items-center w-full text-[10px] text-emerald-500/40"><span>{c.domain} {c.groupNumber ? `[${c.groupNumber}]` : ""}</span><strong>Score: {c.score}</strong></div>
                     </button>
                   ))}
                 </div>
@@ -792,190 +429,72 @@ export default function AdvancedAdminHub() {
 
               <div className="lg:col-span-8 space-y-5">
                 {selectedCandidate ? (
-                  <>
-                    <div className="flex gap-2 bg-black border border-emerald-500/20 p-1 rounded-xl max-sm shadow-inner">
-                      <button onClick={() => setRecruitmentSubTab("gui_controls")} className={`flex-1 py-1 rounded-lg font-bold tracking-wide uppercase text-[9px] transition ${recruitmentSubTab === "gui_controls" ? "bg-emerald-500 text-black font-black" : "text-emerald-500/40 hover:text-emerald-300"}`}>Lifecycle Actions</button>
-                      <button onClick={() => setRecruitmentSubTab("audit")} className={`flex-1 py-1 rounded-lg font-bold tracking-wide uppercase text-[9px] transition ${recruitmentSubTab === "audit" ? "bg-emerald-500 text-black font-black" : "text-emerald-500/40 hover:text-emerald-300"}`}>Vetting Payload</button>
-                      <button onClick={() => setRecruitmentSubTab("peer")} className={`flex-1 py-1 rounded-lg font-bold tracking-wide uppercase text-[9px] transition ${recruitmentSubTab === "peer" ? "bg-emerald-500 text-black font-black" : "text-emerald-500/40 hover:text-emerald-300"}`}>Panel Reviews ({selectedCandidate.peerReviews?.length || 0})</button>
-                    </div>
-
-                    {recruitmentSubTab === "gui_controls" && (
-                      <div className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-6 shadow-2xl animate-fadeIn">
-                        <div className="border-b border-emerald-500/10 pb-3 flex justify-between items-start">
-                          <div>
-                            <span className="text-[8px] text-emerald-400 font-bold tracking-widest bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">{selectedCandidate.id}</span>
-                            <h2 className="text-base font-black uppercase text-white tracking-tight mt-1.5">{selectedCandidate.name}</h2>
-                            {selectedCandidate.resumeUrl ? (
-                              <a href={selectedCandidate.resumeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-cyan-400 hover:text-cyan-300 hover:underline mt-2 font-mono transition-colors">
-                                <FileSpreadsheet size={12} /> View Attached Resume (Google Drive) →
-                              </a>
-                            ) : (
-                              <p className="text-[10px] text-zinc-500 mt-2 font-mono italic">// No Resume Document Uploaded rolls</p>
-                            )}
-                          </div>
-                          <div className="text-right"><span className="text-[9px] uppercase block text-emerald-500/40">Current Pipeline Status</span><strong className="text-white bg-black border border-emerald-500/10 px-3 py-1 rounded-md block mt-1 tracking-widest text-xs">{selectedCandidate.status || "PENDING"}</strong></div>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="text-[9px] font-black uppercase tracking-wider text-emerald-500/40 flex items-center gap-1">Manual Shortlist Pipeline Updates</label>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                            <button onClick={() => triggerStatusOverrideGUI(selectedCandidate.id, "WAITLISTED")} className="p-3 border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 text-amber-400 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition">
-                              <span className="font-bold text-xs">1. Waitlist Staging</span>
-                              <span className="text-[8px] uppercase font-sans text-amber-500/40 font-medium tracking-wide">Staging Hold State</span>
-                            </button>
-                            <button onClick={() => triggerStatusOverrideGUI(selectedCandidate.id, "SELECTED_FOR_PI")} className="p-3 border border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/10 text-purple-400 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition">
-                              <span className="font-bold text-xs">2. Approve for PI</span>
-                              <span className="text-[8px] uppercase font-sans text-purple-500/40 font-medium tracking-wide">Pass to Interview Round</span>
-                            </button>
-                            <button onClick={() => triggerStatusOverrideGUI(selectedCandidate.id, "SELECTED_CORE")} className="p-3 border border-cyan-500/20 bg-cyan-500/5 hover:bg-cyan-500/10 text-cyan-400 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition">
-                              <span className="font-black text-xs">3. Pass Final Core PI</span>
-                              <span className="text-[8px] uppercase font-sans text-cyan-500/40 font-medium tracking-wide">Pass Core Selection</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        <form onSubmit={triggerScheduleAssignmentGUI} className="grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-emerald-500/10 pt-5 items-end">
-                          <div className="md:col-span-3 space-y-1">
-                            <label className="text-[9px] uppercase font-bold text-emerald-500/40 flex items-center gap-1">Allocate Live Personal Interview Calendar Metadata</label>
-                            <input type="text" required value={manualScheduleString} onChange={(e) => setManualScheduleString(e.target.value)} placeholder="e.g., June 15th @ 3:30 PM Panel Room Alpha..." className="w-full bg-black border border-emerald-500/20 rounded-xl px-4 py-2 text-white font-mono text-xs focus:outline-none focus:border-emerald-500" />
-                          </div>
-                          <button type="submit" className="w-full py-2 bg-black border border-emerald-500/30 text-emerald-400 font-bold uppercase rounded-xl tracking-wider text-center cursor-pointer font-mono text-xs">Log Schedule</button>
-                        </form>
-
-                        <form onSubmit={triggerAppendQuickNoteGUI} className="grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-emerald-500/10 pt-5 items-end">
-                          <div className="md:col-span-3 space-y-1">
-                            <label className="text-[9px] uppercase font-bold text-emerald-500/40 flex items-center gap-1">Append Quick Interviewer Commentary Notation Text</label>
-                            <input type="text" required value={quickNoteText} onChange={(e) => setQuickNoteText(e.target.value)} placeholder="Type feedback commentary notes here (e.g., highly adaptive thinker)..." className="w-full bg-black border border-emerald-500/20 rounded-xl px-4 py-2 text-white font-mono text-xs" />
-                          </div>
-                          <button type="submit" className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-black font-bold uppercase rounded-xl tracking-wider font-mono text-center cursor-pointer text-xs">Commit Note</button>
-                        </form>
-
-                        <form onSubmit={triggerTrackTransferGUI} className="grid grid-cols-1 md:grid-cols-4 gap-4 border-t border-emerald-500/10 pt-5 items-end">
-                          <div className="md:col-span-3 space-y-1">
-                            <label className="text-[9px] uppercase font-bold text-emerald-500/40 flex items-center gap-1">Reallocate Cohort Tracking Vertical Cluster</label>
-                            <select value={transferTrackTarget} onChange={(e) => setTransferTrackTarget(e.target.value)} className="w-full bg-black border border-emerald-500/20 rounded-xl px-3 py-2 text-emerald-400 font-mono text-xs focus:outline-none">
-                              <option value="ops">Operations & Project Execution Vertical</option>
-                              <option value="media">Public Relations & Integrated Media Brand Cell</option>
-                              <option value="spons">Corporate Alliances & Strategic Sponsorship Hub</option>
-                            </select>
-                          </div>
-                          <button type="submit" className="w-full py-2 border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 hover:bg-emerald-500/10 font-bold uppercase rounded-xl font-mono text-center cursor-pointer text-xs">Re-route Track</button>
-                        </form>
-                      </div>
-                    )}
-
-                    {recruitmentSubTab === "audit" && (
-                      <div className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-5 shadow-2xl">
-                        <div className="border-b border-emerald-500/10 pb-3 flex justify-between items-start">
-                          <div><h2 className="text-base font-black uppercase text-white tracking-tight">{selectedCandidate.name}</h2></div>
-                          <div className="text-[9px] font-mono text-emerald-500/40 bg-black px-2.5 py-1 rounded-lg border border-emerald-500/10">Track: <strong className="text-white">{selectedCandidate.domain}</strong></div>
-                        </div>
-                        <div className="space-y-1.5 bg-black border border-emerald-500/5 p-4 rounded-xl shadow-inner">
-                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 w-full">
-                            <label className="text-[9px] uppercase font-bold tracking-wider text-emerald-500/40 flex items-center gap-1"><FileCheck size={10} /> Candidate Application Details:</label>
-                            <button type="button" onClick={triggerLiveStressGeneration} disabled={isStressLoading} className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-black text-[9px] font-black uppercase rounded-lg flex items-center gap-1 transition cursor-pointer shadow-md">
-                              <Sparkles size={10} /> {isStressLoading ? "Generating..." : "Generate Stress Scenario"}
-                            </button>
-                          </div>
-                          <p className="text-xs text-white/80 line-relaxed pt-1 text-justify whitespace-pre-wrap">"{selectedCandidate.choices}"</p>
-                        </div>
-                        {stressScenario && (
-                          <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-xl space-y-1.5 animate-fadeIn shadow-lg">
-                            <span className="text-[9px] uppercase font-bold text-cyan-400 flex items-center gap-1"><MessageSquare size={10} /> Live Panel Stress Script:</span>
-                            <p className="text-xs text-emerald-100/90 leading-relaxed text-justify font-bold italic">"{stressScenario}"</p>
-                          </div>
-                        )}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end border-t border-emerald-500/10 pt-4">
-                          <div className="space-y-1">
-                            <label className="text-[9px] uppercase font-bold text-emerald-500/40">Input Override Score (0-100)</label>
-                            <input type="number" value={interviewScore} onChange={(e) => setInterviewScore(e.target.value)} className="w-full bg-black border border-emerald-500/20 rounded-xl px-3 py-1.5 font-bold text-emerald-400 focus:outline-none" />
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button onClick={() => processCandidateDecision("WAITLISTED")} className="py-2 border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/15 text-amber-400 font-bold uppercase rounded-xl transition cursor-pointer">Waitlist</button>
-                            <button onClick={() => processCandidateDecision("SELECTED")} className="py-2 border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/15 text-emerald-400 font-bold uppercase rounded-xl transition cursor-pointer">Select Core</button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {recruitmentSubTab === "peer" && (
-                      <div className="space-y-5 animate-fadeIn">
-                        <form onSubmit={commitPanelReview} className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-5 space-y-4 shadow-xl">
-                          <h3 className="text-[9px] font-bold tracking-widest text-emerald-500/40 uppercase flex items-center gap-1"><Award size={12} /> Add Panel Scorecard</h3>
-                          
-                          {(() => {
-                            const domainLower = selectedCandidate.domain?.toLowerCase() || "";
-                            let label1 = "Technical Skills";
-                            let label2 = "Communication";
-                            let label3 = "Problem Solving";
-
-                            if (domainLower.includes("ops") || domainLower.includes("operations")) {
-                              label1 = "Execution Speed";
-                              label2 = "Team Coordination";
-                              label3 = "Resource Planning";
-                            } else if (domainLower.includes("media") || domainLower.includes("pr")) {
-                              label1 = "Writing & Content";
-                              label2 = "Design Quality";
-                              label3 = "Audience Reach";
-                            } else if (domainLower.includes("spons") || domainLower.includes("sponsorship")) {
-                              label1 = "Pitch Clarity";
-                              label2 = "Negotiation Skill";
-                              label3 = "Deal Closing";
-                            }
-
-                            return (
-                              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                                <div className="space-y-1 sm:col-span-1">
-                                  <label className="text-[9px] uppercase text-emerald-500/40">Interviewer Initials</label>
-                                  <input required type="text" value={interviewerName} onChange={(e) => setInterviewerName(e.target.value)} placeholder="e.g., AB" className="w-full bg-black border border-emerald-500/20 rounded-lg p-2 text-white focus:outline-none" />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[9px] uppercase text-emerald-500/40">{label1} (0-100)</label>
-                                  <input type="number" min="0" max="100" value={techScore} onChange={(e) => setTechScore(e.target.value)} className="w-full bg-black border border-emerald-500/20 rounded-lg p-2 text-emerald-400 focus:outline-none" />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[9px] uppercase text-emerald-500/40">{label2} (0-100)</label>
-                                  <input type="number" min="0" max="100" value={techScore} onChange={(e) => setCommScore(e.target.value)} className="w-full bg-black border border-emerald-500/20 rounded-lg p-2 text-emerald-400 focus:outline-none" />
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[9px] uppercase text-emerald-500/40">{label3} (0-100)</label>
-                                  <input type="number" min="0" max="100" value={solveScore} onChange={(e) => setSolveScore(e.target.value)} className="w-full bg-black border border-emerald-500/20 rounded-lg p-2 text-emerald-400 focus:outline-none" />
-                                </div>
-                              </div>
-                            );
-                          })()}
-
-                          <div className="space-y-1">
-                            <label className="text-[9px] uppercase text-emerald-500/40">Interviewer Notes</label>
-                            <textarea rows={2} value={reviewNotes} onChange={(e) => setReviewNotes(e.target.value)} placeholder="Write down your feedback using clear and simple language..." className="w-full bg-black border border-emerald-500/20 rounded-lg p-3 text-white focus:outline-none resize-none" />
-                          </div>
-                          <button type="submit" disabled={isSubmitting} className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-black font-bold uppercase rounded-xl transition flex items-center justify-center gap-1 cursor-pointer shadow-md"><Plus size={12} /> Save Scorecard</button>
-                        </form>
-                        <div className="space-y-2.5">
-                          <h4 className="text-[9px] font-bold tracking-widest text-emerald-500/40 uppercase border-b border-emerald-500/10 pb-1">Committed Evaluation Audit History</h4>
-                          {selectedCandidate.peerReviews && selectedCandidate.peerReviews.length > 0 ? (
-                            selectedCandidate.peerReviews.map((rev: any, idx: number) => (
-                              <div key={idx} className="bg-black border border-emerald-500/10 p-4 rounded-xl space-y-1.5">
-                                <div className="flex justify-between items-center text-[10px] text-cyan-400 font-bold"><span>Reviewer: {rev.interviewer}</span><span>Mean: {Math.round((parseFloat(rev.techScore) + parseFloat(rev.commScore) + parseFloat(rev.solveScore)) / 3)}/100</span></div>
-                                <p className="text-[11px] text-white/60 font-sans leading-relaxed italic">"{rev.feedback || "No notes written."}"</p>
-                              </div>
-                            ))
-                          ) : (
-                            <p className="text-center py-4 text-emerald-500/20 border border-emerald-500/10 border-dashed rounded-xl bg-black font-mono">No evaluation records saved for this applicant yet.</p>
+                  <div className="bg-zinc-950 border border-emerald-500/20 rounded-2xl p-6 space-y-6 shadow-2xl">
+                    <div className="border-b border-emerald-500/10 pb-3 flex justify-between items-start">
+                      <div>
+                        <span className="text-[8px] text-emerald-400 font-bold bg-emerald-500/10 border px-2 py-0.5 rounded">{selectedCandidate.id}</span>
+                        <h2 className="text-base font-black uppercase text-white mt-1.5">{selectedCandidate.name}</h2>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <span className="text-[10px] text-emerald-500/60">Group: <strong className="text-white">{selectedCandidate.groupNumber || "Unassigned"}</strong></span>
+                          {selectedCandidate.resumeUrl && (
+                             <a href={selectedCandidate.resumeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-cyan-400 hover:underline font-mono">
+                               <FileSpreadsheet size={12} /> View Resume
+                             </a>
                           )}
                         </div>
                       </div>
-                    )}
-                  </>
+                      <div className="text-right">
+                        <span className="text-[9px] uppercase block text-emerald-500/40">Pipeline Status</span>
+                        <strong className="bg-black border px-3 py-1 rounded-md block mt-1 tracking-widest text-xs text-white">{selectedCandidate.status || "PENDING"}</strong>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-black border border-emerald-500/10 rounded-xl p-4 space-y-2">
+                        <span className="text-[9px] font-bold text-emerald-500/40 uppercase tracking-widest block">Candidate Assessment Result</span>
+                        <div className="text-xl font-black text-white">{selectedCandidate.score} / 90</div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                      <button onClick={() => triggerStatusOverrideGUI(selectedCandidate.id, "WAITLISTED")} className="p-3 border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/15 text-amber-400 rounded-xl font-mono text-center flex flex-col items-center gap-1 cursor-pointer transition"><span className="font-bold text-xs">Waitlist Staging</span></button>
+                      <button onClick={() => triggerStatusOverrideGUI(selectedCandidate.id, "ROUND_2_APPROVED")} className="p-3 border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/15 text-blue-400 rounded-xl font-mono text-center flex flex-col items-center gap-1 cursor-pointer transition"><span className="font-bold text-xs">Approve for Round 2</span></button>
+                      
+                      {/* Selected for PI Button with confirmation prompt & email dispatch */}
+                      <button 
+                        onClick={async () => {
+                          if (!confirm(`Are you sure you want to select ${selectedCandidate.name} for Personal Interview (PI)? This will trigger an official email notification.`)) return;
+                          setIsSubmitting(true);
+                          
+                          await triggerStatusOverrideGUI(selectedCandidate.id, "SELECTED_FOR_PI");
+                          
+                          await fetch(webhookUrl, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              action: "dispatch-email-notice",
+                              email: selectedCandidate.email,
+                              name: selectedCandidate.name,
+                              status: "SELECTED_FOR_PI"
+                            })
+                          });
+                          
+                          logTerminalMsg(`Candidate ${selectedCandidate.name} selected for PI. Email dispatched.`, "success");
+                          setIsSubmitting(false);
+                        }} 
+                        disabled={isSubmitting}
+                        className="p-3 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 rounded-xl font-mono text-center flex flex-col items-center gap-1 cursor-pointer transition shadow-lg"
+                      >
+                        <span className="font-bold text-xs">🎯 Selected for PI</span>
+                      </button>
+                    </div>
+                  </div>
                 ) : (
-                  <div className="bg-black border border-emerald-500/10 rounded-2xl p-8 text-center text-emerald-500/20 font-mono">Select an application profile to launch active controls.</div>
+                  <div className="bg-black border border-emerald-500/10 rounded-2xl p-8 text-center text-emerald-500/20">Select an application profile from the left column to view audit options.</div>
                 )}
               </div>
             </div>
           </div>
         )}
       </main>
-      <footer className="border-t border-emerald-500/10 p-4 text-center text-[9px] text-emerald-500/20 flex items-center justify-center gap-1.5 max-w-7xl w-full mx-auto"><ShieldAlert size={11} /> SYSTEM OPERATIONAL DIAGNOSTICS ACTIVE // CORE FRAMEWORK SECURE</footer>
     </div>
   );
 }

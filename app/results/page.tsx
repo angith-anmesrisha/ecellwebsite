@@ -9,7 +9,16 @@ export default function StudentAdmissionsPortal() {
   const [queryType, setQueryType] = useState<"recruitment" | "event">("recruitment");
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
-  const [studentRecord, setStudentRecord] = useState<{ name: string; status: string; score: number; rawNotes: string; type: "recruitment" | "event"; eventTitle?: string } | null>(null);
+  const [studentRecord, setStudentRecord] = useState<{ 
+    name: string; 
+    status: string; 
+    score: number; 
+    rawNotes: string; 
+    type: "recruitment" | "event"; 
+    eventTitle?: string;
+    groupNumber?: string;
+    groupTask?: string;
+  } | null>(null);
 
   const handleQuerySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +42,9 @@ export default function StudentAdmissionsPortal() {
             status: data.status.toUpperCase(),
             score: data.score,
             rawNotes: data.choices || "",
-            type: "recruitment"
+            type: "recruitment",
+            groupNumber: data.groupNumber || "",
+            groupTask: data.groupTask || ""
           });
         } else {
           const studentMatch = Array.isArray(data.data) 
@@ -145,7 +156,7 @@ export default function StudentAdmissionsPortal() {
                   <span className="text-[9px] text-white/30 uppercase tracking-wider font-bold block">
                     Score
                   </span>
-                  <span className="text-xs font-bold text-white block mt-0.5">{studentRecord.score}/100</span>
+                  <span className="text-xs font-bold text-white block mt-0.5">{studentRecord.score}/90</span>
                 </div>
               </div>
 
@@ -171,11 +182,40 @@ export default function StudentAdmissionsPortal() {
                     </div>
                   )}
 
+                  {studentRecord.status === "ROUND_2_APPROVED" && (
+                    <div className="space-y-4 animate-fadeIn">
+                      <div className="p-5 bg-blue-500/5 border border-blue-500/20 rounded-xl space-y-4 font-mono text-xs">
+                        <div className="flex items-center gap-2 font-black uppercase tracking-widest text-blue-400">
+                          <Trophy size={16} className="animate-pulse" /> ROUND 2: ACTIVE CASE SIMULATION STAGE
+                        </div>
+                        <p className="leading-relaxed text-white/80 font-sans text-justify">
+                          Congratulations on clearing Round 1! You have been assigned to an inter-vertical execution cell for Round 2.
+                        </p>
+
+                        {/* Group Number & Live Task Display */}
+                        <div className="bg-black border border-blue-500/30 rounded-xl p-4 space-y-3">
+                          <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                            <span className="text-[10px] text-white/40 uppercase">Assigned Group Node</span>
+                            <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded border border-blue-500/20">
+                              {studentRecord.groupNumber || "Awaiting Group Allocation"}
+                            </span>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-[10px] text-white/40 uppercase font-bold block">Live Group Task Objective:</span>
+                            <p className="text-xs text-white/90 leading-relaxed font-sans bg-white/5 p-3 rounded-lg border border-white/5">
+                              {studentRecord.groupTask || "Waiting for admin task deployment. Check back shortly."}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {studentRecord.status === "SELECTED_FOR_PI" && (
                     <div className="space-y-4 animate-fadeIn">
                       <div className="p-5 bg-purple-500/5 border border-purple-500/20 rounded-xl space-y-4 font-mono text-xs">
                         <div className="flex items-center gap-2 font-black uppercase tracking-widest text-purple-400"><Calendar size={16} className="animate-pulse" /> SHORTLISTED FOR PERSONAL INTERVIEW (PI)</div>
-                        <p className="leading-relaxed text-white/80 font-sans text-justify">Congratulations! You have successfully cleared the initial screening benchmarks.</p>
+                        <p className="leading-relaxed text-white/80 font-sans text-justify">Congratulations! You have successfully cleared Round 2 case simulations.</p>
                         
                         {activeInterviewSchedule ? (
                           <div className="bg-black border-2 border-purple-500/30 rounded-xl p-4 space-y-3 relative overflow-hidden animate-fadeIn">
@@ -185,7 +225,7 @@ export default function StudentAdmissionsPortal() {
                               <p className="text-white text-xs font-black uppercase tracking-tight flex items-center gap-1.5">
                                 <Clock size={12} className="text-purple-400" /> {activeInterviewSchedule}
                               </p>
-                              <p className="text-[10px] text-zinc-400 font-sans">Please ensure you have a stable internet connection and your microphone works properly 10 minutes before your slot.</p>
+                              <p className="text-[10px] text-zinc-400 font-sans">Please ensure stable internet connectivity 10 minutes prior to your slot.</p>
                             </div>
                             <button 
                               onClick={() => window.open("https://meet.google.com", "_blank")}
@@ -196,7 +236,7 @@ export default function StudentAdmissionsPortal() {
                           </div>
                         ) : (
                           <div className="p-3 bg-black border border-purple-500/10 rounded-lg text-purple-300 text-[11px] leading-relaxed font-mono border-dashed">
-                            <strong>STATUS:</strong> SHORTLISTED FOR INTERVIEW // You have been selected for the interview stage. Your specific interview time slot will be visible here shortly.
+                            <strong>STATUS:</strong> SHORTLISTED FOR INTERVIEW // Your specific interview time slot details will be visible here shortly.
                           </div>
                         )}
                       </div>
@@ -208,9 +248,9 @@ export default function StudentAdmissionsPortal() {
                       <div className="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl space-y-4 font-mono text-xs relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-full filter blur-xl animate-pulse" />
                         <div className="flex items-center gap-2 font-black uppercase tracking-widest text-emerald-400"><Award size={16} className="animate-bounce" /> CONGRATULATIONS: SELECTED AS CORE MEMBER</div>
-                        <p className="leading-relaxed text-white/80 font-sans text-justify font-medium">Welcome to the team! Your evaluation across all recruitment rounds and interviews met our selection criteria perfectly.</p>
+                        <p className="leading-relaxed text-white/80 font-sans text-justify font-medium">Welcome to the team! Your evaluation across all recruitment rounds met our selection criteria perfectly.</p>
                         <div className="p-3 bg-black border border-emerald-500/20 rounded-lg text-emerald-400 font-bold">
-                          ✔ SELECTION CONFIRMED: You are selected as a Core Board Member. Onboarding details and orientation schedules will be emailed to you shortly.
+                          ✔ SELECTION CONFIRMED: Onboarding details and orientation schedules have been emailed to you.
                         </div>
                       </div>
                     </div>
@@ -225,9 +265,6 @@ export default function StudentAdmissionsPortal() {
                     <div className="p-5 bg-blue-500/5 border border-blue-500/20 rounded-xl space-y-3 font-mono text-xs">
                       <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-blue-400"><Calendar size={16} /> Registration Confirmed</div>
                       <p className="leading-relaxed text-white/80 font-sans">Your ticket registration for <strong className="text-white">{studentRecord.eventTitle}</strong> is successfully verified in our records.</p>
-                      <div className="p-3 bg-black border border-white/5 rounded-lg text-white/40 text-[10px]">
-                        // If this event includes a dynamic competition or hackathon, final results and team rankings will appear right here once evaluations are completed.
-                      </div>
                     </div>
                   ) : (
                     <div className="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl space-y-3 font-mono text-xs">
