@@ -214,14 +214,12 @@ export default function AdvancedAdminHub() {
     
     try {
       for (const cId of selectedForManualGroup) {
-         // Update the group in the database
          await fetch("/api/recruitment/submit", {
            method: "POST",
            headers: { "Content-Type": "application/json" },
            body: JSON.stringify({ action: "update-candidate-group", candidateId: cId, groupNumber: manualGroupName })
          });
 
-         // Find the candidate's details and dispatch the Round 2 email with the group number
          const candidateRecord = candidates.find(c => c.id === cId);
          if (candidateRecord) {
            await fetch(webhookUrl, {
@@ -247,6 +245,7 @@ export default function AdvancedAdminHub() {
       setIsSubmitting(false);
     }
   };
+
   const groupedCandidatesMap = candidates.reduce((acc: Record<string, Candidate[]>, c) => {
     if (c.groupNumber) {
       if (!acc[c.groupNumber]) acc[c.groupNumber] = [];
@@ -256,8 +255,6 @@ export default function AdvancedAdminHub() {
   }, {});
 
   const sortedGroupKeys = Object.keys(groupedCandidatesMap).sort();
-  
-  // Identify candidates who passed but have no group
   const leftoverCandidates = candidates.filter(c => c.status === "ROUND_2_APPROVED" && !c.groupNumber);
 
   const filteredGuiCandidates = candidates.filter(c => {
@@ -364,7 +361,6 @@ export default function AdvancedAdminHub() {
               </button>
             </div>
 
-            {/* NEW: Leftover Candidates Manual Assignment Block */}
             {leftoverCandidates.length > 0 && (
               <div className="bg-zinc-950 border border-amber-500/30 p-5 rounded-2xl shadow-xl mt-6">
                  <h4 className="text-xs font-black uppercase text-amber-400 mb-2 flex items-center gap-2"><Users size={14}/> Unassigned Candidates ({leftoverCandidates.length})</h4>
@@ -441,7 +437,7 @@ export default function AdvancedAdminHub() {
                           <span className="text-[9px] uppercase font-bold text-emerald-500/40 tracking-widest block mb-1">Group Roster & Verticals</span>
                           {members.map((m, mIdx) => (
                             <div key={mIdx} className="flex justify-between items-center text-[11px]">
-                              <span className="text-white font-medium truncate max-w-[65%]">{m.name}</span>
+                              <span className="text-white font-medium truncate max-w-[65%]" title={m.name}>{m.name}</span>
                               <span className="text-[9px] text-cyan-400 font-mono bg-cyan-500/10 border border-cyan-500/20 px-1.5 py-0.5 rounded truncate max-w-[32%]">{m.domain}</span>
                             </div>
                           ))}
@@ -551,23 +547,20 @@ export default function AdvancedAdminHub() {
                       <div>
                         <span className="text-[8px] text-emerald-400 font-bold bg-emerald-500/10 border px-2 py-0.5 rounded">{selectedCandidate.id}</span>
                         <h2 className="text-base font-black uppercase text-white mt-1.5">{selectedCandidate.name}</h2>
-                        <div className="flex items-center gap-3 mt-1.5">
+                        <div className="flex flex-wrap items-center gap-3 mt-2 pt-2 border-t border-emerald-500/10">
                           <span className="text-[10px] text-emerald-500/60">Group: <strong className="text-white">{selectedCandidate.groupNumber || "Unassigned"}</strong></span>
-                          {selectedCandidate.resumeUrl && (
-                      <div className="bg-black border border-emerald-500/10 rounded-xl p-3 space-y-2">
-                        <div className="flex justify-between items-center text-[10px] text-emerald-500/60 uppercase font-bold">
-                          <span>Candidate Resume Document Preview</span>
-                          <a href={selectedCandidate.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Open Fullscreen ↗</a>
-                        </div>
-                        <div className="w-full h-64 bg-zinc-950 rounded-lg overflow-hidden border border-emerald-500/20">
-                          <iframe 
-                            src={selectedCandidate.resumeUrl.replace("/view?usp=drivesdk", "/preview").replace("/edit?usp=sharing", "/preview")} 
-                            className="w-full h-full border-0"
-                            title="Resume Preview"
-                          />
-                        </div>
-                      </div>
-                    )}
+                          {selectedCandidate.resumeUrl ? (
+                             <a 
+                               href={selectedCandidate.resumeUrl} 
+                               target="_blank" 
+                               rel="noopener noreferrer" 
+                               className="inline-flex items-center gap-1.5 px-3 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 rounded-lg text-[10px] font-bold uppercase transition"
+                             >
+                               <FileSpreadsheet size={12} /> Open PDF Resume in Drive ↗
+                             </a>
+                          ) : (
+                             <span className="text-[10px] text-zinc-500 italic">No resume uploaded</span>
+                          )}
                         </div>
                       </div>
                       <div className="text-right">
@@ -581,6 +574,23 @@ export default function AdvancedAdminHub() {
                         <div className="text-xl font-black text-white">{selectedCandidate.score} / 90</div>
                     </div>
 
+                    {/* EMBEDDED RESUME PREVIEW CONTAINER */}
+                    {selectedCandidate.resumeUrl && (
+                      <div className="bg-black border border-emerald-500/10 rounded-xl p-4 space-y-3">
+                        <div className="flex justify-between items-center text-[10px] text-emerald-500/60 uppercase font-bold">
+                          <span>Resume Document Preview</span>
+                          <span className="text-cyan-400 text-[9px]">If preview is blank, use the button above to view</span>
+                        </div>
+                        <div className="w-full h-80 bg-zinc-950 rounded-lg overflow-hidden border border-emerald-500/20 relative">
+                          <iframe 
+                            src={selectedCandidate.resumeUrl.includes("drive.google.com") ? selectedCandidate.resumeUrl.replace(/\/view.*$/, "/preview") : selectedCandidate.resumeUrl}
+                            className="w-full h-full border-0"
+                            title="Candidate Resume Preview"
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-1">
                       
                       <button onClick={() => triggerStatusOverrideGUI(selectedCandidate.id, "QUIZ_UNLOCKED")} className="p-3 border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition shadow-lg">
@@ -592,43 +602,41 @@ export default function AdvancedAdminHub() {
                       </button>
                       
                       <button 
-  onClick={async () => {
-    if (!confirm(`Approve ${selectedCandidate.name} for Round 2? This will dispatch an official email notification.`)) return;
-    setIsSubmitting(true);
-    
-    try {
-      // 1. Update Database Status
-      await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "update-shortlist", candidateId: selectedCandidate.id, score: selectedCandidate.score || 0, status: "ROUND_2_APPROVED" })
-      });
-      
-      // 2. Dispatch Email
-      await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "dispatch-email-notice",
-          email: selectedCandidate.email,
-          name: selectedCandidate.name,
-          status: "ROUND_2_APPROVED"
-        })
-      });
+                        onClick={async () => {
+                          if (!confirm(`Approve ${selectedCandidate.name} for Round 2? This will dispatch an official email notification.`)) return;
+                          setIsSubmitting(true);
+                          
+                          try {
+                            await fetch(webhookUrl, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ action: "update-shortlist", candidateId: selectedCandidate.id, score: selectedCandidate.score || 0, status: "ROUND_2_APPROVED" })
+                            });
+                            
+                            await fetch(webhookUrl, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                action: "dispatch-email-notice",
+                                email: selectedCandidate.email,
+                                name: selectedCandidate.name,
+                                status: "ROUND_2_APPROVED"
+                              })
+                            });
 
-      logTerminalMsg(`Candidate ${selectedCandidate.name} approved for Round 2. Email dispatched.`, "success");
-      await runBackgroundDatabaseCheck(false, false);
-    } catch (e) {
-      logTerminalMsg("Error processing Round 2 approval.", "warn");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }} 
-  disabled={isSubmitting}
-  className="p-3 border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/15 text-blue-400 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition shadow-lg"
->
-  <span className="font-bold text-[10px] uppercase text-center leading-tight">Approve Round 2</span>
-</button>
+                            logTerminalMsg(`Candidate ${selectedCandidate.name} approved for Round 2. Email dispatched.`, "success");
+                            await runBackgroundDatabaseCheck(false, false);
+                          } catch (e) {
+                            logTerminalMsg("Error processing Round 2 approval.", "warn");
+                          } finally {
+                            setIsSubmitting(false);
+                          }
+                        }} 
+                        disabled={isSubmitting}
+                        className="p-3 border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/15 text-blue-400 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition shadow-lg"
+                      >
+                        <span className="font-bold text-[10px] uppercase text-center leading-tight">Approve Round 2</span>
+                      </button>
                       
                       <button 
                         onClick={async () => {

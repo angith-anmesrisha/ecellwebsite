@@ -28,7 +28,6 @@ export default function RecruitmentRegistrationForm({
   const [regEmail, setRegEmail] = useState("");
   const [regDept, setRegDept] = useState<"ops" | "media" | "spons">("ops");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [base64String, setBase64String] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleFileAttachmentChange = (
@@ -51,12 +50,6 @@ export default function RecruitmentRegistrationForm({
         return;
       }
       setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onload = () => {
-        const rawResult = reader.result as string;
-        setBase64String(rawResult.split(",")[1]);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -66,6 +59,21 @@ export default function RecruitmentRegistrationForm({
     setIsSubmitting(true);
 
     try {
+      // 1. Convert attached resume file into Base64 synchronously on submit
+      let base64Data = "";
+      if (selectedFile) {
+        base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const rawResult = reader.result as string;
+            resolve(rawResult.split(",")[1]);
+          };
+          reader.onerror = (error) => reject(error);
+          reader.readAsDataURL(selectedFile);
+        });
+      }
+
+      // 2. Check initial eligibility / returning session state
       const eligibilityRes = await fetch("/api/recruitment/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -102,6 +110,7 @@ export default function RecruitmentRegistrationForm({
         return;
       }
 
+      // 3. Register new profile with full payload including resume file stream
       const generatedId = "cand_" + Math.random().toString(36).substring(2, 11);
       const resumeName = selectedFile
         ? `${regName.trim().replace(/\s+/g, "_")}_Resume.pdf`
@@ -116,7 +125,7 @@ export default function RecruitmentRegistrationForm({
           name: regName.trim(),
           email: regEmail.trim().toLowerCase(),
           dept: regDept,
-          resumeFileBase64: base64String,
+          resumeFileBase64: base64Data,
           resumeFileName: resumeName,
         }),
       });
@@ -136,6 +145,7 @@ export default function RecruitmentRegistrationForm({
       setActiveCandidate(newCandidate);
 
     } catch (err) {
+      console.error("Registration error:", err);
       const generatedId = "cand_" + Math.random().toString(36).substring(2, 11);
       const offlineCandidate: Candidate = {
         id: generatedId,
@@ -223,7 +233,7 @@ export default function RecruitmentRegistrationForm({
           disabled={isSubmitting}
           className="w-full py-2.5 bg-white text-black font-mono font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-zinc-200 transition"
         >
-          Start Assessment
+          {isSubmitting ? "Processing..." : "Start Assessment"}
         </button>
       </form>
     </div>

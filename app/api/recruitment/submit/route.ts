@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
     if (!targetUrl) throw new Error("Google webhook destination variable is blank.");
 
-    // 1. UNIVERSAL PASSTHROUGH FOR EMAILS & STATUS OVERRIDES
+    // 1. UNIVERSAL PASSTHROUGH FOR EMAILS & STATUS/GROUP OVERRIDES
     if (
       body.action === "dispatch-email-notice" || 
       body.action === "update-shortlist" || 
@@ -54,7 +54,52 @@ export async function POST(request: Request) {
       return NextResponse.json(data);
     }
 
-    // 2. GENERATE ROUND 2 GROUPS (CONCURRENT OPTIMIZATION)
+    // 2. CHECK INITIAL ELIGIBILITY (RESTORES RETURNING SESSION CHECK)
+    if (body.action === "check-initial-eligibility") {
+      const targetEmail = body.email ? body.email.trim().toLowerCase() : "";
+      const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
+      const sheetData = await sheetFetch.json();
+
+      if (sheetData.success && Array.isArray(sheetData.data)) {
+        const existing = sheetData.data.find((c: any) => c.email && c.email.toLowerCase() === targetEmail);
+        if (existing) {
+          return NextResponse.json({
+            success: true,
+            isExistingSession: true,
+            candidate: existing,
+            progress: {
+              passed: existing.status === "ROUND_2_APPROVED" || existing.status === "SELECTED_FOR_PI" || existing.status === "SELECTED_CORE"
+            }
+          });
+        }
+      }
+      return NextResponse.json({ success: true, isExistingSession: false });
+    }
+
+    // 3. HANDLE NEW PROFILE REGISTRATION WITH RESUME UPLOAD
+    if (body.action === "register-new-profile") {
+      const { id, name, email, dept, resumeFileBase64, resumeFileName } = body;
+      console.log("CHECKING RESUME PAYLOAD -> Length:", resumeFileBase64 ? resumeFileBase64.length : "NO FILE", "Name:", resumeFileName);
+      const normalizedDept = dept === "ops" ? "OPS VERTICAL" : dept === "media" ? "PR & MEDIA CELL" : "CORPORATE ALLIANCES";
+
+      const sheetRes = await fetch(targetUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "register-profile",
+          id: id,
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          dept: normalizedDept,
+          resumeFileBase64: resumeFileBase64 || "",
+          resumeFileName: resumeFileName || "Candidate_Resume.pdf"
+        }),
+      });
+      const sheetData = await sheetRes.json();
+      return NextResponse.json(sheetData);
+    }
+
+    // 4. GENERATE ROUND 2 GROUPS (CONCURRENT OPTIMIZATION)
     if (body.action === "generate-round2-groups") {
       const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
       const sheetData = await sheetFetch.json();
@@ -92,7 +137,6 @@ export async function POST(request: Request) {
         const groupName = `G-${groupCounter < 10 ? "0" + groupCounter : groupCounter}`;
         
         for (const member of currentGroupMembers) {
-          // Push network requests to an array instead of awaiting them sequentially to avoid Vercel timeouts
           concurrentTasks.push(
             fetch(targetUrl, {
               method: "POST",
@@ -114,7 +158,6 @@ export async function POST(request: Request) {
         groupCounter++;
       }
 
-      // Execute all pending fetches concurrently in chunks to respect Google's limits
       const chunkSize = 15;
       for (let i = 0; i < concurrentTasks.length; i += chunkSize) {
         const chunk = concurrentTasks.slice(i, i + chunkSize);
@@ -124,7 +167,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, groupsCount: groups.length, groups });
     }
 
-    // 3. AUTOMATED TOP 70 SHORTLIST GENERATOR
+    // 5. AUTOMATED TOP 70 SHORTLIST GENERATOR
     if (body.action === "generate-shortlist") {
       const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
       const sheetData = await sheetFetch.json();
@@ -167,7 +210,6 @@ export async function POST(request: Request) {
             }
         }
 
-        // 1. Update database status
         shortlistTasks.push(
           fetch(targetUrl, {
             method: "POST",
@@ -176,7 +218,6 @@ export async function POST(request: Request) {
           })
         );
 
-        // 2. ADD THIS: Automatically send email if they are approved for Round 2
         if (finalStatus === "ROUND_2_APPROVED") {
           shortlistTasks.push(
             fetch(targetUrl, {
@@ -188,7 +229,6 @@ export async function POST(request: Request) {
         }
       }
 
-      // Execute shortlist updates concurrently
       const chunkSize = 20;
       for (let i = 0; i < shortlistTasks.length; i += chunkSize) {
         const chunk = shortlistTasks.slice(i, i + chunkSize);
@@ -201,9 +241,9 @@ export async function POST(request: Request) {
       });
     }
 
-    // 4. QUIZ SUBMISSION ROUTING
+    // 6. QUIZ SUBMISSION ROUTING
     if (body.round1Choices) {
-      const { name, email, dept, round1Choices, resumeFileBase64, resumeFileName } = body;
+      const { name, email, dept, round1Choices } = body;
       const normalizedDept = dept === "ops" ? "OPS VERTICAL" : dept === "media" ? "PR & MEDIA CELL" : "CORPORATE ALLIANCES";
       
       let finalizedScore = 0;
@@ -228,8 +268,7 @@ export async function POST(request: Request) {
           action: "submit-quiz",
           id: "cand_" + Math.random().toString(36).substring(2, 9),
           name: name.trim(), email: email.trim().toLowerCase(), dept: normalizedDept,
-          score: finalizedScore, round1Choices: readableChoices,
-          resumeFileBase64: resumeFileBase64 || "", resumeFileName: resumeFileName || "Candidate_Resume.pdf"
+          score: finalizedScore, round1Choices: readableChoices
         }),
       });
       await sheetRes.json();
