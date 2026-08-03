@@ -39,7 +39,6 @@ export async function POST(request: Request) {
     if (!targetUrl) throw new Error("Google webhook destination variable is blank.");
 
     // 1. UNIVERSAL PASSTHROUGH FOR EMAILS & STATUS OVERRIDES
-    // This catches the Round 2 email dispatch and forwards it directly to Apps Script
     if (
       body.action === "dispatch-email-notice" || 
       body.action === "update-shortlist" || 
@@ -55,7 +54,7 @@ export async function POST(request: Request) {
       return NextResponse.json(data);
     }
 
-    // 2. GENERATE ROUND 2 GROUPS (GROUPS OF 5 WITH MIXED VERTICALS)
+    // 2. GENERATE ROUND 2 GROUPS (CONCURRENT OPTIMIZATION)
     if (body.action === "generate-round2-groups") {
       const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
       const sheetData = await sheetFetch.json();
@@ -73,6 +72,7 @@ export async function POST(request: Request) {
 
       let groups: any[] = [];
       let groupCounter = 1;
+      const concurrentTasks = [];
 
       while (opsPool.length > 0 || mediaPool.length > 0 || sponsPool.length > 0 || remainingPool.length > 0) {
         let currentGroupMembers: any[] = [];
@@ -90,32 +90,35 @@ export async function POST(request: Request) {
         }
 
         const groupName = `G-${groupCounter < 10 ? "0" + groupCounter : groupCounter}`;
+        
         for (const member of currentGroupMembers) {
-          await fetch(targetUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-              action: "update-candidate-group", 
-              candidateId: member.regId, 
-              groupNumber: groupName 
+          // Push network requests to an array instead of awaiting them sequentially to avoid Vercel timeouts
+          concurrentTasks.push(
+            fetch(targetUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "update-candidate-group", candidateId: member.regId, groupNumber: groupName })
             })
-          });
+          );
 
-          await fetch(targetUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-              action: "dispatch-email-notice", 
-              email: member.email, 
-              name: member.name, 
-              status: "ROUND_2_APPROVED",
-              groupNumber: groupName
+          concurrentTasks.push(
+            fetch(targetUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "dispatch-email-notice", email: member.email, name: member.name, status: "ROUND_2_APPROVED", groupNumber: groupName })
             })
-          });
+          );
         }
 
         groups.push({ groupNumber: groupName, members: currentGroupMembers.map(m => m.name) });
         groupCounter++;
+      }
+
+      // Execute all pending fetches concurrently in chunks to respect Google's limits
+      const chunkSize = 15;
+      for (let i = 0; i < concurrentTasks.length; i += chunkSize) {
+        const chunk = concurrentTasks.slice(i, i + chunkSize);
+        await Promise.all(chunk);
       }
 
       return NextResponse.json({ success: true, groupsCount: groups.length, groups });
@@ -144,6 +147,7 @@ export async function POST(request: Request) {
 
       let selectedCount = 0;
       let borderlineCount = 0;
+      const shortlistTasks = [];
 
       for (const candidate of rankedCandidates) {
         let finalStatus = "WAITLISTED";
@@ -163,11 +167,20 @@ export async function POST(request: Request) {
             }
         }
 
-        await fetch(targetUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "update-shortlist", candidateId: candidate.regId, score: candidate.numScore, status: finalStatus })
-        });
+        shortlistTasks.push(
+          fetch(targetUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "update-shortlist", candidateId: candidate.regId, score: candidate.numScore, status: finalStatus })
+          })
+        );
+      }
+
+      // Execute shortlist updates concurrently
+      const chunkSize = 20;
+      for (let i = 0; i < shortlistTasks.length; i += chunkSize) {
+        const chunk = shortlistTasks.slice(i, i + chunkSize);
+        await Promise.all(chunk);
       }
 
       return NextResponse.json({ 
