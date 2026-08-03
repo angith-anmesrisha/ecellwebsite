@@ -23,7 +23,8 @@ export default function CrystallineParticleMatrix({ isSparse: manualSparse = fal
   const pathname = usePathname();
 
   // Automatically switch to sparse mode on admin and evaluation dashboards
-  const isSparse = manualSparse || pathname?.includes("/admin") || pathname?.includes("/evaluation");
+  // Automatically switch to sparse mode on admin, evaluation, and recruitment dashboards
+  const isSparse = manualSparse || pathname?.includes("/admin") || pathname?.includes("/evaluation") || pathname?.includes("/recruitment") || pathname?.includes("/results");
 
   useEffect(() => {
     const canvas = canvasRef.current;
