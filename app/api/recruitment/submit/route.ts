@@ -167,6 +167,7 @@ export async function POST(request: Request) {
             }
         }
 
+        // 1. Update database status
         shortlistTasks.push(
           fetch(targetUrl, {
             method: "POST",
@@ -174,6 +175,17 @@ export async function POST(request: Request) {
             body: JSON.stringify({ action: "update-shortlist", candidateId: candidate.regId, score: candidate.numScore, status: finalStatus })
           })
         );
+
+        // 2. ADD THIS: Automatically send email if they are approved for Round 2
+        if (finalStatus === "ROUND_2_APPROVED") {
+          shortlistTasks.push(
+            fetch(targetUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "dispatch-email-notice", email: candidate.email, name: candidate.name, status: "ROUND_2_APPROVED" })
+            })
+          );
+        }
       }
 
       // Execute shortlist updates concurrently

@@ -586,21 +586,33 @@ export default function AdvancedAdminHub() {
     if (!confirm(`Approve ${selectedCandidate.name} for Round 2? This will dispatch an official email notification.`)) return;
     setIsSubmitting(true);
     
-    await triggerStatusOverrideGUI(selectedCandidate.id, "ROUND_2_APPROVED");
-    
-    await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "dispatch-email-notice",
-        email: selectedCandidate.email,
-        name: selectedCandidate.name,
-        status: "ROUND_2_APPROVED"
-      })
-    });
-    
-    logTerminalMsg(`Candidate ${selectedCandidate.name} approved for Round 2. Email dispatched.`, "success");
-    setIsSubmitting(false);
+    try {
+      // 1. Update Database Status
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "update-shortlist", candidateId: selectedCandidate.id, score: selectedCandidate.score || 0, status: "ROUND_2_APPROVED" })
+      });
+      
+      // 2. Dispatch Email
+      await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "dispatch-email-notice",
+          email: selectedCandidate.email,
+          name: selectedCandidate.name,
+          status: "ROUND_2_APPROVED"
+        })
+      });
+
+      logTerminalMsg(`Candidate ${selectedCandidate.name} approved for Round 2. Email dispatched.`, "success");
+      await runBackgroundDatabaseCheck(false, false);
+    } catch (e) {
+      logTerminalMsg("Error processing Round 2 approval.", "warn");
+    } finally {
+      setIsSubmitting(false);
+    }
   }} 
   disabled={isSubmitting}
   className="p-3 border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/15 text-blue-400 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition shadow-lg"
