@@ -214,13 +214,30 @@ export default function AdvancedAdminHub() {
     
     try {
       for (const cId of selectedForManualGroup) {
+         // Update the group in the database
          await fetch("/api/recruitment/submit", {
            method: "POST",
            headers: { "Content-Type": "application/json" },
            body: JSON.stringify({ action: "update-candidate-group", candidateId: cId, groupNumber: manualGroupName })
          });
+
+         // Find the candidate's details and dispatch the Round 2 email with the group number
+         const candidateRecord = candidates.find(c => c.id === cId);
+         if (candidateRecord) {
+           await fetch(webhookUrl, {
+             method: "POST",
+             headers: { "Content-Type": "application/json" },
+             body: JSON.stringify({
+               action: "dispatch-email-notice",
+               email: candidateRecord.email,
+               name: candidateRecord.name,
+               status: "ROUND_2_APPROVED",
+               groupNumber: manualGroupName
+             })
+           });
+         }
       }
-      logTerminalMsg(`Manual group ${manualGroupName} created successfully.`, "success");
+      logTerminalMsg(`Manual group ${manualGroupName} created successfully. Notification emails dispatched.`, "success");
       setSelectedForManualGroup([]);
       setManualGroupName("");
       await runBackgroundDatabaseCheck(false, false);
@@ -230,7 +247,6 @@ export default function AdvancedAdminHub() {
       setIsSubmitting(false);
     }
   };
-
   const groupedCandidatesMap = candidates.reduce((acc: Record<string, Candidate[]>, c) => {
     if (c.groupNumber) {
       if (!acc[c.groupNumber]) acc[c.groupNumber] = [];
@@ -565,9 +581,32 @@ export default function AdvancedAdminHub() {
                         <span className="font-bold text-[10px] uppercase text-center leading-tight">Waitlist Staging</span>
                       </button>
                       
-                      <button onClick={() => triggerStatusOverrideGUI(selectedCandidate.id, "ROUND_2_APPROVED")} className="p-3 border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/15 text-blue-400 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition">
-                        <span className="font-bold text-[10px] uppercase text-center leading-tight">Approve Round 2</span>
-                      </button>
+                      <button 
+  onClick={async () => {
+    if (!confirm(`Approve ${selectedCandidate.name} for Round 2? This will dispatch an official email notification.`)) return;
+    setIsSubmitting(true);
+    
+    await triggerStatusOverrideGUI(selectedCandidate.id, "ROUND_2_APPROVED");
+    
+    await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "dispatch-email-notice",
+        email: selectedCandidate.email,
+        name: selectedCandidate.name,
+        status: "ROUND_2_APPROVED"
+      })
+    });
+    
+    logTerminalMsg(`Candidate ${selectedCandidate.name} approved for Round 2. Email dispatched.`, "success");
+    setIsSubmitting(false);
+  }} 
+  disabled={isSubmitting}
+  className="p-3 border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/15 text-blue-400 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition shadow-lg"
+>
+  <span className="font-bold text-[10px] uppercase text-center leading-tight">Approve Round 2</span>
+</button>
                       
                       <button 
                         onClick={async () => {
