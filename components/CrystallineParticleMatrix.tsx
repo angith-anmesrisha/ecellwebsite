@@ -74,13 +74,15 @@ export default function CrystallineParticleMatrix({ isSparse: manualSparse = fal
     const initParticles = (w: number, h: number) => {
       particles = [];
       
-      // Dynamic spacing calculations based on route and device
-      let densityMultiplier = isMobileDevice ? 2000 : 800; 
-      let maxCapLimit = isMobileDevice ? 250 : 1000;        
+      // INCREASE these multipliers to lower the density
+      let densityMultiplier = isMobileDevice ? 4000 : 1600; // Originally 2000 : 800[cite: 7]
+      // DECREASE these caps to restrict the maximum particle count
+      let maxCapLimit = isMobileDevice ? 100 : 500;         // Originally 250 : 1000[cite: 7]
 
       if (isSparse) {
-        densityMultiplier = isMobileDevice ? 5000 : 3500;
-        maxCapLimit = isMobileDevice ? 40 : 120;
+        // Further restrict the sparse mode layout
+        densityMultiplier = isMobileDevice ? 8000 : 6000;   // Originally 5000 : 3500[cite: 7]
+        maxCapLimit = isMobileDevice ? 20 : 60;             // Originally 40 : 120[cite: 7]
       }
       
       const particleCount = Math.min(
