@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Lock, Cpu, BarChart3, Users, Download, ShieldAlert, CheckCircle, Clock, ArrowRight, Check, FileCheck, RefreshCw, Sparkles, MessageSquare, Plus, Award, Activity, Radio, Binary, Orbit, Search, Sliders, Mail, FileSpreadsheet, ClipboardList, Trophy, Unlock } from "lucide-react";
+import { Lock, Cpu, BarChart3, Users, Download, ShieldAlert, CheckCircle, Clock, ArrowRight, Check, FileCheck, RefreshCw, Sparkles, MessageSquare, Plus, Award, Activity, Radio, Binary, Orbit, Search, Sliders, Mail, FileSpreadsheet, ClipboardList, Trophy, Unlock, XCircle } from "lucide-react";
 
 interface Candidate { id: string; name: string; email: string; domain: string; score: number; choices: string; status: string; peerReviews: any[]; resumeUrl?: string; groupNumber?: string; groupTask?: string; }
 interface DistributionItem { sector: string; count: number; }
@@ -25,10 +25,12 @@ export default function AdvancedAdminHub() {
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Controls the global standby waiting room
   const [isGlobalHoldReleased, setIsGlobalHoldReleased] = useState(false);
-
   const [groupTaskInputs, setGroupTaskInputs] = useState<Record<string, string>>({});
+
+  // Manual group assignment state
+  const [selectedForManualGroup, setSelectedForManualGroup] = useState<string[]>([]);
+  const [manualGroupName, setManualGroupName] = useState("");
 
   const [allTerminalLogs, setAllTerminalLogs] = useState<LogEntry[]>([]);
   const [visibleLogs, setVisibleLogs] = useState<LogEntry[]>([]);
@@ -203,6 +205,32 @@ export default function AdvancedAdminHub() {
     } catch (e) {} finally { setIsSubmitting(false); }
   };
 
+  const handleManualGroupCreate = async () => {
+    if (!manualGroupName.trim()) { alert("Please enter a group identifier name."); return; }
+    if (selectedForManualGroup.length === 0) { alert("Select at least one candidate to form a group."); return; }
+    
+    setIsSubmitting(true);
+    logTerminalMsg(`Creating manual group [${manualGroupName}] for ${selectedForManualGroup.length} candidates...`, "exec");
+    
+    try {
+      for (const cId of selectedForManualGroup) {
+         await fetch("/api/recruitment/submit", {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify({ action: "update-candidate-group", candidateId: cId, groupNumber: manualGroupName })
+         });
+      }
+      logTerminalMsg(`Manual group ${manualGroupName} created successfully.`, "success");
+      setSelectedForManualGroup([]);
+      setManualGroupName("");
+      await runBackgroundDatabaseCheck(false, false);
+    } catch(e) {
+      logTerminalMsg("Error creating manual group.", "warn");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const groupedCandidatesMap = candidates.reduce((acc: Record<string, Candidate[]>, c) => {
     if (c.groupNumber) {
       if (!acc[c.groupNumber]) acc[c.groupNumber] = [];
@@ -212,6 +240,9 @@ export default function AdvancedAdminHub() {
   }, {});
 
   const sortedGroupKeys = Object.keys(groupedCandidatesMap).sort();
+  
+  // Identify candidates who passed but have no group
+  const leftoverCandidates = candidates.filter(c => c.status === "ROUND_2_APPROVED" && !c.groupNumber);
 
   const filteredGuiCandidates = candidates.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(guiSearchQuery.toLowerCase()) || c.id.toLowerCase().includes(guiSearchQuery.toLowerCase());
@@ -317,6 +348,54 @@ export default function AdvancedAdminHub() {
               </button>
             </div>
 
+            {/* NEW: Leftover Candidates Manual Assignment Block */}
+            {leftoverCandidates.length > 0 && (
+              <div className="bg-zinc-950 border border-amber-500/30 p-5 rounded-2xl shadow-xl mt-6">
+                 <h4 className="text-xs font-black uppercase text-amber-400 mb-2 flex items-center gap-2"><Users size={14}/> Unassigned Candidates ({leftoverCandidates.length})</h4>
+                 <p className="text-[10px] text-amber-500/50 mb-4">These candidates are approved for Round 2 but currently unassigned. Select them to form a manual group.</p>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4 max-h-48 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-emerald-500/20">
+                   {leftoverCandidates.map(c => (
+                     <label key={c.id} className={`flex items-center gap-3 p-2 rounded-xl border cursor-pointer transition ${selectedForManualGroup.includes(c.id) ? 'bg-amber-500/10 border-amber-500' : 'bg-black border-emerald-500/20 hover:border-emerald-500/50'}`}>
+                       <input 
+                         type="checkbox" 
+                         className="hidden"
+                         checked={selectedForManualGroup.includes(c.id)}
+                         onChange={(e) => {
+                           if (e.target.checked) setSelectedForManualGroup(prev => [...prev, c.id]);
+                           else setSelectedForManualGroup(prev => prev.filter(id => id !== c.id));
+                         }}
+                       />
+                       <div className={`w-3 h-3 rounded-sm border flex items-center justify-center ${selectedForManualGroup.includes(c.id) ? 'bg-amber-500 border-amber-500 text-black' : 'border-emerald-500/50'}`}>
+                          {selectedForManualGroup.includes(c.id) && <Check size={10} strokeWidth={4} />}
+                       </div>
+                       <div className="flex flex-col truncate">
+                         <span className="text-[11px] font-bold text-white truncate">{c.name}</span>
+                         <span className="text-[9px] text-emerald-500/50">{c.domain}</span>
+                       </div>
+                     </label>
+                   ))}
+                 </div>
+
+                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-black border border-emerald-500/20 p-3 rounded-xl">
+                   <input 
+                     type="text" 
+                     value={manualGroupName} 
+                     onChange={(e) => setManualGroupName(e.target.value)}
+                     placeholder="Enter custom group ID (e.g., G-MANUAL-01)" 
+                     className="flex-1 bg-transparent text-white text-xs font-mono focus:outline-none placeholder-emerald-500/30 px-2"
+                   />
+                   <button 
+                     onClick={handleManualGroupCreate}
+                     disabled={isSubmitting || selectedForManualGroup.length === 0 || !manualGroupName.trim()}
+                     className="px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-black font-black uppercase text-[10px] rounded-lg tracking-wider transition cursor-pointer"
+                   >
+                     Form Manual Group
+                   </button>
+                 </div>
+              </div>
+            )}
+
             {sortedGroupKeys.length === 0 ? (
               <div className="bg-zinc-950 border border-emerald-500/10 rounded-2xl p-12 text-center text-emerald-500/30 space-y-2">
                 <Users size={32} className="mx-auto opacity-40 animate-pulse" />
@@ -419,7 +498,6 @@ export default function AdvancedAdminHub() {
                   </select>
                 </div>
                 
-                {/* NEW GLOBAL UNLOCK BUTTON */}
                 <button 
                   onClick={releaseGlobalAssessmentHold}
                   disabled={isSubmitting || isGlobalHoldReleased}
@@ -442,7 +520,7 @@ export default function AdvancedAdminHub() {
                     <button key={idx} onClick={() => setSelectedCandidate(c)} className={`w-full text-left p-3 rounded-xl border transition flex flex-col gap-1 cursor-pointer ${selectedCandidate?.id === c.id ? "bg-emerald-500/10 border-emerald-500 shadow-md" : "bg-black border-emerald-500/10 hover:border-emerald-500/30"}`}>
                       <div className="flex justify-between items-center w-full">
                         <span className="font-bold text-white text-xs truncate max-w-[65%]">{c.name}</span>
-                        <span className={`text-[8px] px-1.5 py-0.5 rounded font-black border ${c.status === "BORDERLINE" ? "bg-pink-500/10 border-pink-500 text-pink-400" : c.status === "ROUND_2_APPROVED" ? "bg-blue-500/10 border-blue-500 text-blue-400" : c.status === "SELECTED_FOR_PI" ? "bg-purple-500/10 border-purple-500 text-purple-400" : c.status === "QUIZ_UNLOCKED" ? "bg-cyan-500/10 border-cyan-500 text-cyan-400" : "bg-zinc-900 border-white/5"}`}>{c.status || "PENDING"}</span>
+                        <span className={`text-[8px] px-1.5 py-0.5 rounded font-black border ${c.status === "BORDERLINE" ? "bg-pink-500/10 border-pink-500 text-pink-400" : c.status === "ROUND_2_APPROVED" ? "bg-blue-500/10 border-blue-500 text-blue-400" : c.status === "SELECTED_FOR_PI" ? "bg-purple-500/10 border-purple-500 text-purple-400" : c.status === "QUIZ_UNLOCKED" ? "bg-cyan-500/10 border-cyan-500 text-cyan-400" : c.status === "REJECTED" ? "bg-red-500/10 border-red-500 text-red-400" : "bg-zinc-900 border-white/5"}`}>{c.status || "PENDING"}</span>
                       </div>
                       <div className="flex justify-between items-center w-full text-[10px] text-emerald-500/40"><span>{c.domain} {c.groupNumber ? `[${c.groupNumber}]` : ""}</span><strong>Score: {c.score}</strong></div>
                     </button>
@@ -477,10 +555,8 @@ export default function AdvancedAdminHub() {
                         <div className="text-xl font-black text-white">{selectedCandidate.score} / 90</div>
                     </div>
 
-                    {/* ACTION BUTTON GRID */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-1">
                       
-                      {/* Individual Unlock Assessment Button (Fallback) */}
                       <button onClick={() => triggerStatusOverrideGUI(selectedCandidate.id, "QUIZ_UNLOCKED")} className="p-3 border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition shadow-lg">
                         <span className="font-bold text-[10px] uppercase text-center leading-tight">🔓 Unlock Assessment</span>
                       </button>
@@ -519,6 +595,34 @@ export default function AdvancedAdminHub() {
                       >
                         <span className="font-bold text-[10px] uppercase text-center leading-tight">🎯 Select for PI</span>
                       </button>
+
+                      <button 
+                        onClick={async () => {
+                          if (!confirm(`Are you sure you want to REJECT ${selectedCandidate.name}? This will revoke any previous shortlists and send a formal rejection email.`)) return;
+                          setIsSubmitting(true);
+                          
+                          await triggerStatusOverrideGUI(selectedCandidate.id, "REJECTED");
+                          
+                          await fetch(webhookUrl, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              action: "dispatch-email-notice",
+                              email: selectedCandidate.email,
+                              name: selectedCandidate.name,
+                              status: "REJECTED"
+                            })
+                          });
+                          
+                          logTerminalMsg(`Candidate ${selectedCandidate.name} rejected. Rejection email dispatched.`, "success");
+                          setIsSubmitting(false);
+                        }} 
+                        disabled={isSubmitting}
+                        className="p-3 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-300 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition shadow-lg"
+                      >
+                        <span className="font-bold text-[10px] uppercase text-center leading-tight flex items-center gap-1"><XCircle size={12}/> Reject / Revoke</span>
+                      </button>
+
                     </div>
                   </div>
                 ) : (
