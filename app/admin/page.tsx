@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Lock, Cpu, BarChart3, Users, Download, ShieldAlert, CheckCircle, Clock, ArrowRight, Check, FileCheck, RefreshCw, Sparkles, MessageSquare, Plus, Award, Activity, Radio, Binary, Orbit, Search, Sliders, Mail, FileSpreadsheet, ClipboardList, Trophy } from "lucide-react";
+import { Lock, Cpu, BarChart3, Users, Download, ShieldAlert, CheckCircle, Clock, ArrowRight, Check, FileCheck, RefreshCw, Sparkles, MessageSquare, Plus, Award, Activity, Radio, Binary, Orbit, Search, Sliders, Mail, FileSpreadsheet, ClipboardList, Trophy, Unlock } from "lucide-react";
 
 interface Candidate { id: string; name: string; email: string; domain: string; score: number; choices: string; status: string; peerReviews: any[]; resumeUrl?: string; groupNumber?: string; groupTask?: string; }
 interface DistributionItem { sector: string; count: number; }
@@ -12,7 +12,6 @@ export default function AdvancedAdminHub() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [securityError, setSecurityError] = useState("");
-  // Added "r2_tasks" as a dedicated modular tab
   const [activeTab, setActiveTab] = useState<"hub" | "analytics" | "recruitment" | "r2_tasks">("hub");
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -25,9 +24,10 @@ export default function AdvancedAdminHub() {
   const [guiTrackFilter, setGuiTrackFilter] = useState("ALL");
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Controls the global standby waiting room
   const [isGlobalHoldReleased, setIsGlobalHoldReleased] = useState(false);
 
-  // Dynamic group task dictionary for the new tab: { "G-01": "Task description..." }
   const [groupTaskInputs, setGroupTaskInputs] = useState<Record<string, string>>({});
 
   const [allTerminalLogs, setAllTerminalLogs] = useState<LogEntry[]>([]);
@@ -78,7 +78,6 @@ export default function AdvancedAdminHub() {
         if (isInitialFetch) logTerminalMsg(`Database connection established. Loaded ${structuralMapping.length} candidate entries.`, "success");
         else if (isCliForced) logTerminalMsg(`CLI manual sync complete. Found ${structuralMapping.length} records.`, "success");
 
-        // Populate initial local state for group task text inputs
         const initialTaskMap: Record<string, string> = {};
         structuralMapping.forEach((c: Candidate) => {
           if (c.groupNumber) {
@@ -166,6 +165,25 @@ export default function AdvancedAdminHub() {
     } catch (err) { logTerminalMsg("Phase broadcast failed.", "warn"); }
   };
 
+  const releaseGlobalAssessmentHold = async () => {
+    if (!confirm("Release the global hold and start the assessment for all waiting candidates?")) return;
+    setIsSubmitting(true);
+    logTerminalMsg("Broadcasting global hold release signal...", "exec");
+    try {
+      await fetch("/api/recruitment/admin", { 
+        method: "POST", 
+        headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify({ action: "update-global-phase", phase: recruitmentPhase, holdReleased: true }) 
+      });
+      setIsGlobalHoldReleased(true);
+      logTerminalMsg("Global hold released. Assessments unlocked for all candidates in waiting room.", "success");
+    } catch (err) {
+      logTerminalMsg("Failed to release global hold.", "warn");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const triggerTop70ShortlistGUI = async (skipConfirm = false) => {
     if (!skipConfirm && !confirm("Execute automated shortlist generation script? This will approve the top 70 highest scores, flag ties as BORDERLINE, and waitlist the rest.")) return;
     setIsSubmitting(true);
@@ -185,7 +203,6 @@ export default function AdvancedAdminHub() {
     } catch (e) {} finally { setIsSubmitting(false); }
   };
 
-  // Group active candidates by their assigned group number for the new modular tab
   const groupedCandidatesMap = candidates.reduce((acc: Record<string, Candidate[]>, c) => {
     if (c.groupNumber) {
       if (!acc[c.groupNumber]) acc[c.groupNumber] = [];
@@ -260,7 +277,6 @@ export default function AdvancedAdminHub() {
           </div>
         )}
 
-        {/* MODULAR TAB: ROUND 2 GROUP TASKS */}
         {activeTab === "r2_tasks" && (
           <div className="space-y-6 animate-fadeIn">
             <div className="bg-zinc-950 border border-emerald-500/20 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
@@ -301,7 +317,6 @@ export default function AdvancedAdminHub() {
               </button>
             </div>
 
-            {/* DYNAMIC LIST OF ALL GENERATED GROUPS */}
             {sortedGroupKeys.length === 0 ? (
               <div className="bg-zinc-950 border border-emerald-500/10 rounded-2xl p-12 text-center text-emerald-500/30 space-y-2">
                 <Users size={32} className="mx-auto opacity-40 animate-pulse" />
@@ -327,7 +342,6 @@ export default function AdvancedAdminHub() {
                           </span>
                         </div>
 
-                        {/* Member List with Verticals */}
                         <div className="space-y-1.5 bg-black/60 border border-emerald-500/10 rounded-xl p-3">
                           <span className="text-[9px] uppercase font-bold text-emerald-500/40 tracking-widest block mb-1">Group Roster & Verticals</span>
                           {members.map((m, mIdx) => (
@@ -339,7 +353,6 @@ export default function AdvancedAdminHub() {
                         </div>
                       </div>
 
-                      {/* Individual Group Task Editor */}
                       <div className="space-y-2 pt-2 border-t border-emerald-500/10">
                         <label className="text-[9px] uppercase font-bold text-emerald-500/60 tracking-wider block">Assigned Group Task Objective</label>
                         <textarea 
@@ -398,14 +411,24 @@ export default function AdvancedAdminHub() {
                 <Sliders size={16} className="text-emerald-400 animate-pulse" />
                 <div><h3 className="text-xs font-black uppercase text-white tracking-wider">CANDIDATE AUDIT MATRIX</h3><p className="text-[10px] text-emerald-500/40">Evaluate candidates and promote to PI.</p></div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2 bg-black border border-emerald-500/20 px-2 py-1.5 rounded-lg">
                   <span className="text-[9px] font-bold uppercase text-white/50">Portal Phase:</span>
                   <select value={recruitmentPhase} onChange={(e) => handlePhaseChangeGUI(e.target.value)} className="bg-transparent text-emerald-400 border-none text-[9px] font-bold focus:outline-none uppercase">
                     <option value="LOCKED">LOCKED (Timer)</option><option value="OPEN">OPEN (App Form)</option><option value="STANDBY">STANDBY (Review)</option>
                   </select>
                 </div>
-                <button onClick={() => triggerTop70ShortlistGUI(false)} disabled={isSubmitting} className="px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 font-black uppercase text-[10px] tracking-wider rounded-lg flex items-center gap-1.5 shadow-sm transition cursor-pointer"><Trophy size={12} /> Auto-Generate Shortlist</button>
+                
+                {/* NEW GLOBAL UNLOCK BUTTON */}
+                <button 
+                  onClick={releaseGlobalAssessmentHold}
+                  disabled={isSubmitting || isGlobalHoldReleased}
+                  className={`px-3 py-1.5 font-black uppercase text-[10px] tracking-wider rounded-lg flex items-center gap-1.5 shadow-sm transition cursor-pointer ${isGlobalHoldReleased ? "bg-emerald-500/20 text-emerald-500 border border-emerald-500/30" : "bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400"}`}
+                >
+                  {isGlobalHoldReleased ? <><CheckCircle size={12}/> Assessment Active</> : <><Unlock size={12}/> Start Assessment (Release Holds)</>}
+                </button>
+
+                <button onClick={() => triggerTop70ShortlistGUI(false)} disabled={isSubmitting} className="px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-400 font-black uppercase text-[10px] tracking-wider rounded-lg flex items-center gap-1.5 shadow-sm transition cursor-pointer"><Trophy size={12} /> Auto-Generate Shortlist</button>
               </div>
             </div>
 
@@ -419,7 +442,7 @@ export default function AdvancedAdminHub() {
                     <button key={idx} onClick={() => setSelectedCandidate(c)} className={`w-full text-left p-3 rounded-xl border transition flex flex-col gap-1 cursor-pointer ${selectedCandidate?.id === c.id ? "bg-emerald-500/10 border-emerald-500 shadow-md" : "bg-black border-emerald-500/10 hover:border-emerald-500/30"}`}>
                       <div className="flex justify-between items-center w-full">
                         <span className="font-bold text-white text-xs truncate max-w-[65%]">{c.name}</span>
-                        <span className={`text-[8px] px-1.5 py-0.5 rounded font-black border ${c.status === "BORDERLINE" ? "bg-pink-500/10 border-pink-500 text-pink-400" : c.status === "ROUND_2_APPROVED" ? "bg-blue-500/10 border-blue-500 text-blue-400" : c.status === "SELECTED_FOR_PI" ? "bg-purple-500/10 border-purple-500 text-purple-400" : "bg-zinc-900 border-white/5"}`}>{c.status || "PENDING"}</span>
+                        <span className={`text-[8px] px-1.5 py-0.5 rounded font-black border ${c.status === "BORDERLINE" ? "bg-pink-500/10 border-pink-500 text-pink-400" : c.status === "ROUND_2_APPROVED" ? "bg-blue-500/10 border-blue-500 text-blue-400" : c.status === "SELECTED_FOR_PI" ? "bg-purple-500/10 border-purple-500 text-purple-400" : c.status === "QUIZ_UNLOCKED" ? "bg-cyan-500/10 border-cyan-500 text-cyan-400" : "bg-zinc-900 border-white/5"}`}>{c.status || "PENDING"}</span>
                       </div>
                       <div className="flex justify-between items-center w-full text-[10px] text-emerald-500/40"><span>{c.domain} {c.groupNumber ? `[${c.groupNumber}]` : ""}</span><strong>Score: {c.score}</strong></div>
                     </button>
@@ -454,11 +477,22 @@ export default function AdvancedAdminHub() {
                         <div className="text-xl font-black text-white">{selectedCandidate.score} / 90</div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                      <button onClick={() => triggerStatusOverrideGUI(selectedCandidate.id, "WAITLISTED")} className="p-3 border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/15 text-amber-400 rounded-xl font-mono text-center flex flex-col items-center gap-1 cursor-pointer transition"><span className="font-bold text-xs">Waitlist Staging</span></button>
-                      <button onClick={() => triggerStatusOverrideGUI(selectedCandidate.id, "ROUND_2_APPROVED")} className="p-3 border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/15 text-blue-400 rounded-xl font-mono text-center flex flex-col items-center gap-1 cursor-pointer transition"><span className="font-bold text-xs">Approve for Round 2</span></button>
+                    {/* ACTION BUTTON GRID */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
                       
-                      {/* Selected for PI Button with confirmation prompt & email dispatch */}
+                      {/* Individual Unlock Assessment Button (Fallback) */}
+                      <button onClick={() => triggerStatusOverrideGUI(selectedCandidate.id, "QUIZ_UNLOCKED")} className="p-3 border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition shadow-lg">
+                        <span className="font-bold text-[10px] uppercase text-center leading-tight">🔓 Unlock Assessment</span>
+                      </button>
+
+                      <button onClick={() => triggerStatusOverrideGUI(selectedCandidate.id, "WAITLISTED")} className="p-3 border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/15 text-amber-400 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition">
+                        <span className="font-bold text-[10px] uppercase text-center leading-tight">Waitlist Staging</span>
+                      </button>
+                      
+                      <button onClick={() => triggerStatusOverrideGUI(selectedCandidate.id, "ROUND_2_APPROVED")} className="p-3 border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/15 text-blue-400 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition">
+                        <span className="font-bold text-[10px] uppercase text-center leading-tight">Approve Round 2</span>
+                      </button>
+                      
                       <button 
                         onClick={async () => {
                           if (!confirm(`Are you sure you want to select ${selectedCandidate.name} for Personal Interview (PI)? This will trigger an official email notification.`)) return;
@@ -481,9 +515,9 @@ export default function AdvancedAdminHub() {
                           setIsSubmitting(false);
                         }} 
                         disabled={isSubmitting}
-                        className="p-3 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 rounded-xl font-mono text-center flex flex-col items-center gap-1 cursor-pointer transition shadow-lg"
+                        className="p-3 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 rounded-xl font-mono text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition shadow-lg"
                       >
-                        <span className="font-bold text-xs">🎯 Selected for PI</span>
+                        <span className="font-bold text-[10px] uppercase text-center leading-tight">🎯 Select for PI</span>
                       </button>
                     </div>
                   </div>
