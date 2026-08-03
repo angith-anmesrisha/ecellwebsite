@@ -38,7 +38,24 @@ export async function POST(request: Request) {
 
     if (!targetUrl) throw new Error("Google webhook destination variable is blank.");
 
-    // GENERATE ROUND 2 GROUPS (GROUPS OF 5 WITH MIXED VERTICALS)
+    // 1. UNIVERSAL PASSTHROUGH FOR EMAILS & STATUS OVERRIDES
+    // This catches the Round 2 email dispatch and forwards it directly to Apps Script
+    if (
+      body.action === "dispatch-email-notice" || 
+      body.action === "update-shortlist" || 
+      body.action === "update-candidate-group" || 
+      body.action === "assign-group-task"
+    ) {
+      const sheetRes = await fetch(targetUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const data = await sheetRes.json();
+      return NextResponse.json(data);
+    }
+
+    // 2. GENERATE ROUND 2 GROUPS (GROUPS OF 5 WITH MIXED VERTICALS)
     if (body.action === "generate-round2-groups") {
       const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
       const sheetData = await sheetFetch.json();
@@ -104,19 +121,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, groupsCount: groups.length, groups });
     }
 
-    // ASSIGN TASK TO A SPECIFIC GROUP
-    if (body.action === "assign-group-task") {
-      const { groupNumber, taskDescription } = body;
-      const sheetRes = await fetch(targetUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "update-group-task", groupNumber, taskDescription })
-      });
-      const data = await sheetRes.json();
-      return NextResponse.json(data);
-    }
-
-    // AUTOMATED TOP 70 SHORTLIST GENERATOR
+    // 3. AUTOMATED TOP 70 SHORTLIST GENERATOR
     if (body.action === "generate-shortlist") {
       const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
       const sheetData = await sheetFetch.json();
@@ -171,26 +176,7 @@ export async function POST(request: Request) {
       });
     }
 
-    if (body.action === "update-shortlist") {
-      const sheetRes = await fetch(targetUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const data = await sheetRes.json();
-      return NextResponse.json(data);
-    }
-
-    if (body.action === "dispatch-email-notice") {
-      const sheetRes = await fetch(targetUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const data = await sheetRes.json();
-      return NextResponse.json(data);
-    }
-
+    // 4. QUIZ SUBMISSION ROUTING
     if (body.round1Choices) {
       const { name, email, dept, round1Choices, resumeFileBase64, resumeFileName } = body;
       const normalizedDept = dept === "ops" ? "OPS VERTICAL" : dept === "media" ? "PR & MEDIA CELL" : "CORPORATE ALLIANCES";
