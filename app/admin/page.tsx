@@ -554,11 +554,20 @@ export default function AdvancedAdminHub() {
                         <div className="flex items-center gap-3 mt-1.5">
                           <span className="text-[10px] text-emerald-500/60">Group: <strong className="text-white">{selectedCandidate.groupNumber || "Unassigned"}</strong></span>
                           {selectedCandidate.resumeUrl && (
-                             <a href={selectedCandidate.resumeUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-cyan-400 hover:underline font-mono">
-                               <FileSpreadsheet size={12} /> View Resume
-                             </a>
-                          )}
+                      <div className="bg-black border border-emerald-500/10 rounded-xl p-3 space-y-2">
+                        <div className="flex justify-between items-center text-[10px] text-emerald-500/60 uppercase font-bold">
+                          <span>Candidate Resume Document Preview</span>
+                          <a href={selectedCandidate.resumeUrl} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">Open Fullscreen ↗</a>
                         </div>
+                        <div className="w-full h-64 bg-zinc-950 rounded-lg overflow-hidden border border-emerald-500/20">
+                          <iframe 
+                            src={selectedCandidate.resumeUrl.replace("/view?usp=drivesdk", "/preview").replace("/edit?usp=sharing", "/preview")} 
+                            className="w-full h-full border-0"
+                            title="Resume Preview"
+                          />
+                        </div>
+                      </div>
+                    )}
                       </div>
                       <div className="text-right">
                         <span className="text-[9px] uppercase block text-emerald-500/40">Pipeline Status</span>
