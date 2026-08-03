@@ -568,6 +568,7 @@ export default function AdvancedAdminHub() {
                         </div>
                       </div>
                     )}
+                        </div>
                       </div>
                       <div className="text-right">
                         <span className="text-[9px] uppercase block text-emerald-500/40">Pipeline Status</span>
