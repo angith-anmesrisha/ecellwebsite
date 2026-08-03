@@ -110,7 +110,7 @@ export default function RecruitmentSituationalQuiz({
             Your evaluation matrix has been securely locked and submitted to the E-Cell core systems. 
             The system is calculating percentiles across all candidates. 
             <br/><br/>
-            Check back here when the Top 70 Shortlist is released.
+            Check back here when the Shortlist is released.
           </p>
         </div>
       </motion.div>
