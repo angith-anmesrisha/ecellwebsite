@@ -64,7 +64,7 @@ export default function RecruitmentPortal() {
     };
 
     checkLockStatus();
-    const intervalNode = setInterval(checkLockStatus, 1000);
+    const intervalNode = setInterval(checkLockStatus, 15000);
 
     const cachedUserRaw = localStorage.getItem("ecell_active_candidate_session");
     if (cachedUserRaw) {
