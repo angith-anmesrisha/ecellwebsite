@@ -73,7 +73,7 @@ export default function RecruitmentRegistrationForm({
         });
       }
 
-      // 2. Check initial eligibility / returning session state
+      // 2. Check initial eligibility (Keeping this lightweight check via Next.js API)
       const eligibilityRes = await fetch("/api/recruitment/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -110,23 +110,37 @@ export default function RecruitmentRegistrationForm({
         return;
       }
 
-      // 3. Register new profile with full payload including resume file stream
+      // 3. Register new profile with full payload DIRECTLY TO GOOGLE
+      const webhookUrl = process.env.NEXT_PUBLIC_SHEET_WEBHOOK_URL;
+      
+      if (!webhookUrl) {
+        alert("Configuration Error: Webhook URL is missing from environment variables.");
+        setIsSubmitting(false);
+        return;
+      }
+
       const generatedId = "cand_" + Math.random().toString(36).substring(2, 11);
       const resumeName = selectedFile
         ? `${regName.trim().replace(/\s+/g, "_")}_Resume.pdf`
         : "Candidate_Resume.pdf";
+      
+      // Normalize department formatting before sending to Google
+      const normalizedDept = regDept === "ops" ? "OPS VERTICAL" : regDept === "media" ? "PR & MEDIA CELL" : "CORPORATE ALLIANCES";
 
-      await fetch("/api/recruitment/submit", {
+      // Direct Client-to-Google fetch (Bypasses Vercel Serverless Bandwidth completely)
+      await fetch(webhookUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        // The text/plain header is critical. It bypasses the browser's CORS preflight (OPTIONS) check.
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({
-          action: "register-new-profile",
+          action: "register-profile",
           id: generatedId,
           name: regName.trim(),
           email: regEmail.trim().toLowerCase(),
-          dept: regDept,
+          dept: normalizedDept,
           resumeFileBase64: base64Data,
           resumeFileName: resumeName,
+          score: 0
         }),
       });
 
@@ -146,6 +160,7 @@ export default function RecruitmentRegistrationForm({
 
     } catch (err) {
       console.error("Registration error:", err);
+      // Fallback offline session generation
       const generatedId = "cand_" + Math.random().toString(36).substring(2, 11);
       const offlineCandidate: Candidate = {
         id: generatedId,
