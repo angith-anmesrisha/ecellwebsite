@@ -1,5 +1,8 @@
+import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
-import { kv } from "@vercel/kv";
+
+// Initialize Redis from environment variables
+const redis = Redis.fromEnv();
 
 // FORCE DYNAMIC: Prevents Vercel from caching the GET request for real-time polling
 export const dynamic = "force-dynamic";
@@ -7,8 +10,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     // Fetch current global states from Redis (with fallback defaults if empty)
-    const phase = (await kv.get("ecell_recruitment_phase")) || "LOCKED";
-    const holdReleased = (await kv.get("ecell_global_hold")) || false;
+    const phase = (await redis.get("ecell_recruitment_phase")) || "LOCKED";
+    const holdReleased = (await redis.get("ecell_global_hold")) || false;
     
     return NextResponse.json({ 
       success: true, 
@@ -16,7 +19,7 @@ export async function GET() {
       holdReleased 
     });
   } catch (error) {
-    return NextResponse.json({ success: false, error: "Failed to fetch state from KV" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Failed to fetch state from Redis" }, { status: 500 });
   }
 }
 
@@ -27,15 +30,15 @@ export async function POST(request: Request) {
     // Handle global state updates via Redis
     if (body.action === "update-global-phase") {
       if (body.phase !== undefined) {
-        await kv.set("ecell_recruitment_phase", body.phase);
+        await redis.set("ecell_recruitment_phase", body.phase);
       }
       if (body.holdReleased !== undefined) {
-        await kv.set("ecell_global_hold", body.holdReleased);
+        await redis.set("ecell_global_hold", body.holdReleased);
       }
       
       // Fetch the updated values to return in response
-      const updatedPhase = await kv.get("ecell_recruitment_phase");
-      const updatedHoldReleased = await kv.get("ecell_global_hold");
+      const updatedPhase = await redis.get("ecell_recruitment_phase");
+      const updatedHoldReleased = await redis.get("ecell_global_hold");
 
       return NextResponse.json({ 
         success: true, 
@@ -44,7 +47,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // Handle Master Passkey Authorization (from your old code)
+    // Handle Master Passkey Authorization
     const { passkey } = body;
     if (!passkey) {
       return NextResponse.json({ error: "Missing authorization token parameter." }, { status: 400 });
