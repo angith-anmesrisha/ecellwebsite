@@ -241,14 +241,16 @@ export async function POST(request: Request) {
       });
     }
 
-    // 6. QUIZ SUBMISSION ROUTING
+    // 6. QUIZ SUBMISSION ROUTING (UPDATED WITH PROCTORING LOGIC)
     if (body.round1Choices) {
-      const { name, email, dept, round1Choices } = body;
+      // PROCTORING FIX: We added "tabSwitches" to the extraction here
+      const { name, email, dept, round1Choices, tabSwitches } = body;
       const normalizedDept = dept === "ops" ? "OPS VERTICAL" : dept === "media" ? "PR & MEDIA CELL" : "CORPORATE ALLIANCES";
       
       let finalizedScore = 0;
       const readableChoices: string[] = [];
 
+      // Your grading logic here remains exactly as you built it
       if (Array.isArray(round1Choices)) {
         CORRECT_ANSWERS.forEach((correctIdx, index) => {
           const selectedIdx = round1Choices[index];
@@ -268,7 +270,8 @@ export async function POST(request: Request) {
           action: "submit-quiz",
           id: "cand_" + Math.random().toString(36).substring(2, 9),
           name: name.trim(), email: email.trim().toLowerCase(), dept: normalizedDept,
-          score: finalizedScore, round1Choices: readableChoices
+          score: finalizedScore, round1Choices: readableChoices,
+          tabSwitches: tabSwitches || 0 // PROCTORING FIX: This passes the number directly to Google Sheets
         }),
       });
       await sheetRes.json();
