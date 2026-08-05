@@ -167,20 +167,35 @@ export default function AdvancedAdminHub() {
     } catch (err) { logTerminalMsg("Phase broadcast failed.", "warn"); }
   };
 
-  const releaseGlobalAssessmentHold = async () => {
-    if (!confirm("Release the global hold and start the assessment for all waiting candidates?")) return;
+  const toggleGlobalAssessmentHold = async () => {
+    const targetState = !isGlobalHoldReleased;
+    const promptMsg = targetState 
+      ? "Release the global hold and start the assessment for all waiting candidates?" 
+      : "Pause the assessment and lock candidate access?";
+      
+    if (!confirm(promptMsg)) return;
     setIsSubmitting(true);
-    logTerminalMsg("Broadcasting global hold release signal...", "exec");
+    logTerminalMsg(`Broadcasting global hold ${targetState ? "release" : "lock"} signal...`, "exec");
     try {
-      await fetch("/api/recruitment/admin", { 
+      const res = await fetch("/api/recruitment/admin", { 
         method: "POST", 
         headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({ action: "update-global-phase", phase: recruitmentPhase, holdReleased: true }) 
+        body: JSON.stringify({ action: "update-global-phase", phase: recruitmentPhase, holdReleased: targetState }) 
       });
-      setIsGlobalHoldReleased(true);
-      logTerminalMsg("Global hold released. Assessments unlocked for all candidates in waiting room.", "success");
+      const data = await res.json();
+      if (data.success) {
+        setIsGlobalHoldReleased(targetState);
+        logTerminalMsg(
+          targetState 
+            ? "Global hold released. Assessments unlocked for all candidates." 
+            : "Global hold active. Assessments locked.", 
+          "success"
+        );
+      } else {
+        logTerminalMsg("Failed to update global hold state on server.", "warn");
+      }
     } catch (err) {
-      logTerminalMsg("Failed to release global hold.", "warn");
+      logTerminalMsg("Failed to broadcast global hold state.", "warn");
     } finally {
       setIsSubmitting(false);
     }
@@ -511,11 +526,19 @@ export default function AdvancedAdminHub() {
                 </div>
                 
                 <button 
-                  onClick={releaseGlobalAssessmentHold}
-                  disabled={isSubmitting || isGlobalHoldReleased}
-                  className={`px-3 py-1.5 font-black uppercase text-[10px] tracking-wider rounded-lg flex items-center gap-1.5 shadow-sm transition cursor-pointer ${isGlobalHoldReleased ? "bg-emerald-500/20 text-emerald-500 border border-emerald-500/30" : "bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400"}`}
+                  onClick={toggleGlobalAssessmentHold}
+                  disabled={isSubmitting}
+                  className={`px-3 py-1.5 font-black uppercase text-[10px] tracking-wider rounded-lg flex items-center gap-1.5 shadow-sm transition cursor-pointer ${
+                    isGlobalHoldReleased 
+                      ? "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40" 
+                      : "bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
+                  }`}
                 >
-                  {isGlobalHoldReleased ? <><CheckCircle size={12}/> Assessment Active</> : <><Unlock size={12}/> Start Assessment (Release Holds)</>}
+                  {isGlobalHoldReleased ? (
+                    <><CheckCircle size={12}/> Assessment Active (Click to Lock)</>
+                  ) : (
+                    <><Unlock size={12}/> Start Assessment (Release Holds)</>
+                  )}
                 </button>
 
                 <button onClick={() => triggerTop70ShortlistGUI(false)} disabled={isSubmitting} className="px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-400 font-black uppercase text-[10px] tracking-wider rounded-lg flex items-center gap-1.5 shadow-sm transition cursor-pointer"><Trophy size={12} /> Auto-Generate Shortlist</button>
