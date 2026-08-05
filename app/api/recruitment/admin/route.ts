@@ -1,44 +1,44 @@
 import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
 
-// Initialize Redis manually using the specific Vercel KV environment variables
+// Securely grab the environment variables
+const url = process.env.KV_REST_API_URL || "";
+const token = process.env.KV_REST_API_TOKEN || "";
+
+// Initialize Redis
 const redis = new Redis({
-  url: process.env.KV_REST_API_URL || "",
-  token: process.env.KV_REST_API_TOKEN || "",
+  url: url,
+  token: token,
 });
 
-// FORCE DYNAMIC: Prevents Vercel from caching the GET request for real-time polling
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const phase = (await redis.get("ecell_recruitment_phase")) || "LOCKED";
+    if (!url || !token) throw new Error("Missing Redis environment variables.");
     
-    // Force strict boolean parsing to prevent string mismatches
+    const phase = (await redis.get("ecell_recruitment_phase")) || "LOCKED";
     const rawHold = await redis.get("ecell_global_hold");
     const holdReleased = rawHold === true || rawHold === "true";
     
-    return NextResponse.json({ 
-      success: true, 
-      phase,
-      holdReleased 
-    });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Failed to fetch state from Redis" }, { status: 500 });
+    return NextResponse.json({ success: true, phase, holdReleased });
+  } catch (error: any) {
+    console.error("Redis GET Error:", error.message);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
+    if (!url || !token) throw new Error("Missing Redis environment variables.");
+
     const body = await request.json();
 
-    // Handle global state updates via Redis
     if (body.action === "update-global-phase") {
       if (body.phase !== undefined) {
         await redis.set("ecell_recruitment_phase", body.phase);
       }
       if (body.holdReleased !== undefined) {
-        // Ensure it is saved as a strict boolean
         await redis.set("ecell_global_hold", body.holdReleased === true);
       }
       
@@ -53,20 +53,19 @@ export async function POST(request: Request) {
       });
     }
 
-    // Handle Master Passkey Authorization
     const { passkey } = body;
     if (!passkey) {
-      return NextResponse.json({ error: "Missing authorization token parameter." }, { status: 400 });
+      return NextResponse.json({ error: "Missing authorization token." }, { status: 400 });
     }
 
     const masterPasskey = process.env.NEXT_PUBLIC_ADMIN_MASTER_KEY || "ecelladmin2026";
-
     if (passkey === masterPasskey) {
       return NextResponse.json({ success: true, message: "System bypass authorized successfully." });
     }
 
     return NextResponse.json({ success: false, error: "Access denied." }, { status: 401 });
-  } catch (error) {
-    return NextResponse.json({ error: "Server authentication layer fault." }, { status: 500 });
+  } catch (error: any) {
+    console.error("Redis POST Error:", error.message);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
