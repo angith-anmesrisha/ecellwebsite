@@ -1,17 +1,22 @@
 import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
 
-// Initialize Redis from environment variables
-const redis = Redis.fromEnv();
+// Initialize Redis manually using the specific Vercel KV environment variables
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL || "",
+  token: process.env.KV_REST_API_TOKEN || "",
+});
 
 // FORCE DYNAMIC: Prevents Vercel from caching the GET request for real-time polling
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    // Fetch current global states from Redis (with fallback defaults if empty)
     const phase = (await redis.get("ecell_recruitment_phase")) || "LOCKED";
-    const holdReleased = (await redis.get("ecell_global_hold")) || false;
+    
+    // Force strict boolean parsing to prevent string mismatches
+    const rawHold = await redis.get("ecell_global_hold");
+    const holdReleased = rawHold === true || rawHold === "true";
     
     return NextResponse.json({ 
       success: true, 
@@ -33,12 +38,13 @@ export async function POST(request: Request) {
         await redis.set("ecell_recruitment_phase", body.phase);
       }
       if (body.holdReleased !== undefined) {
-        await redis.set("ecell_global_hold", body.holdReleased);
+        // Ensure it is saved as a strict boolean
+        await redis.set("ecell_global_hold", body.holdReleased === true);
       }
       
-      // Fetch the updated values to return in response
       const updatedPhase = await redis.get("ecell_recruitment_phase");
-      const updatedHoldReleased = await redis.get("ecell_global_hold");
+      const rawUpdatedHold = await redis.get("ecell_global_hold");
+      const updatedHoldReleased = rawUpdatedHold === true || rawUpdatedHold === "true";
 
       return NextResponse.json({ 
         success: true, 
