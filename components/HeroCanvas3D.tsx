@@ -72,7 +72,8 @@ function SceneLighting() {
 }
 
 export default function HeroCanvas3D() {
-  const [isMobile, setIsMobile] = useState(false);
+  // null until measured, so the model never starts loading on small screens
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -84,7 +85,7 @@ export default function HeroCanvas3D() {
   }, []);
 
   // Do not render resource-heavy 3D canvas on small screens
-  if (isMobile) return null;
+  if (isMobile !== false) return null;
 
   return (
     <div className="absolute inset-0 w-full h-full z-0 pointer-events-none opacity-80">
@@ -102,5 +103,3 @@ export default function HeroCanvas3D() {
     </div>
   );
 }
-
-useGLTF.preload("/hero-mesh.glb");

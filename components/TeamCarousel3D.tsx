@@ -112,6 +112,8 @@ export default function TeamCarousel3D({ progress }: TeamCarousel3DProps) {
                   <img 
                     src={member.image} 
                     alt={member.name} 
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent z-10 opacity-90" />

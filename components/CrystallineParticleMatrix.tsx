@@ -38,6 +38,10 @@ export default function CrystallineParticleMatrix({ isSparse: manualSparse = fal
     
     const isMobileDevice = window.innerWidth < 768;
 
+    // Cached on resize so the animation loop doesn't force a layout read every frame
+    let logicalWidth = window.innerWidth;
+    let logicalHeight = window.innerHeight;
+
     let particles: Array<{
       x: number;
       y: number;
@@ -56,8 +60,8 @@ export default function CrystallineParticleMatrix({ isSparse: manualSparse = fal
       const d = document.documentElement;
       const b = document.body;
       
-      const logicalWidth = window.innerWidth;
-      const logicalHeight = Math.max(d.scrollHeight, d.offsetHeight, b.scrollHeight, b.offsetHeight, window.innerHeight);
+      logicalWidth = window.innerWidth;
+      logicalHeight = Math.max(d.scrollHeight, d.offsetHeight, b.scrollHeight, b.offsetHeight, window.innerHeight);
       
       const dpr = isMobileDevice ? 1 : (window.devicePixelRatio || 1);
       
@@ -128,11 +132,6 @@ export default function CrystallineParticleMatrix({ isSparse: manualSparse = fal
       const deltaTime = (currentTime - lastTime) * 0.001;
       lastTime = currentTime;
 
-      const d = document.documentElement;
-      const b = document.body;
-      const logicalWidth = window.innerWidth;
-      const logicalHeight = Math.max(d.scrollHeight, d.offsetHeight, b.scrollHeight, b.offsetHeight, window.innerHeight);
-
       ctx.clearRect(0, 0, logicalWidth, logicalHeight);
       const mouse = mouseRef.current;
 
@@ -144,12 +143,10 @@ export default function CrystallineParticleMatrix({ isSparse: manualSparse = fal
       mouse.lastX = mouse.x;
       mouse.lastY = mouse.y;
 
-      ripplesRef.current.forEach((ripple, idx) => {
+      ripplesRef.current.forEach((ripple) => {
         ripple.time += deltaTime;
-        if (ripple.time > 1.2) {
-          ripplesRef.current.splice(idx, 1);
-        }
       });
+      ripplesRef.current = ripplesRef.current.filter((ripple) => ripple.time <= 1.2);
 
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
