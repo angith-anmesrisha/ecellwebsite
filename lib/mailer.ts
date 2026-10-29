@@ -170,3 +170,31 @@ export async function sendEventPassEmail({
     throw new Error("Mailer dispatch failure.");
   }
 }
+
+interface ContactMessageProps {
+  name: string;
+  email: string;
+  message: string;
+}
+
+const escapeHtml = (value: string) =>
+  value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
+
+// 3. Forwards a message from the home page contact form to the E-Cell inbox.
+export async function sendContactMessage({ name, email, message }: ContactMessageProps) {
+  const inbox = process.env.CONTACT_INBOX || "ecell@bimtech.ac.in";
+
+  await transporter.sendMail({
+    from: `"E-Cell Website" <${process.env.SMTP_USER}>`,
+    to: inbox,
+    replyTo: `"${name.replace(/"/g, "")}" <${email}>`,
+    subject: `[Website] Message from ${name}`,
+    text: `${message}\n\nFrom: ${name} <${email}>`,
+    html: `
+      <div style="font-family: -apple-system, Segoe UI, sans-serif; font-size: 14px; line-height: 1.6; color: #111;">
+        <p style="white-space: pre-wrap;">${escapeHtml(message)}</p>
+        <p style="color: #666; border-top: 1px solid #eee; padding-top: 12px;">From ${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;, sent from the website contact form.</p>
+      </div>
+    `,
+  });
+}

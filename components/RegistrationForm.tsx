@@ -72,11 +72,11 @@ export default function RegistrationForm({
     ctx.fillStyle = "#09090b";
     ctx.fillRect(0, 0, 450, 250);
 
-    ctx.strokeStyle = "rgba(59, 130, 246, 0.3)";
+    ctx.strokeStyle = "rgba(129, 140, 248, 0.3)";
     ctx.lineWidth = 2;
     ctx.strokeRect(10, 10, 430, 230);
 
-    ctx.fillStyle = "#3b82f6";
+    ctx.fillStyle = "#a5b4fc";
     ctx.font = "bold 14px monospace";
     ctx.fillText("BIMTECH E-CELL OFFICIAL ENTRY PASS", 25, 40);
 
@@ -144,18 +144,18 @@ export default function RegistrationForm({
         </div>
 
         <div className="bg-black border border-white/5 p-4 rounded-xl text-left font-mono text-[11px] space-y-2 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 rounded-bl-full pointer-events-none" />
-          <p className="text-blue-400 font-bold text-xs border-b border-white/5 pb-1.5">// ENTRY SLIP</p>
-          <p><span className="text-white/40">EVENT:</span> {selectedEvent.title}</p>
-          <p><span className="text-white/40">NAME:</span> {studentName}</p>
-          <p><span className="text-white/40">ID:</span> {registeredPassId}</p>
+          <div className="absolute top-0 right-0 w-16 h-16 bg-nebula-500/5 rounded-bl-full pointer-events-none" />
+          <p className="text-nebula-400 font-bold text-xs border-b border-white/5 pb-1.5">{"// ENTRY SLIP"}</p>
+          <p><span className="text-white/60">EVENT:</span> {selectedEvent.title}</p>
+          <p><span className="text-white/60">NAME:</span> {studentName}</p>
+          <p><span className="text-white/60">ID:</span> {registeredPassId}</p>
         </div>
 
         <canvas ref={canvasRef} width={450} height={250} className="hidden" />
 
         {/* RECONFIGURED GRID ACTION ROW */}
         <div className="flex flex-col gap-2">
-          <button onClick={downloadTicketAsImage} className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wider text-[10px] rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md">
+          <button onClick={downloadTicketAsImage} className="w-full py-2.5 bg-nebula-600 hover:bg-nebula-700 text-white font-bold uppercase tracking-wider text-[10px] rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-md">
             <Download size={12} /> Download Pass Card
           </button>
           
@@ -181,19 +181,19 @@ export default function RegistrationForm({
   }
 
   return (
-    <div className="bg-zinc-950 border border-blue-500/20 p-5 rounded-2xl space-y-4 sticky top-24 shadow-2xl">
+    <div className="bg-zinc-950 border border-nebula-500/20 p-5 rounded-2xl space-y-4 sticky top-24 shadow-2xl">
       <div className="flex justify-between items-start border-b border-white/5 pb-2">
         <div>
-          <h3 className="text-sm font-bold text-blue-400 uppercase tracking-wider">
+          <h3 className="text-sm font-bold text-nebula-400 uppercase tracking-wider">
             Event Signup
           </h3>
-          <p className="text-[10px] font-mono text-white/40 truncate max-w-[180px]">
+          <p className="text-[10px] font-mono text-white/60 truncate max-w-[180px]">
             {selectedEvent.title}
           </p>
         </div>
         <button
           onClick={onCancel}
-          className="text-white/40 hover:text-white cursor-pointer text-xs"
+          className="text-white/60 hover:text-white cursor-pointer text-xs"
         >
           Cancel
         </button>
@@ -205,13 +205,13 @@ export default function RegistrationForm({
             Full Name
           </label>
           <div className="relative">
-            <User className="absolute left-3 top-2.5 text-white/30" size={12} />
+            <User className="absolute left-3 top-2.5 text-white/60" size={12} />
             <input
               required
               type="text"
               value={studentName}
               onChange={(e) => setStudentName(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-3 py-2 text-white focus:outline-none focus:border-blue-500"
+              className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-3 py-2 text-white focus:outline-none focus:border-nebula-500"
               placeholder="Your name"
             />
           </div>
@@ -222,13 +222,13 @@ export default function RegistrationForm({
             College Email
           </label>
           <div className="relative">
-            <Mail className="absolute left-3 top-2.5 text-white/30" size={12} />
+            <Mail className="absolute left-3 top-2.5 text-white/60" size={12} />
             <input
               required
               type="email"
               value={studentEmail}
               onChange={(e) => setStudentEmail(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-3 py-2 text-white focus:outline-none focus:border-blue-500"
+              className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-3 py-2 text-white focus:outline-none focus:border-nebula-500"
               placeholder="name@college.com"
             />
           </div>
@@ -240,7 +240,7 @@ export default function RegistrationForm({
           </label>
           <div className="relative">
             <FileText
-              className="absolute left-3 top-2.5 text-white/30"
+              className="absolute left-3 top-2.5 text-white/60"
               size={12}
             />
             <input
@@ -248,7 +248,7 @@ export default function RegistrationForm({
               type="text"
               value={rollNumber}
               onChange={(e) => setRollNumber(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-3 py-2 text-white focus:outline-none focus:border-blue-500"
+              className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-3 py-2 text-white focus:outline-none focus:border-nebula-500"
               placeholder="e.g., 2025-PGDM-044"
             />
           </div>
@@ -266,7 +266,7 @@ export default function RegistrationForm({
               onChange={(e) =>
                 setCustomAnswers({ ...customAnswers, [field]: e.target.value })
               }
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-nebula-500"
               placeholder={`Enter ${field.toLowerCase()}`}
             />
           </div>
@@ -275,7 +275,7 @@ export default function RegistrationForm({
         <button
           disabled={isSubmitting}
           type="submit"
-          className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wider text-[10px] rounded-xl transition flex items-center justify-center gap-1.5 disabled:opacity-40 cursor-pointer shadow-lg"
+          className="w-full py-2.5 bg-nebula-600 hover:bg-nebula-700 text-white font-bold uppercase tracking-wider text-[10px] rounded-xl transition flex items-center justify-center gap-1.5 disabled:opacity-40 cursor-pointer shadow-lg"
         >
           {isSubmitting ? (
             <Loader2 size={12} className="animate-spin" />

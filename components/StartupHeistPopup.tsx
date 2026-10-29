@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Calendar, X } from "lucide-react";
+import { ArrowRight, Calendar, CalendarPlus, X } from "lucide-react";
+import BlackHoleCanvas from "./BlackHoleCanvas";
 
 // Deterministic star field so the scene renders identically every time
 const STARS = Array.from({ length: 70 }, (_, i) => {
@@ -19,167 +20,61 @@ const STARS = Array.from({ length: 70 }, (_, i) => {
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-const VERT = `attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }`;
+// Event window in IST. The countdown runs to the start; during the event it shows "live".
+const EVENT_TITLE = "Startup Heist | BIMTECH E-Cell";
+const EVENT_START = new Date("2026-11-02T00:00:00+05:30");
+const EVENT_END = new Date("2026-11-04T00:00:00+05:30");
+const EVENT_LOCATION = "BIMTECH, Greater Noida";
+const EVENT_DETAILS = "Startup Heist by BIMTECH E-Cell. Entry details are on the E-Cell website.";
 
-// Stylised Gargantua: Keplerian accretion disk, gravitationally lensed back
-// side, photon ring and Doppler beaming. Output is premultiplied alpha so the
-// starfield behind the canvas still shows through.
-const FRAG = `
-precision highp float;
-uniform vec2 uRes;
-uniform float uTime;
+const GOOGLE_CALENDAR_URL =
+  "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+  `&text=${encodeURIComponent(EVENT_TITLE)}` +
+  "&dates=20261102/20261104" +
+  `&details=${encodeURIComponent(EVENT_DETAILS)}` +
+  `&location=${encodeURIComponent(EVENT_LOCATION)}`;
 
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-float noise(vec2 p) {
-  vec2 i = floor(p), f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+function downloadIcs() {
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//BIMTECH E-Cell//Startup Heist//EN",
+    "BEGIN:VEVENT",
+    "UID:startup-heist-2026@bimtech-ecell",
+    "DTSTAMP:20261029T000000Z",
+    "DTSTART;VALUE=DATE:20261102",
+    "DTEND;VALUE=DATE:20261104",
+    `SUMMARY:${EVENT_TITLE}`,
+    `LOCATION:${EVENT_LOCATION}`,
+    `DESCRIPTION:${EVENT_DETAILS}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "startup-heist.ics";
+  link.click();
+  URL.revokeObjectURL(url);
 }
-float fbm(vec2 p) {
-  float v = 0.0, a = 0.5;
-  for (int i = 0; i < 5; i++) { v += a * noise(p); p *= 2.03; a *= 0.5; }
-  return v;
-}
-vec3 heat(float t) {
-  t = clamp(t, 0.0, 1.0);
-  vec3 c = mix(vec3(0.35, 0.05, 0.0), vec3(1.0, 0.42, 0.06), smoothstep(0.0, 0.4, t));
-  return mix(c, vec3(1.0, 0.93, 0.8), smoothstep(0.4, 1.0, t));
-}
-// Turbulent, differentially rotating gas between rin and rout
-float band(float r, float a, float rin, float rout, float seed) {
-  if (r < rin || r > rout) return 0.0;
-  float x = (r - rin) / (rout - rin);
-  float profile = smoothstep(0.0, 0.06, x) * pow(1.0 - x, 1.8);
-  float ang = a + uTime * 0.6 / pow(r / rin, 1.5);
-  vec2 q = vec2(cos(ang), sin(ang)) * 2.2 + vec2(r * 16.0, seed);
-  float gas = fbm(q) * 0.75 + fbm(q * 2.7 + 4.0) * 0.45;
-  return profile * (0.35 + gas * 1.1);
-}
 
-void main() {
-  vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y * 1.75;
-  float c = cos(-0.1), s = sin(-0.1);
-  p = mat2(c, -s, s, c) * p;
-
-  float rs = 0.36;
-  float r = length(p);
-  float a = atan(p.y, p.x);
-
-  // Disk plane seen nearly edge-on
-  float tilt = 0.13;
-  vec2 d = vec2(p.x, p.y / tilt);
-  float rd = length(d);
-  float ad = atan(d.y, d.x);
-  float doppler = 1.0 + 0.6 * clamp(-d.x / max(rd, 1e-3), -1.0, 1.0);
-
-  vec3 col = vec3(0.0);
-
-  // Lensed image of the far side of the disk, wrapped over and under the hole
-  float lr = r / rs;
-  float over = smoothstep(-0.1, 0.5, p.y / max(r, 1e-3));
-  float lens = band(lr, a, 1.06, 2.1, 7.0) * mix(0.3, 1.7, over);
-  lens *= 1.0 + 0.45 * clamp(-p.x / max(r, 1e-3), -1.0, 1.0);
-  col += heat(lens * 0.9) * lens * 1.4;
-
-  // Photon ring
-  float ring = exp(-pow((r - rs * 1.035) / 0.007, 2.0));
-  col += vec3(1.0, 0.85, 0.65) * ring * (0.9 + 0.4 * clamp(-p.x / r, -1.0, 1.0));
-
-  // Event horizon
-  float hole = 1.0 - smoothstep(rs * 0.985, rs * 1.0, r);
-  col *= 1.0 - hole;
-
-  // Near side of the disk crosses in front of the hole
-  float disk = band(rd, ad, rs * 1.55, rs * 4.4, 0.0) * doppler;
-  float front = p.y < 0.0 ? 1.0 : 1.0 - hole;
-  col += heat(disk * 0.8) * disk * 1.6 * front;
-
-  // Soft glow
-  col += vec3(1.0, 0.45, 0.12) * 0.05 / (0.15 + abs(p.y) * 8.0 + max(r - rs, 0.0) * 2.0) * (1.0 - hole);
-
-  col = 1.0 - exp(-col * 1.3);
-  float alpha = clamp(max(max(col.r, col.g), max(col.b, hole)), 0.0, 1.0);
-  gl_FragColor = vec4(min(col, vec3(alpha)), alpha);
-}
-`;
-
-function BlackHole({ animate }: { animate: boolean }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [failed, setFailed] = useState(false);
-
+function useCountdown() {
+  const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const gl = canvas?.getContext("webgl", { premultipliedAlpha: true, antialias: false });
-    if (!canvas || !gl) {
-      setFailed(true);
-      return;
-    }
-
-    const compile = (type: number, src: string) => {
-      const sh = gl.createShader(type)!;
-      gl.shaderSource(sh, src);
-      gl.compileShader(sh);
-      return sh;
-    };
-    const prog = gl.createProgram()!;
-    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
-    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-      setFailed(true);
-      return;
-    }
-    gl.useProgram(prog);
-
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    const loc = gl.getAttribLocation(prog, "p");
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    const uRes = gl.getUniformLocation(prog, "uRes");
-    const uTime = gl.getUniformLocation(prog, "uTime");
-
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.round(canvas.clientWidth * dpr);
-      canvas.height = Math.round(canvas.clientHeight * dpr);
-      gl.viewport(0, 0, canvas.width, canvas.height);
-    };
-    resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
-
-    let raf = 0;
-    const start = performance.now();
-    const draw = () => {
-      gl.uniform2f(uRes, canvas.width, canvas.height);
-      gl.uniform1f(uTime, animate ? (performance.now() - start) / 1000 : 4);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-      if (animate) raf = requestAnimationFrame(draw);
-    };
-    draw();
-
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-      gl.getExtension("WEBGL_lose_context")?.loseContext();
-    };
-  }, [animate]);
-
-  if (failed) {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative w-32 h-32">
-          <div className="absolute inset-[12%] rounded-full border-[3px] border-amber-100/80 blur-[1.5px] shadow-[0_0_40px_12px_rgba(251,191,36,0.35)]" />
-          <div className="absolute inset-[19%] rounded-full bg-black" />
-          <div className="absolute left-[-40%] right-[-40%] top-1/2 h-[14%] -translate-y-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,#fffbeb_0%,#fcd34d_25%,#ea580c_55%,transparent_75%)] blur-[2px]" />
-        </div>
-      </div>
-    );
-  }
-
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  if (now === null || now >= EVENT_END.getTime()) return null;
+  const diff = EVENT_START.getTime() - now;
+  if (diff <= 0) return { live: true as const };
+  return {
+    live: false as const,
+    days: Math.floor(diff / 86_400_000),
+    hours: Math.floor((diff / 3_600_000) % 24),
+    minutes: Math.floor((diff / 60_000) % 60),
+    seconds: Math.floor((diff / 1000) % 60),
+  };
 }
 
 export default function StartupHeistPopup({
@@ -190,6 +85,23 @@ export default function StartupHeistPopup({
   onClose: () => void;
 }) {
   const reduceMotion = useReducedMotion();
+  const countdown = useCountdown();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Escape closes; focus moves into the dialog and back to where it was afterwards
+  useEffect(() => {
+    if (!open) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    closeButtonRef.current?.focus({ preventScroll: true });
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      previouslyFocused?.focus?.({ preventScroll: true });
+    };
+  }, [open, onClose]);
 
   return (
     <AnimatePresence>
@@ -198,6 +110,9 @@ export default function StartupHeistPopup({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, transition: { duration: 0.5, delay: 0.2 } }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="startup-heist-title"
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6"
         >
           <style>{`
@@ -229,6 +144,7 @@ export default function StartupHeistPopup({
             <div className="relative rounded-[15px] bg-[#060608] overflow-hidden">
               {/* Close Button */}
               <button
+                ref={closeButtonRef}
                 onClick={onClose}
                 aria-label="Close"
                 className="absolute top-3 right-3 z-30 p-2 text-white/60 hover:text-white bg-black/50 hover:bg-white/10 border border-white/10 rounded-full backdrop-blur-sm transition-colors cursor-pointer"
@@ -262,7 +178,7 @@ export default function StartupHeistPopup({
                   transition={{ duration: 1.8, ease: EASE, delay: 0.2 }}
                   className="absolute inset-0"
                 >
-                  <BlackHole animate={!reduceMotion} />
+                  <BlackHoleCanvas animate={!reduceMotion} />
                 </motion.div>
 
                 {/* Telemetry overlay */}
@@ -307,6 +223,7 @@ export default function StartupHeistPopup({
                 {/* Headers */}
                 <div className="relative">
                   <motion.h2
+                    id="startup-heist-title"
                     variants={{
                       hidden: { opacity: 0, y: 16, letterSpacing: "0.3em", filter: "blur(8px)" },
                       show: { opacity: 1, y: 0, letterSpacing: "-0.02em", filter: "blur(0px)", transition: { duration: 1.1, ease: EASE } },
@@ -322,6 +239,47 @@ export default function StartupHeistPopup({
                     <Calendar size={14} className="text-amber-300/80" />
                     <span>Nov 2 & 3</span>
                   </motion.div>
+                  {countdown && (
+                    <motion.div
+                      variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } } }}
+                      className="mt-4 flex flex-wrap items-center gap-3"
+                    >
+                      {countdown.live ? (
+                        <span className="font-mono text-xs uppercase tracking-[0.25em] text-amber-200">Happening now</span>
+                      ) : (
+                        <div className="flex gap-2" aria-label={`Starts in ${countdown.days} days and ${countdown.hours} hours`}>
+                          {[
+                            { label: "Days", value: countdown.days },
+                            { label: "Hrs", value: countdown.hours },
+                            { label: "Min", value: countdown.minutes },
+                            { label: "Sec", value: countdown.seconds },
+                          ].map((unit) => (
+                            <div key={unit.label} className="w-12 rounded-lg border border-white/10 bg-white/[0.03] py-1.5 text-center" aria-hidden="true">
+                              <div className="font-mono text-base font-bold tabular-nums text-white">{String(unit.value).padStart(2, "0")}</div>
+                              <div className="font-mono text-[8px] uppercase tracking-widest text-white/50">{unit.label}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest">
+                        <a
+                          href={GOOGLE_CALENDAR_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-amber-200/80 hover:text-amber-100 transition-colors"
+                        >
+                          <CalendarPlus size={12} />
+                          Google Calendar
+                        </a>
+                        <button
+                          onClick={downloadIcs}
+                          className="text-white/50 hover:text-white transition-colors cursor-pointer"
+                        >
+                          .ics
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
 
                 <motion.p
@@ -338,7 +296,7 @@ export default function StartupHeistPopup({
                 >
                   <button
                     onClick={onClose}
-                    className="text-[10px] font-mono font-bold text-white/40 hover:text-white uppercase tracking-widest transition cursor-pointer"
+                    className="text-[10px] font-mono font-bold text-white/60 hover:text-white uppercase tracking-widest transition cursor-pointer"
                   >
                     [ Dismiss ]
                   </button>

@@ -80,7 +80,7 @@ export default function PitchSimulator() {
       setHasSimulated(true);
 
     } catch (err) {
-      alert("Analytical node handshake failure. Check your Groq API key.");
+      alert("We couldn't reach the AI service. Please try again in a minute.");
     } finally {
       setIsLoading(false);
     }
@@ -89,7 +89,7 @@ export default function PitchSimulator() {
   const handlePrintIsolatedDocument = () => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      alert("Please allow popups to export your strategic roadmap PDF.");
+      alert("Please allow pop-ups to download your roadmap as a PDF.");
       return;
     }
 
@@ -179,37 +179,37 @@ export default function PitchSimulator() {
       {/* LEFT HALF: EXTENDED INPUT FORM MATRIX */}
       <form onSubmit={handleSimulateArchitecture} className="lg:col-span-5 p-6 md:p-8 border-b lg:border-b-0 lg:border-r border-white/10 space-y-5 bg-black/30">
         <div className="space-y-1">
-          <label className="text-[10px] font-mono font-bold uppercase tracking-widest text-blue-500">Venture Architecture</label>
-          <h3 className="text-lg font-bold text-white tracking-tight">Concept Simulator Input</h3>
+          <label className="text-[10px] font-mono font-bold uppercase tracking-widest text-accent-300">Startup idea sandbox</label>
+          <h3 className="text-lg font-bold text-white tracking-tight">Describe your idea</h3>
         </div>
 
         <div className="space-y-3">
           <div className="space-y-1">
-            <label className="text-[10px] uppercase font-mono tracking-wider text-white/40">Startup Brand Name</label>
-            <input required type="text" value={startupTitle} onChange={(e) => setStartupTitle(e.target.value)} placeholder="e.g., Nexis Core" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-white/10 focus:outline-none focus:border-blue-500 font-mono" />
+            <label htmlFor="sim-name" className="text-[10px] uppercase font-mono tracking-wider text-white/60">Startup name</label>
+            <input id="sim-name" required type="text" value={startupTitle} onChange={(e) => setStartupTitle(e.target.value)} placeholder="e.g., Nexis Core" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder-white/40 focus:outline-none focus:border-nebula-500 font-mono" />
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] uppercase font-mono tracking-wider text-white/40">Target Problem Statement</label>
-            <textarea required rows={3} value={problemStatement} onChange={(e) => setProblemStatement(e.target.value)} placeholder="Describe the explicit operational bottleneck or market friction layout..." className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white placeholder-white/10 focus:outline-none focus:border-blue-500 font-mono resize-none" />
+            <label htmlFor="sim-problem" className="text-[10px] uppercase font-mono tracking-wider text-white/60">What problem does it solve?</label>
+            <textarea id="sim-problem" required rows={3} value={problemStatement} onChange={(e) => setProblemStatement(e.target.value)} placeholder="Who has this problem, and why do current options fall short?" className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-xs text-white placeholder-white/40 focus:outline-none focus:border-nebula-500 font-mono resize-none" />
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] uppercase font-mono tracking-wider text-white/40">Domain Sector Node</label>
-            <select value={selectedSector} onChange={(e) => setSelectedSector(e.target.value)} className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono">
-              <option disabled className="text-white/30 font-bold bg-black">-- Deep Tech Cluster --</option>
+            <label htmlFor="sim-sector" className="text-[10px] uppercase font-mono tracking-wider text-white/60">Industry</label>
+            <select id="sim-sector" value={selectedSector} onChange={(e) => setSelectedSector(e.target.value)} className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-nebula-500 font-mono">
+              <option disabled className="text-white/60 font-bold bg-black">-- Deep Tech Cluster --</option>
               <option value="Artificial Intelligence">Artificial Intelligence & LLMOps</option>
               <option value="Autonomous Mobility">Autonomous Mobility & Robotics</option>
               <option value="Cybersecurity Nodes">Cybersecurity & Cryptographic Nets</option>
-              <option disabled className="text-white/30 font-bold bg-black">-- Financial Infrastructures --</option>
+              <option disabled className="text-white/60 font-bold bg-black">-- Financial Infrastructures --</option>
               <option value="FinTech Nodes">FinTech, Neo-Banking & DeFi</option>
               <option value="B2B SaaS Ecosystems">B2B SaaS Infrastructure Tools</option>
               <option value="Web3 & Tokenomics">Web3 Protocols & Digital Identity</option>
-              <option disabled className="text-white/30 font-bold bg-black">-- Climate Tech & Operations --</option>
+              <option disabled className="text-white/60 font-bold bg-black">-- Climate Tech & Operations --</option>
               <option value="Sustainable Supply Chains">Sustainable Supply Chains & Logistics</option>
               <option value="CleanTech & Renewable Energy">CleanTech & Renewable Energy Core</option>
               <option value="AgriTech Ecosystems">AgriTech & Controlled Environment Farming</option>
-              <option disabled className="text-white/30 font-bold bg-black">-- Consumer Enterprise --</option>
+              <option disabled className="text-white/60 font-bold bg-black">-- Consumer Enterprise --</option>
               <option value="Direct Consumer Retail">Direct-to-Consumer (D2C) Brands</option>
               <option value="HealthTech & Telemedicine">HealthTech & Precision Medicine Platforms</option>
               <option value="EdTech Systems">EdTech & Continuous Learning Sandbox</option>
@@ -218,8 +218,8 @@ export default function PitchSimulator() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-[10px] uppercase font-mono tracking-wider text-white/40">Monetization Engine</label>
-              <select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono">
+              <label htmlFor="sim-model" className="text-[10px] uppercase font-mono tracking-wider text-white/60">Business model</label>
+              <select id="sim-model" value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)} className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-nebula-500 font-mono">
                 <option value="SaaS Subscription">SaaS Subscription</option>
                 <option value="B2B Enterprise Contracts">B2B Enterprise Contracts</option>
                 <option value="Transactional Cut">Transactional Cut</option>
@@ -227,8 +227,8 @@ export default function PitchSimulator() {
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] uppercase font-mono tracking-wider text-white/40">Pricing Matrix</label>
-              <select value={selectedPricing} onChange={(e) => setSelectedPricing(e.target.value)} className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono">
+              <label htmlFor="sim-pricing" className="text-[10px] uppercase font-mono tracking-wider text-white/60">Pricing</label>
+              <select id="sim-pricing" value={selectedPricing} onChange={(e) => setSelectedPricing(e.target.value)} className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-nebula-500 font-mono">
                 <option value="Premium Pricing">Premium Pricing</option>
                 <option value="Value-Based Tiering">Value-Based Tiering</option>
                 <option value="Cost-Plus Baseline">Cost-Plus Baseline</option>
@@ -239,8 +239,8 @@ export default function PitchSimulator() {
         </div>
 
         <button type="submit" disabled={isLoading || !startupTitle || !problemStatement} className="w-full py-3 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 disabled:opacity-20 transition cursor-pointer">
-          <Sparkles size={14} className={isLoading ? "animate-spin text-blue-500" : ""} />
-          <span>{isLoading ? "Staging & Analyzing..." : "Simulate Business Architecture"}</span>
+          <Sparkles size={14} className={isLoading ? "animate-spin text-nebula-500" : ""} />
+          <span>{isLoading ? "Analysing your idea..." : "Get AI feedback"}</span>
         </button>
       </form>
 
@@ -248,18 +248,18 @@ export default function PitchSimulator() {
       <div className="lg:col-span-7 p-6 md:p-8 flex flex-col justify-center bg-zinc-950/40 relative max-h-[600px] overflow-y-auto">
         <AnimatePresence mode="wait">
           {!hasSimulated && !isLoading ? (
-            <motion.div key="empty-prompt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12 space-y-2 font-mono text-xs text-white/30">
+            <motion.div key="empty-prompt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12 space-y-2 font-mono text-xs text-white/60">
               <Cpu size={24} className="mx-auto text-white/10 mb-2 animate-pulse" />
-              <p>Sandbox engine standby. Input parameters to log row entries and open analytical trees.</p>
+              <p>Fill in your idea on the left and press Get AI feedback. You&rsquo;ll get scores, a three-step roadmap and the biggest risks to watch.</p>
             </motion.div>
           ) : isLoading ? (
             <motion.div key="loading-prompt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-sm mx-auto w-full py-12">
               <div className="space-y-1 text-center font-mono">
-                <div className="text-[10px] uppercase tracking-widest text-blue-500 font-bold animate-pulse">Streaming Free Inference Node</div>
-                <p className="text-xs text-white/40">Llama 3 is crunching parameters and saving rows to your Sheet ledger...</p>
+                <div className="text-[10px] uppercase tracking-widest text-nebula-500 font-bold animate-pulse">Streaming Free Inference Node</div>
+                <p className="text-xs text-white/60">Llama 3 is crunching parameters and saving rows to your Sheet ledger...</p>
               </div>
               <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden relative">
-                <motion.div initial={{ left: "-100%" }} animate={{ left: "100%" }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} className="absolute top-0 bottom-0 w-1/2 bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
+                <motion.div initial={{ left: "-100%" }} animate={{ left: "100%" }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} className="absolute top-0 bottom-0 w-1/2 bg-gradient-to-r from-transparent via-nebula-500 to-transparent" />
               </div>
             </motion.div>
           ) : (
@@ -267,36 +267,36 @@ export default function PitchSimulator() {
               
               {/* PERFORMANCE METRICS */}
               <div className="border border-white/5 bg-white/[0.01] p-4 rounded-xl space-y-3">
-                <div className="flex justify-between items-center font-mono text-[9px] uppercase tracking-wider text-white/40">
+                <div className="flex justify-between items-center font-mono text-[9px] uppercase tracking-wider text-white/60">
                   <span className="flex items-center gap-1"><Layers size={10} /> Data Ledger Confirmed</span>
                   <span className="font-bold text-white">Llama 3 Balanced</span>
                 </div>
                 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-center">
                   <div className="bg-white/5 p-2 rounded-lg border border-white/10">
-                    <span className="text-[8px] text-white/40 uppercase block">Viability</span>
-                    <span className={`text-base font-black ${isViolationBlock ? 'text-red-500' : 'text-blue-400'}`}>{viabilityIndex}%</span>
+                    <span className="text-[8px] text-white/60 uppercase block">Viability</span>
+                    <span className={`text-base font-black ${isViolationBlock ? 'text-red-500' : 'text-nebula-400'}`}>{viabilityIndex}%</span>
                   </div>
                   <div className="bg-white/5 p-2 rounded-lg border border-white/10">
-                    <span className="text-[8px] text-white/40 uppercase block">Market Fit</span>
+                    <span className="text-[8px] text-white/60 uppercase block">Market Fit</span>
                     <span className="text-base font-black text-white">{marketFitIndex}%</span>
                   </div>
                   <div className="bg-white/5 p-2 rounded-lg border border-white/10">
-                    <span className="text-[8px] text-white/40 uppercase block">Complexity</span>
+                    <span className="text-[8px] text-white/60 uppercase block">Complexity</span>
                     <span className="text-base font-black text-white">{complexityIndex}%</span>
                   </div>
                   <div className="bg-white/5 p-2 rounded-lg border border-white/10">
-                    <span className="text-[8px] text-white/40 uppercase block">Risk Index</span>
+                    <span className="text-[8px] text-white/60 uppercase block">Risk Index</span>
                     <span className="text-base font-black text-white">{riskIndex}%</span>
                   </div>
                 </div>
               </div>
 
               {/* FEEDBACK ASSESSMENT */}
-              <div className={`p-4 rounded-xl border flex gap-3 items-start ${isViolationBlock ? 'bg-red-500/5 border-red-500/20 text-red-200' : 'bg-blue-500/5 border-blue-500/10 text-white/90'}`}>
-                {isViolationBlock ? <ShieldAlert size={16} className="text-red-500 shrink-0 mt-0.5" /> : <CheckCircle size={16} className="text-blue-500 shrink-0 mt-0.5" />}
+              <div className={`p-4 rounded-xl border flex gap-3 items-start ${isViolationBlock ? 'bg-red-500/5 border-red-500/20 text-red-200' : 'bg-nebula-500/5 border-nebula-500/10 text-white/90'}`}>
+                {isViolationBlock ? <ShieldAlert size={16} className="text-red-500 shrink-0 mt-0.5" /> : <CheckCircle size={16} className="text-nebula-500 shrink-0 mt-0.5" />}
                 <div className="space-y-0.5">
-                  <div className="text-[9px] font-mono font-bold tracking-widest uppercase text-white/40">
+                  <div className="text-[9px] font-mono font-bold tracking-widest uppercase text-white/60">
                     {isViolationBlock ? "Compliance Filter Halt" : "Live AI Advisory Assessment"}
                   </div>
                   <p className="text-xs font-mono leading-relaxed select-none text-justify">{advisoryAssessment}</p>
@@ -306,13 +306,13 @@ export default function PitchSimulator() {
               {/* 📅 DYNAMIC EXECUTION ROADMAP FROM LLM */}
               {!isViolationBlock && (
                 <div className="space-y-2 border-t border-white/5 pt-3">
-                  <h4 className="text-[10px] font-mono tracking-widest text-white/40 uppercase flex items-center gap-1.5 pb-1">
+                  <h4 className="text-[10px] font-mono tracking-widest text-white/60 uppercase flex items-center gap-1.5 pb-1">
                     <TrendingUp size={12} /> Strategic Execution Roadmap (Llama 3)
                   </h4>
                   <div className="space-y-2.5">
                     {dynamicPhases.map((step, idx) => (
                       <div key={idx} className="bg-white/[0.02] border border-white/5 p-3 rounded-xl space-y-1 hover:border-white/10 transition">
-                        <span className="text-[9px] font-mono font-bold text-blue-400 uppercase tracking-wide block">{step.t}</span>
+                        <span className="text-[9px] font-mono font-bold text-nebula-400 uppercase tracking-wide block">{step.t}</span>
                         <p className="text-[11px] text-white/60 font-sans leading-relaxed text-justify">{step.d}</p>
                       </div>
                     ))}

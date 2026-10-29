@@ -1,141 +1,121 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import TeamCarousel3D from "./TeamCarousel3D";
+import { useEffect, useRef, useState } from "react";
+import { motion, useMotionValueEvent, useScroll, useTransform } from "framer-motion";
+import TeamCarousel3D, { TEAM_MEMBERS } from "./TeamCarousel3D";
 import PitchSimulator from "./PitchSimulator";
 import KineticTextReveal from "./KineticTextReveal";
 
-export default function HorizonSlideDeck() {
+// Share of the pinned scroll spent sliding from the intro panel to the team panel;
+// the rest steps through the board members one by one.
+const SLIDE_PORTION = 0.25;
+
+function BoardIntro() {
+  return (
+    <div className="max-w-xl space-y-4">
+      <KineticTextReveal
+        text="// Meet the team"
+        className="text-xs font-mono tracking-widest uppercase text-accent-300 font-bold"
+        delay={0.1}
+      />
+      <h2 className="text-5xl md:text-6xl font-bold tracking-tight uppercase leading-none text-white">
+        The Board <br />
+        <span className="text-accent-400 block mt-2">Behind E-Cell</span>
+      </h2>
+      <p className="text-white/60 font-sans text-sm md:text-base leading-relaxed pt-2">
+        The students and mentor who run events, bring in speakers and partners, and help founders on campus get started.
+      </p>
+    </div>
+  );
+}
+
+function BoardHeader() {
+  return (
+    <div className="border-b border-white/10 pb-4 flex items-center justify-between font-mono text-[10px] tracking-widest uppercase">
+      <span className="text-accent-300 font-bold">01 // Executive board</span>
+      <span className="text-white/50">{TEAM_MEMBERS.length} members</span>
+    </div>
+  );
+}
+
+// Desktop: the section pins while the visitor scrolls, slides sideways to the team,
+// then advances one member per scroll step. Scroll values drive transforms directly
+// (no React state per frame); state only changes when the active member changes.
+function PinnedBoard() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [isFixed, setIsFixed] = useState(false);
-  const [isPast, setIsPast] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end end"] });
+  const x = useTransform(scrollYProgress, [0, SLIDE_PORTION], ["0vw", "-100vw"]);
 
-  useEffect(() => {
-    let ticking = false;
-
-    const updateScrollState = () => {
-      if (!containerRef.current) return;
-
-      const rect = containerRef.current.getBoundingClientRect();
-      const containerHeight = containerRef.current.offsetHeight;
-      const windowHeight = window.innerHeight;
-
-      // Failsafe to prevent zero-division during initial rapid DOM paints
-      const totalScrollableDistance = Math.max(1, containerHeight - windowHeight);
-      const currentScrollPosition = -rect.top;
-      
-      const progress = Math.max(0, Math.min(1, currentScrollPosition / totalScrollableDistance));
-      setScrollProgress(progress);
-
-      // We explicitly check the previous state before updating to prevent the 
-      // "Maximum update depth exceeded" layout shift infinite loop
-      if (rect.top <= 0 && -rect.top <= totalScrollableDistance) {
-        setIsFixed((prev) => (prev !== true ? true : prev));
-        setIsPast((prev) => (prev !== false ? false : prev));
-      } else if (-rect.top > totalScrollableDistance) {
-        setIsFixed((prev) => (prev !== false ? false : prev));
-        setIsPast((prev) => (prev !== true ? true : prev));
-      } else {
-        setIsFixed((prev) => (prev !== false ? false : prev));
-        setIsPast((prev) => (prev !== false ? false : prev));
-      }
-
-      ticking = false;
-    };
-
-    const handleScroll = () => {
-      if (!ticking) {
-        ticking = true;
-        window.requestAnimationFrame(updateScrollState);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    
-    // Initial evaluation trigger
-    updateScrollState();
-
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // Map the scroll progress directly to the horizontal rail position
-  const xTranslate = `${-scrollProgress * 200}vw`;
+  useMotionValueEvent(scrollYProgress, "change", (progress) => {
+    if (progress < SLIDE_PORTION) return;
+    const normalized = (progress - SLIDE_PORTION) / (1 - SLIDE_PORTION);
+    const idx = Math.min(TEAM_MEMBERS.length - 1, Math.floor(normalized * TEAM_MEMBERS.length));
+    setActiveIdx((prev) => (prev === idx ? prev : idx));
+  });
 
   return (
-    <div 
-      ref={containerRef} 
-      className="relative h-[650vh] w-full bg-transparent"
-    >
-      {/* 🌟 RESTORED DIRECT VIEWPORT LOCK LAYER */}
-      <div 
-        className={`w-full h-screen overflow-hidden flex items-center border-t border-b border-white/10 bg-zinc-950/20 backdrop-blur-3xl transition-shadow duration-300 ${
-          isFixed 
-            ? "fixed top-0 left-0 z-50 shadow-2xl" 
-            : isPast 
-            ? "absolute bottom-0 left-0" 
-            : "absolute top-0 left-0"
-        }`}
-      >
-        
-        {/* Hardware-Accelerated Animation Rail */}
-        <motion.div 
-          animate={{ x: xTranslate }}
-          transition={{ type: "spring", stiffness: 100, damping: 20, mass: 0.2 }}
-          className="flex h-full w-[300vw] will-change-transform bg-transparent"
-        >
-          
-          {/* DECK PANEL 1: Introduction Anchor */}
-          <div className="w-screen h-full flex flex-col justify-center px-12 md:px-24 shrink-0 relative bg-transparent">
-            <div className="max-w-xl space-y-4">
-              <KineticTextReveal 
-                text="// System Architecture Matrix" 
-                className="text-xs font-mono tracking-widest uppercase text-purple-400 font-bold"
-                delay={0.1}
-              />
-              <h2 className="text-5xl md:text-6xl font-black tracking-tight uppercase leading-none text-white">
-                LEADERSHIP <br />
-                <span className="text-purple-500 block mt-2">&amp; LABS Matrix</span>
-              </h2>
-              <p className="text-white/40 font-sans text-sm leading-relaxed pt-2">
-                E-Cell core systems initialized. Continue scrolling naturally downward to slide horizontally into the active team control array frames.
-              </p>
-              <div className="pt-6 flex items-center gap-3 font-mono text-[10px] text-purple-400/60 animate-pulse">
-                <span>ROTATE WHEEL DOWN TO DEPLOY</span>
-                <span>→</span>
-              </div>
+    <div ref={containerRef} className="relative h-[350vh] w-full">
+      {/* Navbar "The Board" lands here, just after the slide finishes */}
+      <span id="team" className="absolute left-0" style={{ top: "34%" }} aria-hidden="true" />
+
+      <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center border-y border-white/10 bg-space/40 backdrop-blur-sm">
+        <motion.div style={{ x }} className="flex h-full w-[200vw] will-change-transform">
+          <div className="w-screen h-full flex flex-col justify-center px-12 md:px-24 shrink-0">
+            <BoardIntro />
+          </div>
+          <div className="w-screen h-full flex flex-col justify-center px-12 md:px-20 shrink-0 border-l border-white/10">
+            <div className="w-full max-w-7xl mx-auto space-y-4">
+              <BoardHeader />
+              <TeamCarousel3D activeIdx={activeIdx} onChange={setActiveIdx} />
             </div>
           </div>
-
-          {/* DECK PANEL 2: Executive Board Carousel */}
-          <div id="team" className="w-screen h-full flex flex-col justify-center px-12 md:px-20 shrink-0 border-l border-r border-white/10 bg-transparent relative scroll-mt-24">
-            <div className="w-full max-w-7xl mx-auto space-y-6">
-              <div className="border-b border-white/5 pb-4 flex items-center justify-between font-mono text-[10px] tracking-widest">
-                <span className="text-purple-400 font-bold">01 // EXECUTIVE BOARD ROSTER</span>
-                <span className="text-white/20">// CORE COMMAND CONTROL ARRAY</span>
-              </div>
-              <div className="w-full overflow-hidden max-h-[460px] flex items-center justify-center relative">
-                <TeamCarousel3D progress={scrollProgress} />
-              </div>
-            </div>
-          </div>
-
-          {/* DECK PANEL 3: Venture Simulation Lab */}
-          <div id="simulator" className="w-screen h-full flex flex-col justify-center px-12 md:px-20 shrink-0 bg-transparent relative scroll-mt-24">
-            <div className="w-full max-w-6xl mx-auto space-y-6">
-              <div className="border-b border-white/5 pb-4 flex items-center justify-between font-mono text-[10px] tracking-widest">
-                <span className="text-blue-400 font-bold">02 // VENTURE SIMULATION LAB</span>
-                <span className="text-white/20">// REAL-TIME DATA INFERENCE NODE</span>
-              </div>
-              <div className="w-full max-w-4xl mx-auto">
-                <PitchSimulator />
-              </div>
-            </div>
-          </div>
-
         </motion.div>
       </div>
     </div>
+  );
+}
+
+// Phones and tablets: a normal section with a swipeable carousel, no scroll hijacking.
+function StackedBoard() {
+  const [activeIdx, setActiveIdx] = useState(0);
+  return (
+    <section id="team" className="relative w-full px-6 py-24 border-t border-white/10 space-y-10 scroll-mt-20">
+      <BoardIntro />
+      <div className="space-y-2">
+        <BoardHeader />
+        <TeamCarousel3D activeIdx={activeIdx} onChange={setActiveIdx} />
+      </div>
+    </section>
+  );
+}
+
+export default function HorizonSlideDeck() {
+  const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 1024px)");
+    const update = () => setIsDesktop(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  return (
+    <>
+      {isDesktop === null ? <div className="h-screen" /> : isDesktop ? <PinnedBoard /> : <StackedBoard />}
+
+      <section id="simulator" className="relative w-full px-6 md:px-20 py-24 md:py-32 border-t border-white/10 scroll-mt-20">
+        <div className="w-full max-w-6xl mx-auto space-y-6">
+          <div className="border-b border-white/10 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-mono text-[10px] tracking-widest uppercase">
+            <span className="text-nebula-300 font-bold">02 // Startup idea sandbox</span>
+            <span className="text-white/50">Get instant AI feedback on your idea</span>
+          </div>
+          <div className="w-full max-w-4xl mx-auto">
+            <PitchSimulator />
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

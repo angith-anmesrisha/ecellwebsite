@@ -64,7 +64,7 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
               animate={{
                 y: isHovered ? -8 : 0,
                 x: isHovered ? 8 : 0,
-                color: isHovered ? "rgba(168, 85, 247, 1)" : "rgba(255, 255, 255, 1)"
+                color: isHovered ? "rgba(245, 158, 11, 1)" : "rgba(255, 255, 255, 1)"
               }}
               transition={{ type: "spring", stiffness: 220, damping: 14 }}
               className="absolute inset-0 block will-change-transform"
@@ -78,7 +78,7 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
               animate={{
                 y: isHovered ? 8 : 0,
                 x: isHovered ? -8 : 0,
-                color: isHovered ? "rgba(59, 130, 246, 1)" : "rgba(255, 255, 255, 1)"
+                color: isHovered ? "rgba(129, 140, 248, 1)" : "rgba(255, 255, 255, 1)"
               }}
               transition={{ type: "spring", stiffness: 220, damping: 14 }}
               className="absolute inset-0 block will-change-transform"
@@ -95,7 +95,7 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
                 scaleY: isHovered ? 1 : 0
               }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="absolute inset-x-0 top-[48%] bottom-[48%] flex items-center justify-start text-[10px] font-bold text-white/40 tracking-[0.4em] pointer-events-none overflow-visible z-20 whitespace-nowrap"
+              className="absolute inset-x-0 top-[48%] bottom-[48%] flex items-center justify-start text-[10px] font-bold text-white/60 tracking-[0.4em] pointer-events-none overflow-visible z-20 whitespace-nowrap"
             >
               {tag}
             </motion.span>
@@ -109,7 +109,7 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
               rotate: isHovered ? 45 : 0
             }}
             transition={{ type: "spring", stiffness: 180, damping: 12 }}
-            className="text-white/30 group-hover:text-purple-400 font-mono text-sm pr-4 shrink-0"
+            className="text-white/60 group-hover:text-accent-400 font-mono text-sm pr-4 shrink-0"
           >
             
           </motion.div>
@@ -120,7 +120,7 @@ export default function DigitalStripSplitter({ text, tag = "//SYS.ACTIVATE", hre
           initial={{ scaleX: 0 }}
           animate={{ scaleX: isHovered ? 1 : 0 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-purple-500 via-blue-500 to-transparent origin-left pointer-events-none"
+          className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-accent-500 via-nebula-500 to-transparent origin-left pointer-events-none"
         />
       </div>
     </Link>

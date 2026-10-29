@@ -170,17 +170,17 @@ export default function RecruitmentRegistrationForm({
   return (
     <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 md:p-8 max-w-md mx-auto space-y-6 shadow-2xl">
       <div className="space-y-1 text-center font-mono">
-        <UserPlus className="text-blue-500 mx-auto mb-1" size={28} />
+        <UserPlus className="text-nebula-500 mx-auto mb-1" size={28} />
         <h3 className="text-sm font-bold text-white uppercase tracking-wider">
           Create Application Profile
         </h3>
-        <p className="text-[11px] text-white/40">
+        <p className="text-[11px] text-white/60">
           Enter your official details below to initialize your application.
         </p>
       </div>
       <form onSubmit={handleRegisterCandidate} className="space-y-4">
         <div className="space-y-1">
-          <label className="text-[10px] uppercase font-mono text-white/40 tracking-wider">
+          <label className="text-[10px] uppercase font-mono text-white/60 tracking-wider">
             Your Full Name
           </label>
           <input
@@ -189,11 +189,11 @@ export default function RecruitmentRegistrationForm({
             value={regName}
             onChange={(e) => setRegName(e.target.value)}
             placeholder="e.g., Angith V Shaji"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-nebula-500 font-mono"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] uppercase font-mono text-white/40 tracking-wider">
+          <label className="text-[10px] uppercase font-mono text-white/60 tracking-wider">
             Email Address
           </label>
           <input
@@ -202,11 +202,11 @@ export default function RecruitmentRegistrationForm({
             value={regEmail}
             onChange={(e) => setRegEmail(e.target.value)}
             placeholder="name@domain.com"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-nebula-500 font-mono"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] uppercase font-mono text-white/40 tracking-wider">
+          <label className="text-[10px] uppercase font-mono text-white/60 tracking-wider">
             Attach Professional Resume / Curriculum Vitae (PDF Only)
           </label>
           <input
@@ -214,17 +214,17 @@ export default function RecruitmentRegistrationForm({
             type="file"
             accept=".pdf"
             onChange={handleFileAttachmentChange}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-mono text-white/60 file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-mono file:bg-blue-500/20 file:text-blue-400 file:cursor-pointer cursor-pointer hover:file:bg-blue-500/30 transition"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-mono text-white/60 file:mr-4 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-mono file:bg-nebula-500/20 file:text-nebula-400 file:cursor-pointer cursor-pointer hover:file:bg-nebula-500/30 transition"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-[10px] uppercase font-mono text-white/40 tracking-wider">
+          <label className="text-[10px] uppercase font-mono text-white/60 tracking-wider">
             Select Department Track
           </label>
           <select
             value={regDept}
             onChange={(e) => setRegDept(e.target.value as any)}
-            className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+            className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-nebula-500 font-mono"
           >
             <option value="ops">OPS VERTICAL</option>
             <option value="media">PR & MEDIA CELL</option>

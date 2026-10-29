@@ -13,7 +13,7 @@ export default function NativeFluidRipple() {
       const ripple = document.createElement("div");
       
       
-      ripple.className = "absolute rounded-full pointer-events-none border border-blue-400/40 bg-gradient-to-r from-blue-500/5 to-transparent";
+      ripple.className = "absolute rounded-full pointer-events-none border border-nebula-400/40 bg-gradient-to-r from-nebula-500/5 to-transparent";
       
       
       const size = 20; 
@@ -23,7 +23,7 @@ export default function NativeFluidRipple() {
       ripple.style.top = `${e.pageY - size / 2}px`;
       ripple.style.transform = "scale(1)";
       ripple.style.transition = "all 1.2s cubic-bezier(0.1, 0.8, 0.25, 1)";
-      ripple.style.boxShadow = "0 0 15px rgba(59, 130, 246, 0.15), inset 0 0 10px rgba(255, 255, 255, 0.1)";
+      ripple.style.boxShadow = "0 0 15px rgba(129, 140, 248, 0.15), inset 0 0 10px rgba(255, 255, 255, 0.1)";
 
       containerRef.current.appendChild(ripple);
 

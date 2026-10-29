@@ -6,6 +6,7 @@ import Lenis from "lenis";
 declare global {
   interface Window {
     lenisVelocity: number;
+    ecellLenis?: Lenis;
   }
 }
 
@@ -13,6 +14,9 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
   const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
+    // Native scrolling for people who ask the OS for less motion
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
     const lenis = new Lenis({
       duration: 1.2,       
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), 
@@ -24,6 +28,7 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
     });
 
     lenisRef.current = lenis;
+    window.ecellLenis = lenis;
     window.lenisVelocity = 0;
 
     lenis.on("scroll", (e) => {
@@ -48,6 +53,7 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();
       lenis.destroy();
+      window.ecellLenis = undefined;
     };
   }, []);
 

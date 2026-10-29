@@ -20,6 +20,51 @@ export default function GateScanner({ onClose }: GateScannerProps) {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
+  async function handleValidatePassId(passId: string) {
+    setStatus({ state: "SCANNING", message: `Verifying token: ${passId}...` });
+
+    try {
+      const [eventsRes, regsRes] = await Promise.all([
+        fetch("/api/events?mode=events"),
+        fetch("/api/events?mode=registrations")
+      ]);
+      
+      const eventsData = await eventsRes.json();
+      const regsData = await regsRes.json();
+
+      if (eventsData.success && regsData.success && Array.isArray(regsData.data) && Array.isArray(eventsData.data)) {
+        const record = regsData.data.find((r: any) => r.regId === passId);
+
+        if (record) {
+          const targetEvent = eventsData.data.find((e: any) => e.id === record.eventId);
+
+          if (targetEvent && targetEvent.status === "ACTIVE") {
+            setStatus({
+              state: "VALID",
+              message: "ACCESS GRANTED // PASS VERIFIED",
+              attendeeName: record.name,
+              eventTitle: record.eventTitle
+            });
+          } else {
+            setStatus({
+              state: "INVALID",
+              message: `ACCESS DENIED // Event is completed or inactive: ${record.eventTitle}`
+            });
+          }
+        } else {
+          setStatus({
+            state: "INVALID",
+            message: `ACCESS DENIED // Invalid or unrecognized token: ${passId}`
+          });
+        }
+      } else {
+        setStatus({ state: "ERROR", message: "Could not link to backend registry ledger." });
+      }
+    } catch (err) {
+      setStatus({ state: "ERROR", message: "Connection issue encountered during verification check." });
+    }
+  }
+
   const startScannerWithDelay = () => {
     setStatus({ state: "IDLE", message: "Connecting to camera hardware..." });
     
@@ -105,50 +150,6 @@ export default function GateScanner({ onClose }: GateScannerProps) {
     }
   };
 
-  const handleValidatePassId = async (passId: string) => {
-    setStatus({ state: "SCANNING", message: `Verifying token: ${passId}...` });
-
-    try {
-      const [eventsRes, regsRes] = await Promise.all([
-        fetch("/api/events?mode=events"),
-        fetch("/api/events?mode=registrations")
-      ]);
-      
-      const eventsData = await eventsRes.json();
-      const regsData = await regsRes.json();
-
-      if (eventsData.success && regsData.success && Array.isArray(regsData.data) && Array.isArray(eventsData.data)) {
-        const record = regsData.data.find((r: any) => r.regId === passId);
-
-        if (record) {
-          const targetEvent = eventsData.data.find((e: any) => e.id === record.eventId);
-
-          if (targetEvent && targetEvent.status === "ACTIVE") {
-            setStatus({
-              state: "VALID",
-              message: "ACCESS GRANTED // PASS VERIFIED",
-              attendeeName: record.name,
-              eventTitle: record.eventTitle
-            });
-          } else {
-            setStatus({
-              state: "INVALID",
-              message: `ACCESS DENIED // Event is completed or inactive: ${record.eventTitle}`
-            });
-          }
-        } else {
-          setStatus({
-            state: "INVALID",
-            message: `ACCESS DENIED // Invalid or unrecognized token: ${passId}`
-          });
-        }
-      } else {
-        setStatus({ state: "ERROR", message: "Could not link to backend registry ledger." });
-      }
-    } catch (err) {
-      setStatus({ state: "ERROR", message: "Connection issue encountered during verification check." });
-    }
-  };
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 font-mono text-xs text-white">

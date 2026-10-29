@@ -53,19 +53,27 @@ export default function FluidHoverTile({ children, onClick, className = "" }: Pr
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
-      className={`group relative bg-zinc-950 overflow-hidden cursor-pointer selection-none p-8 min-h-[260px] ${className}`}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (onClick && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={`group relative bg-space-900 overflow-hidden cursor-pointer selection-none p-8 min-h-[260px] ${className}`}
     >
       {/* 🌟 SPHERICAL SPOTLIGHT GLOW: Calculated dynamically via hardware properties using explicit colors */}
       <motion.div
         className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0"
         style={{
-          background: `radial-gradient(220px circle at ${mouseX.get()}px ${mouseY.get()}px, rgba(168, 85, 247, 0.08), transparent 80%)`,
+          background: `radial-gradient(220px circle at ${mouseX.get()}px ${mouseY.get()}px, rgba(245, 158, 11, 0.08), transparent 80%)`,
         }}
       />
 
       {/* Crystalline Corner Grid Accent Anchor Layout Lines */}
-      <div className="absolute top-0 right-0 w-8 h-8 border-r border-t border-white/[0.03] group-hover:border-purple-500/30 transition-colors duration-500 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-8 h-8 border-l border-b border-white/[0.03] group-hover:border-purple-500/30 transition-colors duration-500 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-8 h-8 border-r border-t border-white/[0.03] group-hover:border-accent-500/30 transition-colors duration-500 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-8 h-8 border-l border-b border-white/[0.03] group-hover:border-accent-500/30 transition-colors duration-500 pointer-events-none" />
 
       {/* Floating Inertial Interior Content Container */}
       <motion.div

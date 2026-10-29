@@ -74,7 +74,7 @@ export default function FracturedTextButton({ text, href }: Props) {
                   y: spreadY,
                   rotate: randomRotation,
                   scale: isHovered ? 1.3 : 1,
-                  color: isHovered ? (idx % 2 === 0 ? "#a855f7" : "#3b82f6") : "currentColor"
+                  color: isHovered ? (idx % 2 === 0 ? "#fbbf24" : "#a5b4fc") : "currentColor"
                 }}
                 transition={{
                   type: "spring",

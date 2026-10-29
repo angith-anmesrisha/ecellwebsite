@@ -23,7 +23,7 @@ export default function PageTransition({ children }: { children: React.ReactNode
             animate={{ opacity: 0 }}
             exit={{ opacity: 1 }}
             transition={curtainTransition(0)}
-            className="fixed inset-0 bg-blue-950/20 z-[99997] pointer-events-none w-full h-full"
+            className="fixed inset-0 bg-nebula-950/20 z-[99997] pointer-events-none w-full h-full"
           />
 
           {/* Curtain 2: Dark Slate Overlay */}

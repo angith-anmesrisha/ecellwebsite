@@ -108,7 +108,7 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
       return;
     }
 
-    if (confirm("Lock final execution plan? Once submitted, this node cannot be re-edited.")) {
+    if (confirm("Submit your final plan? You won't be able to edit it afterwards.")) {
       setIsSubmitting(true);
       
       try {
@@ -143,7 +143,7 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
           setIsSubmitted(true);
           onComplete(userSubmission);
         } else {
-          alert(`Submission Failed: ${resData.error || "The server rejected the strategy packet configuration node."}`);
+          alert(`Submission Failed: ${resData.error || "Please check your answer and try again."}`);
         }
       } catch (err) {
         alert("Network Handshake Fault: Unable to reach the evaluation gateway. Check your terminal connection logs and retry.");
@@ -161,10 +161,10 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
         <ShieldCheck className="text-emerald-500 mx-auto animate-pulse" size={40} />
         <div className="space-y-1">
           <h3 className="text-white font-bold text-sm uppercase tracking-wider">Round 2 Strategy Vault Locked</h3>
-          <p className="text-xs text-white/40">Your unique department operational response metrics have been logged securely.</p>
+          <p className="text-xs text-white/60">Your unique department operational response metrics have been logged securely.</p>
         </div>
         <div className="bg-white/[0.02] border border-white/5 p-4 rounded-xl text-left text-xs max-h-40 overflow-y-auto text-white/60 leading-relaxed italic select-none">
-          "{userSubmission}"
+          &quot;{userSubmission}&quot;
         </div>
       </div>
     );
@@ -178,7 +178,7 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
         <div className="flex items-center gap-2 text-xs font-bold font-mono tracking-wider text-amber-500 uppercase">
           <AlertTriangle size={14} className="animate-bounce" /> Round 2: Crisis Command Simulation
         </div>
-        <div className="text-[10px] font-mono uppercase bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
+        <div className="text-[10px] font-mono uppercase bg-nebula-500/10 border border-nebula-500/20 text-nebula-400 px-2 py-0.5 rounded">
           Node: Sector {department}
         </div>
       </div>
@@ -198,7 +198,7 @@ export default function CaseSimulation({ candidateId, candidateEmail, department
         {/* INPUT RESPONSE FORM */}
         <form onSubmit={handleSubmitCase} className="space-y-3">
           <div className="space-y-1">
-            <div className="flex justify-between items-center text-[10px] uppercase font-mono text-white/40 tracking-wider">
+            <div className="flex justify-between items-center text-[10px] uppercase font-mono text-white/60 tracking-wider">
               <label className="font-bold flex items-center gap-1"><FileText size={12} /> System Resolution Plan</label>
               <span className={currentWordCount < 50 ? "text-amber-500" : "text-emerald-400"}>
                 {currentWordCount} / Min 50 Words

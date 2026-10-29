@@ -6,7 +6,7 @@ import { Clock } from "lucide-react";
 interface LockedProps {
   isBypassed: boolean;
   setIsBypassed: (b: boolean) => void;
-  setPortalPhase: (p: "LOCKED" | "REGISTRATION_OPEN" | "COMPLETED") => void;
+  setPortalPhase: (p: "LOCKED" | "OPEN" | "STANDBY" | "COMPLETED") => void;
 }
 
 export default function RecruitmentPortalLocked({
@@ -66,17 +66,17 @@ export default function RecruitmentPortalLocked({
       const data = await res.json();
       if (data.success) {
         setIsBypassed(true);
-        setPortalPhase("REGISTRATION_OPEN");
+        setPortalPhase("OPEN");
       }
     } catch (err) {}
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col justify-center items-center px-4 select-none antialiased">
+    <div className="min-h-screen bg-transparent text-white flex flex-col justify-center items-center px-4 select-none antialiased">
       <div className="w-full max-w-2xl text-center space-y-10">
         <div className="flex justify-center">
           <div className="p-4 bg-zinc-950 border border-white/5 rounded-full shadow-inner">
-            <Clock size={32} className="text-blue-500" />
+            <Clock size={32} className="text-nebula-500" />
           </div>
         </div>
         <h1 className="text-xl md:text-2xl font-bold uppercase tracking-wider text-white">
@@ -95,7 +95,7 @@ export default function RecruitmentPortalLocked({
                   {unit.val}
                 </span>
               </div>
-              <span className="text-[9px] font-mono font-bold tracking-widest text-white/30 uppercase mt-2">
+              <span className="text-[9px] font-mono font-bold tracking-widest text-white/60 uppercase mt-2">
                 {unit.label}
               </span>
             </div>
@@ -108,7 +108,7 @@ export default function RecruitmentPortalLocked({
             value={bypassInput}
             onChange={(e) => setBypassInput(e.target.value)}
             aria-label="Admin passkey"
-            className="w-full text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-mono tracking-widest text-white placeholder-white/20 focus:outline-none focus:border-blue-500 transition-colors"
+            className="w-full text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-mono tracking-widest text-white placeholder-white/20 focus:outline-none focus:border-nebula-500 transition-colors"
             autoComplete="off"
           />
         </form>

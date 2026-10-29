@@ -58,7 +58,7 @@ export default function AdminEventsPanel() {
     }
   }, [isAuthenticated]);
 
-  const fetchAdminData = async () => {
+  async function fetchAdminData() {
     try {
       setIsLoading(true);
       const [eventsRes, regsRes] = await Promise.all([
@@ -74,7 +74,7 @@ export default function AdminEventsPanel() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   
  const handleSecurityCheck = async (e: React.FormEvent) => {
@@ -361,7 +361,7 @@ export default function AdminEventsPanel() {
                     
                     <div className="bg-zinc-950 border border-white/10 rounded-xl p-5 space-y-4">
                       <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                        <h3 className="text-[11px] font-bold uppercase tracking-wider text-blue-400">// COHORT DISTRIBUTION RATIOS</h3>
+                        <h3 className="text-[11px] font-bold uppercase tracking-wider text-blue-400">{"// COHORT DISTRIBUTION RATIOS"}</h3>
                         <span className="text-[9px] text-white/30">MAPPED SUBMISSIONS</span>
                       </div>
                       
@@ -389,7 +389,7 @@ export default function AdminEventsPanel() {
                           );
                         })}
                         {Object.keys(cohortCounts).length === 0 && (
-                          <p className="text-[10px] text-white/30 italic py-2">// Awaiting registration matrix records to compile metrics...</p>
+                          <p className="text-[10px] text-white/30 italic py-2">{"// Awaiting registration matrix records to compile metrics..."}</p>
                         )}
                       </div>
                     </div>
@@ -398,7 +398,7 @@ export default function AdminEventsPanel() {
                     <div className="bg-zinc-950 border border-white/10 rounded-xl p-5 flex flex-col justify-between">
                       <div>
                         <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-4">
-                          <h3 className="text-[11px] font-bold uppercase tracking-wider text-blue-400">// SYSTEM VELOCITY MATRIX</h3>
+                          <h3 className="text-[11px] font-bold uppercase tracking-wider text-blue-400">{"// SYSTEM VELOCITY MATRIX"}</h3>
                           <span className="text-[9px] text-emerald-400 font-bold animate-pulse">● LIVE CHANNEL</span>
                         </div>
                         
@@ -415,8 +415,8 @@ export default function AdminEventsPanel() {
                       </div>
 
                       <div className="bg-black border border-white/5 rounded-lg p-3 text-[9px] text-white/30 space-y-0.5 mt-4">
-                        <p>// LINK IDENTITY SYSTEM STATUS : ACTIVE</p>
-                        <p>// PIPELINE SOURCE COMPILING : REG_ROLL_FIELD_AXIS</p>
+                        <p>{"// LINK IDENTITY SYSTEM STATUS : ACTIVE"}</p>
+                        <p>{"// PIPELINE SOURCE COMPILING : REG_ROLL_FIELD_AXIS"}</p>
                       </div>
                     </div>
 

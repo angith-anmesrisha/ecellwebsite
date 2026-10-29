@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Unlock, ArrowRight, ShieldAlert, Activity, CheckCircle } from "lucide-react";
-import Navbar from "@/components/Navbar";
 
 export default function QuizEntryTerminal() {
   const [isLocked, setIsLocked] = useState(true);
@@ -41,11 +40,10 @@ export default function QuizEntryTerminal() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black text-white font-mono flex flex-col items-center justify-center relative overflow-hidden">
-      <Navbar />
+    <div className="min-h-screen bg-transparent text-white font-mono flex flex-col items-center justify-center relative overflow-hidden">
       
       {/* Background Cyber Styling */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900/20 via-black to-black pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900/20 via-transparent to-transparent pointer-events-none" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
 
       <main className="relative z-10 w-full max-w-lg px-6">
@@ -81,7 +79,7 @@ export default function QuizEntryTerminal() {
               <div className="h-16 flex items-center justify-center">
                 <AnimatePresence mode="wait">
                   {isLoading ? (
-                    <motion.p key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-white/40 leading-relaxed max-w-xs mx-auto">
+                    <motion.p key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-white/60 leading-relaxed max-w-xs mx-auto">
                       Establishing secure connection to E-Cell master servers...
                     </motion.p>
                   ) : isLocked ? (
@@ -104,7 +102,7 @@ export default function QuizEntryTerminal() {
                 onClick={() => window.location.href = "https://quizzler.ecellbimtech.in"}
                 className={`w-full flex items-center justify-center gap-3 py-4 px-6 rounded-xl font-black uppercase text-sm tracking-wider transition-all duration-300 ${
                   isLocked || isLoading
-                    ? "bg-zinc-900 text-white/30 border border-white/5 cursor-not-allowed"
+                    ? "bg-zinc-900 text-white/60 border border-white/5 cursor-not-allowed"
                     : "bg-emerald-600 hover:bg-emerald-500 text-black shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:scale-[1.02] cursor-pointer"
                 }`}
               >
@@ -123,8 +121,8 @@ export default function QuizEntryTerminal() {
             </div>
 
             {/* Security Notice */}
-            <div className="flex items-center justify-center gap-1.5 pt-2 text-[9px] text-white/30 uppercase tracking-widest">
-              <Activity size={10} className="text-blue-500/50" />
+            <div className="flex items-center justify-center gap-1.5 pt-2 text-[9px] text-white/60 uppercase tracking-widest">
+              <Activity size={10} className="text-nebula-500/50" />
               <span>Strict Proctoring & Tab Tracking Active</span>
             </div>
 

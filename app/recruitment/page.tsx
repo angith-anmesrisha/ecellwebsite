@@ -119,20 +119,20 @@ export default function RecruitmentPortal() {
             <p>• <strong className="text-zinc-200">Staging Status:</strong> Standby Lock Active</p>
             <p>• <strong className="text-zinc-200">Requirement:</strong> The E-Cell administration needs to verify your entry before the quiz opens.</p>
           </div>
-          <p className="text-[9px] text-zinc-600 animate-pulse">// The dashboard updates automatically when the admin releases your hold...</p>
+          <p className="text-[9px] text-zinc-400 animate-pulse">{"// The dashboard updates automatically when the admin releases your hold..."}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white py-16 px-4 font-sans antialiased selection:bg-blue-500/30">
+    <div className="min-h-screen bg-transparent text-white py-16 px-4 font-sans antialiased selection:bg-nebula-500/30">
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="text-center space-y-2">
-          <div className="text-[10px] uppercase font-mono tracking-widest bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20 inline-block font-black">
+          <div className="text-[10px] uppercase font-mono tracking-widest bg-nebula-500/10 text-nebula-400 px-3 py-1 rounded-full border border-nebula-500/20 inline-block font-black">
             BIMTECH E-CELL OFFICIAL RECRUITMENT ASSESSMENT{" "}
             {isBypassed && (
-              <span className="text-red-400 ml-1">// BYPASS ACTIVE</span>
+              <span className="text-red-400 ml-1">{"// BYPASS ACTIVE"}</span>
             )}
           </div>
           <h1 className="text-3xl font-black uppercase tracking-tight">
@@ -152,13 +152,13 @@ export default function RecruitmentPortal() {
             <div className="flex justify-center items-center gap-4 border-b border-white/5 pb-4 font-mono text-[10px] tracking-widest uppercase font-bold select-none">
               <div
                 className={`flex items-center gap-1.5 ${
-                  currentRound === 1 ? "text-blue-500" : "text-white/40"
+                  currentRound === 1 ? "text-nebula-500" : "text-white/60"
                 }`}
               >
                 <span
                   className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${
                     currentRound === 1
-                      ? "bg-blue-500 text-black"
+                      ? "bg-nebula-500 text-black"
                       : "bg-white/10 text-white"
                   }`}
                 >
@@ -166,24 +166,24 @@ export default function RecruitmentPortal() {
                 </span>
                 Situational Management Quiz
               </div>
-              <ArrowRight size={12} className="text-white/20" />
+              <ArrowRight size={12} className="text-white/50" />
               <div
                 className={`flex items-center gap-1.5 ${
-                  currentRound === 2 ? "text-amber-500" : "text-white/20"
+                  currentRound === 2 ? "text-amber-500" : "text-white/50"
                 }`}
               >
                 <span
                   className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${
                     currentRound === 2
                       ? "bg-amber-500 text-black"
-                      : "bg-white/10 text-white/40"
+                      : "bg-white/10 text-white/60"
                   }`}
                 >
                   2
                 </span>
                 Case Simulation Stage
                 {!round1Passed && (
-                  <Lock size={10} className="text-white/20 ml-0.5" />
+                  <Lock size={10} className="text-white/50 ml-0.5" />
                 )}
               </div>
             </div>
@@ -207,13 +207,13 @@ export default function RecruitmentPortal() {
           </>
         )}
 
-        <div className="pt-8 text-center font-mono text-[9px] text-white/5 hover:text-white/20 transition-colors select-none">
+        <div className="pt-8 text-center font-mono text-[9px] text-white/5 hover:text-white/50 transition-colors select-none">
           <button
             type="button"
             onClick={() => (window.location.href = "/admin")}
             className="hover:underline cursor-pointer"
           >
-            // Open Executive Admin Portal Link //
+            {"// Open Executive Admin Portal Link //"}
           </button>
         </div>
       </div>

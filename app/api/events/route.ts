@@ -1,4 +1,5 @@
 import { NextResponse, after } from "next/server";
+import { revalidateTag } from "next/cache";
 import { sendEventPassEmail } from "@/lib/mailer";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
 
@@ -66,6 +67,11 @@ export async function POST(request: Request) {
     });
 
     const data = await response.json();
+
+    // Admin changes to the event list should show on /events straight away
+    if (data.success && body.action !== "submit-registration") {
+      revalidateTag("get-events", { expire: 0 });
+    }
 
     if (data.success && body.action === "submit-registration") {
       // after() keeps the serverless function alive until the email is sent;

@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import { motion, useSpring, useMotionValue } from "framer-motion";
 import { ArrowUpRight, Sparkles, Users, Skull, Calendar } from "lucide-react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 
 const SkeletonBox = ({ height = "300px" }: { height?: string }) => (
   <div
@@ -12,7 +13,7 @@ const SkeletonBox = ({ height = "300px" }: { height?: string }) => (
   />
 );
 
-const HeroCanvas3D = dynamic(() => import("@/components/HeroCanvas3D"), {
+const HeroBlackHole = dynamic(() => import("@/components/HeroBlackHole"), {
   ssr: false,
 });
 
@@ -33,7 +34,6 @@ const ConnectSection = dynamic(() => import("@/components/ConnectSection"), {
   ssr: false,
 });
 
-import RotatingBadge from "@/components/RotatingBadge";
 import AnimatedWord from "@/components/AnimatedWord";
 import Navbar from "@/components/Navbar";
 import KineticTextReveal from "@/components/KineticTextReveal";
@@ -90,7 +90,7 @@ function MasterMagnet({
   return (
     <motion.div
       ref={elementRef}
-      className="inline-block w-full lg:w-auto overflow-visible perspective-1000"
+      className="block w-full overflow-visible"
     >
       {children}
     </motion.div>
@@ -118,13 +118,11 @@ export default function Home() {
 
       <div
         ref={containerRef}
-        className="relative min-h-[200vh] text-white overflow-hidden bg-transparent w-full"
+        className="relative min-h-[200vh] text-white overflow-x-clip bg-transparent w-full"
       >
         <Navbar />
 
         <main className="relative z-10 flex flex-col pt-44 sm:pt-48 pb-32 overflow-visible">
-          <HeroCanvas3D />
-
           <div className="flex-1 flex flex-col lg:flex-row items-center justify-between px-6 md:px-10 max-w-7xl mx-auto w-full gap-16 relative z-10 pointer-events-none">
             <div className="flex-1 space-y-8 text-center lg:text-left z-20 w-full pointer-events-auto">
               
@@ -133,9 +131,9 @@ export default function Home() {
                   initial={{ opacity: 0, x: -25 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6 }}
-                  className="text-purple-500 font-mono tracking-widest uppercase text-xs md:text-sm flex items-center justify-center lg:justify-start gap-2"
+                  className="text-accent-500 font-mono tracking-widest uppercase text-xs md:text-sm flex items-center justify-center lg:justify-start gap-2"
                 >
-                  <span className="inline-block w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse" />
+                  <span className="inline-block w-1.5 h-1.5 bg-accent-500 rounded-full animate-pulse" />
                   {"// Where Aspiration Meets Opportunity"}
                 </motion.p>
               </div>
@@ -156,26 +154,16 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
-                className="max-w-md mx-auto lg:mx-0 text-white/50 text-base md:text-lg mt-4 font-sans leading-relaxed"
+                className="max-w-md mx-auto lg:mx-0 text-white/70 text-base md:text-lg mt-4 font-sans leading-relaxed"
               >
                 Empowering the next generation of founders at BIMTECH. We help
                 turn your ideas into impactful ventures.
               </motion.p>
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, rotate: -5 }}
-              animate={{ opacity: 1, scale: 1, rotate: 0 }}
-              transition={{
-                type: "spring",
-                stiffness: 60,
-                damping: 15,
-                delay: 0.2,
-              }}
-              className="flex-1 flex justify-center items-center scale-75 md:scale-100 z-20 lg:border-l border-white/[0.04] py-8 lg:py-16 w-full pointer-events-auto"
-            >
-              <RotatingBadge />
-            </motion.div>
+            <div className="flex-1 flex justify-center items-center z-0 w-full -mt-8 lg:mt-0 lg:-mr-16">
+              <HeroBlackHole />
+            </div>
           </div>
           <AnimatedGridLine orientation="horizontal" className="bottom-0" />
         </main>
@@ -189,8 +177,8 @@ export default function Home() {
           <KineticGlitchReveal>
             <div className="text-center mb-16 relative z-10 pointer-events-auto">
               <KineticTextReveal
-                text="// Global Trends Loop"
-                className="text-xs font-mono tracking-widest uppercase text-purple-500 font-bold"
+                text="// Trending in tech"
+                className="text-xs font-mono tracking-widest uppercase text-accent-500 font-bold"
                 delay={0.1}
               />
               <MasterMagnet radius={150} pull={0.25}>
@@ -219,7 +207,7 @@ export default function Home() {
               <div className="space-y-3 pointer-events-auto">
                 <KineticTextReveal
                   text="// E-Cell Network"
-                  className="text-xs font-mono tracking-widest uppercase text-purple-500 font-bold"
+                  className="text-xs font-mono tracking-widest uppercase text-accent-500 font-bold"
                   delay={0.1}
                 />
                 <MasterMagnet radius={180} pull={0.25}>
@@ -227,21 +215,20 @@ export default function Home() {
                     <span className="text-white block">
                       <InertialSkewText text="EXPLORE OUR" />
                     </span>
-                    <span className="text-purple-500 block mt-1">
+                    <span className="text-accent-500 block mt-1">
                       ECOSYSTEM
                     </span>
                   </h2>
                 </MasterMagnet>
-                <p className="text-white/50 max-w-xl text-sm md:text-base leading-relaxed font-sans">
-                  Connect with seasoned professionals, register for active
-                  campus initiatives, or explore previous business frameworks
-                  built directly within our startup community.
+                <p className="text-white/60 max-w-xl text-sm md:text-base leading-relaxed font-sans">
+                  Meet alumni mentors, sign up for upcoming events, and learn
+                  from the student ventures that came before you.
                 </p>
               </div>
 
-              <div className="font-mono text-[10px] bg-zinc-950/60 border border-white/10 rounded-lg px-4 py-2 flex items-center gap-2 text-white/60 shadow-xl shrink-0">
+              <div className="font-mono text-[10px] bg-zinc-950/60 border border-white/10 rounded-lg px-4 py-2 flex items-center gap-2 text-white/70 shadow-xl shrink-0">
                 <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                <span>CAMPUS INITIATIVE ARCHITECTURE</span>
+                <span>3 ways to get involved</span>
               </div>
             </div>
           </KineticGlitchReveal>
@@ -265,18 +252,18 @@ export default function Home() {
                   link: "/alumni",
                   desc: "Connect directly with our corporate alumni network who are scaling businesses, leading executive branches, or offering structured mentorship to student founders.",
                   cta: "View Directory",
-                  glowColor: "rgba(168, 85, 247, 0.04)",
+                  glowColor: "rgba(245, 158, 11, 0.04)",
                 }}
               />
               <TrackedCyberCard
                 delay={0.15}
                 node={{
-                  title: "Strategic Action Hub",
+                  title: "Events & Workshops",
                   icon: <Calendar size={16} />,
                   link: "/events",
                   desc: "Explore and register for upcoming campus innovation workshops, entrepreneurial leadership panels, and active business plan competitions.",
                   cta: "Explore Live Events",
-                  glowColor: "rgba(168, 85, 247, 0.04)",
+                  glowColor: "rgba(245, 158, 11, 0.04)",
                 }}
               />
               <TrackedCyberCard
@@ -287,7 +274,7 @@ export default function Home() {
                   link: "/graveyard",
                   desc: "Analyze realistic case studies, pivot strategies, and practical market validation lessons curated from previous student-led ventures.",
                   cta: "Read Archive Lessons",
-                  glowColor: "rgba(168, 85, 247, 0.04)",
+                  glowColor: "rgba(245, 158, 11, 0.04)",
                 }}
               />
             </div>
@@ -304,34 +291,34 @@ export default function Home() {
           <KineticGlitchReveal>
             <div className="mb-14">
               <KineticTextReveal
-                text="// Startup Ecosystem Tools"
-                className="text-xs font-mono tracking-widest uppercase text-purple-400 font-bold"
+                text="// Quick links"
+                className="text-xs font-mono tracking-widest uppercase text-accent-400 font-bold"
                 delay={0.1}
               />
               <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white uppercase mt-1">
-                STUDENT EMBYTER RESOURCES
+                Student Resources
               </h2>
             </div>
 
             <div className="w-full mt-8 flex flex-col border-t border-white/10 pointer-events-auto">
               <DigitalStripSplitter
-                text="Executive Recruitment Application"
-                tag="//PORTAL.RECRUITMENT"
+                text="Apply to join E-Cell"
+                tag="//APPLY"
                 href="/recruitment"
               />
               <DigitalStripSplitter
-                text="Global Innovation Trends"
-                tag="//TRENDS.LIVE.FEED"
+                text="Latest startup & tech news"
+                tag="//TRENDS"
                 href="#ai-feed"
               />
               <DigitalStripSplitter
-                text="E-Cell Network Ecosystem"
-                tag="//NETWORK.DIRECTORY"
+                text="Alumni, events & archive"
+                tag="//ECOSYSTEM"
                 href="#ecosystem"
               />
               <DigitalStripSplitter
-                text="Venture Analytics Sandbox"
-                tag="//SIMULATOR.RUN"
+                text="Test your startup idea"
+                tag="//SANDBOX"
                 href="#simulator"
               />
             </div>
@@ -340,21 +327,21 @@ export default function Home() {
 
         <section className="w-full max-w-7xl mx-auto px-6 md:px-10 py-32 relative z-10">
           <KineticGlitchReveal>
-            <div className="w-full bg-zinc-950/40 backdrop-blur-xs border border-white/10 rounded-2xl p-8 md:p-14 relative overflow-hidden flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 group hover:border-purple-500/20 transition-all duration-500">
-              <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/5 rounded-full blur-[80px] pointer-events-none group-hover:bg-purple-500/15 transition-all duration-500" />
+            <div className="w-full bg-zinc-950/40 backdrop-blur-xs border border-white/10 rounded-2xl p-8 md:p-14 relative overflow-hidden flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 group hover:border-accent-500/20 transition-all duration-500">
+              <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-accent-500/5 rounded-full blur-[80px] pointer-events-none group-hover:bg-accent-500/15 transition-all duration-500" />
 
               <div className="space-y-3 max-w-2xl pointer-events-auto">
-                <div className="text-[10px] font-mono font-bold tracking-widest text-purple-500 uppercase flex items-center gap-1.5">
+                <div className="text-[10px] font-mono font-bold tracking-widest text-accent-500 uppercase flex items-center gap-1.5">
                   <Sparkles size={12} className="animate-pulse" />
                   Join the Executive Committee
                 </div>
                 <h3 className="text-2xl md:text-4xl font-black tracking-tight text-white uppercase leading-tight">
                   <InertialSkewText text="SHAPE THE FUTURE OF CAMPUS" />
                 </h3>
-                <p className="text-xs md:text-sm text-white/50 leading-relaxed max-w-xl font-sans">
-                  Applications for official E-Cell leadership positions open
-                  soon. Select your area of interest, complete our simple review
-                  process, and secure a spot for the final evaluation rounds.
+                <p className="text-xs md:text-sm text-white/60 leading-relaxed max-w-xl font-sans">
+                  Applications for E-Cell team positions open soon. Pick the
+                  team you want to join, complete a short quiz and case round,
+                  and make it to the final interviews.
                 </p>
               </div>
 
@@ -434,12 +421,12 @@ function TrackedCyberCard({
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay }}
       className="w-full relative preserve-3d"
     >
+      <Link href={node.link} aria-label={`${node.title}: ${node.cta}`} className="block">
       <motion.div
         ref={cardRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onMouseEnter={() => setIsHovered(true)}
-        onClick={() => (window.location.href = node.link)}
         style={{
           rotateX: springX,
           rotateY: springY,
@@ -454,11 +441,11 @@ function TrackedCyberCard({
           }}
         />
 
-        <div className="absolute top-0 right-0 w-6 h-6 border-r border-t border-white/10 group-hover:border-purple-500/40 group-hover:w-8 group-hover:h-8 transition-all duration-300 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-6 h-6 border-l border-b border-white/10 group-hover:border-purple-500/40 group-hover:w-8 group-hover:h-8 transition-all duration-300 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-6 h-6 border-r border-t border-white/10 group-hover:border-accent-500/40 group-hover:w-8 group-hover:h-8 transition-all duration-300 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-6 h-6 border-l border-b border-white/10 group-hover:border-accent-500/40 group-hover:w-8 group-hover:h-8 transition-all duration-300 pointer-events-none" />
 
         <div className="space-y-4 relative z-10 translate-z-0 group-hover:translate-z-12 transition-transform duration-500 ease-[0.16,1,0.3,1] pointer-events-none">
-          <div className="text-white/30 group-hover:text-purple-400 group-hover:scale-110 transition-all duration-300 origin-left inline-block">
+          <div className="text-white/60 group-hover:text-accent-400 group-hover:scale-110 transition-all duration-300 origin-left inline-block">
             {node.icon}
           </div>
 
@@ -466,14 +453,14 @@ function TrackedCyberCard({
             <h3 className="text-sm font-black uppercase tracking-wider text-white">
               {node.title}
             </h3>
-            <p className="text-[12px] text-zinc-400 font-sans leading-relaxed text-justify transition-colors duration-300">
+            <p className="text-[13px] text-zinc-300 font-sans leading-relaxed transition-colors duration-300">
               {node.desc}
             </p>
           </div>
         </div>
 
         <div className="flex justify-between items-center text-[10px] font-bold tracking-wider uppercase pt-4 border-t border-white/5 relative z-10 translate-z-0 group-hover:translate-z-6 transition-transform duration-500 ease-[0.16,1,0.3,1] pointer-events-none overflow-visible">
-          <span className="flex overflow-visible text-white/40 group-hover:text-white transition-colors duration-300">
+          <span className="flex overflow-visible text-white/70 group-hover:text-white transition-colors duration-300">
             {letters.map((char, idx) => {
               if (char === " ") return <span key={idx} className="w-1" />;
 
@@ -494,8 +481,8 @@ function TrackedCyberCard({
                     scale: isHovered ? 1.2 : 1,
                     color: isHovered
                       ? idx % 2 === 0
-                        ? "#a855f7"
-                        : "#3b82f6"
+                        ? "#fbbf24"
+                        : "#a5b4fc"
                       : "#ffffff",
                   }}
                   transition={{
@@ -516,10 +503,11 @@ function TrackedCyberCard({
           </span>
           <ArrowUpRight
             size={12}
-            className="text-white/20 group-hover:text-purple-400 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300"
+            className="text-white/50 group-hover:text-accent-400 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300"
           />
         </div>
       </motion.div>
+      </Link>
     </motion.div>
   );
 }

@@ -129,12 +129,12 @@ export async function POST(request: Request) {
       const sponsPool = approvedCandidates.filter((c: any) => c.eventTitle?.toUpperCase().includes("SPONS") || c.eventTitle?.toUpperCase().includes("CORPORATE"));
       const remainingPool = approvedCandidates.filter((c: any) => !opsPool.includes(c) && !mediaPool.includes(c) && !sponsPool.includes(c));
 
-      let groups: any[] = [];
+      const groups: any[] = [];
       let groupCounter = 1;
       const concurrentTasks = [];
 
       while (opsPool.length > 0 || mediaPool.length > 0 || sponsPool.length > 0 || remainingPool.length > 0) {
-        let currentGroupMembers: any[] = [];
+        const currentGroupMembers: any[] = [];
 
         if (opsPool.length > 0) currentGroupMembers.push(opsPool.shift());
         if (mediaPool.length > 0) currentGroupMembers.push(mediaPool.shift());

@@ -65,7 +65,7 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated]);
 
-  const fetchSpreadsheetData = async () => {
+  async function fetchSpreadsheetData() {
     setIsLoading(true);
     try {
       const localRegistry = localStorage.getItem(
@@ -79,7 +79,7 @@ export default function AdminDashboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   const handleTogglePortalGate = () => {
     const nextState = !isPortalForceUnlocked;
@@ -458,13 +458,13 @@ export default function AdminDashboard() {
                                       <span className="text-blue-500 font-bold">
                                         Q{cIdx + 1}:
                                       </span>
-                                      <span className="italic">"{choice}"</span>
+                                      <span className="italic">&quot;{choice}&quot;</span>
                                     </div>
                                   ))}
                                 </div>
                               ) : (
                                 <div className="text-[11px] text-white/30 italic">
-                                  // No MCQ breakdown string returned for entry
+                                  {"// No MCQ breakdown string returned for entry"}
                                 </div>
                               )}
                             </div>
@@ -475,11 +475,11 @@ export default function AdminDashboard() {
                               </div>
                               {item.caseAnswer ? (
                                 <div className="bg-black/50 border border-white/5 rounded-xl p-4 text-xs text-white/80 leading-relaxed italic">
-                                  "{item.caseAnswer}"
+                                  &quot;{item.caseAnswer}&quot;
                                 </div>
                               ) : (
                                 <div className="text-[11px] text-white/30 italic">
-                                  // Case Simulation incomplete or dropped
+                                  {"// Case Simulation incomplete or dropped"}
                                 </div>
                               )}
                             </div>

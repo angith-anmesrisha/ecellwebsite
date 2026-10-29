@@ -182,7 +182,7 @@ export default function RecruitmentCaseSimulation({
           <AlertTriangle size={14} className="animate-bounce" /> Round 2: Active
           Case Simulation
         </div>
-        <div className="text-[10px] font-mono uppercase bg-blue-500/10 border border-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
+        <div className="text-[10px] font-mono uppercase bg-nebula-500/10 border border-nebula-500/20 text-nebula-400 px-2 py-0.5 rounded">
           Track: {activeCandidate.dept.toUpperCase()} Vertical
         </div>
       </div>
@@ -200,7 +200,7 @@ export default function RecruitmentCaseSimulation({
         {!r2Completed ? (
           <form onSubmit={handleSubmitRound2Case} className="space-y-3">
             <div className="space-y-1">
-              <div className="flex justify-between items-center text-[10px] uppercase font-mono text-white/40 tracking-wider">
+              <div className="flex justify-between items-center text-[10px] uppercase font-mono text-white/60 tracking-wider">
                 <label className="font-bold flex items-center gap-1">
                   Your Proposed Solution Plan
                 </label>
@@ -236,7 +236,7 @@ export default function RecruitmentCaseSimulation({
             <h4 className="text-white text-xs uppercase font-bold tracking-wider">
               Solution Locked and Logged
             </h4>
-            <p className="text-[11px] text-white/40 max-w-sm mx-auto">
+            <p className="text-[11px] text-white/60 max-w-sm mx-auto">
               Your answer documentation has been safely submitted to the admin
               interview dashboard panels.
             </p>

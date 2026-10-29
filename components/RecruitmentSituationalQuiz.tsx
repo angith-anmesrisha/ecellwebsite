@@ -169,8 +169,8 @@ export default function RecruitmentSituationalQuiz({
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-      <div className="p-5 border-b border-white/10 bg-white/[0.01] flex flex-col md:flex-row justify-between items-start md:items-center font-mono text-[10px] text-white/40 uppercase tracking-widest gap-2">
-        <span className="flex items-center gap-1.5"><ShieldAlert size={12} className="text-blue-500" /> Negative Marking Active (+3/-1)</span>
+      <div className="p-5 border-b border-white/10 bg-white/[0.01] flex flex-col md:flex-row justify-between items-start md:items-center font-mono text-[10px] text-white/60 uppercase tracking-widest gap-2">
+        <span className="flex items-center gap-1.5"><ShieldAlert size={12} className="text-nebula-500" /> Negative Marking Active (+3/-1)</span>
         <span className="font-bold text-white bg-white/10 px-2 py-0.5 rounded">
           Question {currentQuestionIdx + 1} of {quizQuestions.length}
         </span>
@@ -185,7 +185,7 @@ export default function RecruitmentSituationalQuiz({
               key={i}
               disabled={isSubmitting}
               onClick={() => handleAnswerSelection(i)}
-              className="w-full text-left p-4 rounded-xl border border-white/5 bg-white/[0.02] text-xs font-mono text-white/70 leading-normal hover:bg-blue-500/10 hover:border-blue-500/50 hover:text-white transition cursor-pointer disabled:opacity-50"
+              className="w-full text-left p-4 rounded-xl border border-white/5 bg-white/[0.02] text-xs font-mono text-white/70 leading-normal hover:bg-nebula-500/10 hover:border-nebula-500/50 hover:text-white transition cursor-pointer disabled:opacity-50"
             >
               {opt}
             </button>

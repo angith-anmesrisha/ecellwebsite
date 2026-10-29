@@ -10,8 +10,10 @@ interface Props {
 
 export default function KineticGlitchReveal({ children, delay = 0 }: Props) {
   const ref = React.useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: false, margin: "-10% 0px" });
+  const isInView = useInView(ref, { once: true, margin: "-10% 0px" });
   const [isGlitching, setIsGlitching] = useState(false);
+  // Picked once per mount; calling Math.random during render makes output unstable
+  const [glitchSlice] = useState(() => Math.floor(Math.random() * 4));
 
   useEffect(() => {
     if (isInView) {
@@ -66,14 +68,14 @@ export default function KineticGlitchReveal({ children, delay = 0 }: Props) {
             initial={{ opacity: 0.5 }}
             animate={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: "linear" }}
-            className="absolute inset-0 bg-transparent border border-dashed border-purple-500/30 pointer-events-none rounded-xl z-50 mix-blend-screen"
+            className="absolute inset-0 bg-transparent border border-dashed border-accent-500/30 pointer-events-none rounded-xl z-50 mix-blend-screen"
             style={{
               clipPath: [
                 "inset(10% 0% 60% 0%)", 
                 "inset(65% 0% 15% 0%)", 
                 "inset(30% 0% 45% 0%)",
                 "inset(0% 0% 0% 0%)"
-              ][Math.floor(Math.random() * 4)]
+              ][glitchSlice]
             }}
           />
         )}

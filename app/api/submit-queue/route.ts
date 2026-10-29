@@ -42,7 +42,7 @@ export async function GET(request: Request) {
           });
         }
       }
-      return NextResponse.json({ success: false, error: "Profile node credentials not found in registry." });
+      return NextResponse.json({ success: false, error: "No application found for this email address." });
     }
 
     // Every other read is an admin dashboard query
@@ -102,8 +102,9 @@ export async function POST(request: Request) {
 
     
 
+    let staged = false;
     try {
-      await fetch(targetUrl, {
+      const stageRes = await fetch(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -112,8 +113,17 @@ export async function POST(request: Request) {
           payload
         })
       });
+      staged = stageRes.ok;
     } catch (sheetError) {
       console.error("Sheets Ledger Sync Warning:", sheetError);
+    }
+
+    // Alumni and archive submissions only need staging for review; the AI analysis
+    // below is for the startup idea sandbox
+    if (type !== "VENTURE_SIMULATION") {
+      return staged
+        ? NextResponse.json({ success: true })
+        : NextResponse.json({ success: false, error: "Could not save your submission. Please try again." }, { status: 502 });
     }
 
     if (!process.env.GROQ_API_KEY) {

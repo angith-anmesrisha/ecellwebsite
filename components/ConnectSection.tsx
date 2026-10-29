@@ -1,10 +1,37 @@
 "use client";
 
-import React from "react";
-import { Mail, Send } from "lucide-react";
+import React, { useState } from "react";
+import { Mail, Send, Check } from "lucide-react";
 import Link from "next/link";
 
+type FormStatus = "idle" | "sending" | "sent" | "error";
+
 export default function ConnectSection() {
+  const [status, setStatus] = useState<FormStatus>("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const data = Object.fromEntries(new FormData(form));
+    setStatus("sending");
+    setErrorMessage("");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok || !result.success) throw new Error(result.error);
+      form.reset();
+      setStatus("sent");
+    } catch (err) {
+      setErrorMessage(err instanceof Error && err.message ? err.message : "Something went wrong. Please try again.");
+      setStatus("error");
+    }
+  };
+
   const socials = [
     { 
       name: "Instagram", 
@@ -16,7 +43,7 @@ export default function ConnectSection() {
         </svg>
       ), 
       url: "https://www.instagram.com/ecell_bimtech?igsh=bHhkNmlieWQ4cmd3",
-      color: "hover:text-pink-500 hover:shadow-[0_0_15px_rgba(236,72,153,0.5)]" 
+      color: "hover:text-accent-500 hover:shadow-[0_0_15px_rgba(245, 158, 11,0.5)]" 
     },
     { 
       name: "LinkedIn", 
@@ -28,13 +55,13 @@ export default function ConnectSection() {
         </svg>
       ), 
       url: "https://www.linkedin.com/in/e-cell-bimtech-57b2231a/",
-      color: "hover:text-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]" 
+      color: "hover:text-nebula-500 hover:shadow-[0_0_15px_rgba(129, 140, 248,0.5)]" 
     },
     { 
       name: "Email", 
       icon: <Mail size={24} />, 
       url: "mailto:ecell@bimtech.ac.in",
-      color: "hover:text-blue-400 hover:shadow-[0_0_15px_rgba(96,165,250,0.5)]" 
+      color: "hover:text-nebula-400 hover:shadow-[0_0_15px_rgba(165, 180, 252,0.5)]" 
     },
   ];
 
@@ -46,7 +73,7 @@ export default function ConnectSection() {
         <div className="space-y-6 flex flex-col justify-between">
           <div className="space-y-4">
             <h2 className="text-4xl md:text-5xl font-black tracking-tight">
-              LET&apos;S <span className="text-blue-500">CONNECT.</span>
+              LET&apos;S <span className="text-nebula-500">CONNECT.</span>
             </h2>
             <p className="text-white/60 max-w-md text-base md:text-lg">
               Have questions, startup ideas, or want to collaborate with BIMTECH E-CELL? Reach out and let&apos;s build the ecosystem together.
@@ -55,7 +82,7 @@ export default function ConnectSection() {
 
           {/* Social Icons Array */}
           <div className="space-y-4 pt-6 lg:pt-0">
-            <h4 className="text-sm font-semibold uppercase tracking-widest text-white/40">Follow Our Journey</h4>
+            <h4 className="text-sm font-semibold uppercase tracking-widest text-white/60">Follow Our Journey</h4>
             <div className="flex gap-4">
               {socials.map((social, index) => (
                 <a
@@ -76,49 +103,81 @@ export default function ConnectSection() {
         {/* Right Side: Quick Action Message Form */}
         <div className="bg-white/5 border border-white/10 backdrop-blur-md rounded-2xl p-6 md:p-8 space-y-4 shadow-2xl">
           <h3 className="text-xl font-bold text-white">Send us a message</h3>
-          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input 
-                type="text" 
-                placeholder="Your Name" 
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-blue-500 transition text-sm"
+              <input
+                type="text"
+                name="name"
+                required
+                maxLength={100}
+                autoComplete="name"
+                aria-label="Your name"
+                placeholder="Your Name"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-accent transition text-sm"
               />
-              <input 
-                type="email" 
-                placeholder="Email Address" 
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-blue-500 transition text-sm"
+              <input
+                type="email"
+                name="email"
+                required
+                autoComplete="email"
+                aria-label="Email address"
+                placeholder="Email Address"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-accent transition text-sm"
               />
             </div>
-            <textarea 
-              rows={4} 
-              placeholder="Your Message or Idea..." 
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-blue-500 transition text-sm resize-none"
+            <textarea
+              name="message"
+              rows={4}
+              required
+              minLength={5}
+              maxLength={5000}
+              aria-label="Your message"
+              placeholder="Your Message or Idea..."
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-accent transition text-sm resize-none"
             ></textarea>
-            
-            {/* 🌟 FIXED: Removed native text transitions on color configurations and explicitly locked down the vector stroke color */}
-            <button className="w-full py-3 bg-white text-zinc-950 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-200 transition-transform text-sm">
-              <span>Send Message</span>
-              <Send size={16} color="rgb(9, 9, 11)" className="transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+            {/* Honeypot: hidden from people, tempting to bots */}
+            <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
+
+            <button
+              type="submit"
+              disabled={status === "sending"}
+              className="w-full py-3 bg-white text-zinc-950 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-200 transition-colors text-sm disabled:opacity-60 disabled:cursor-wait"
+            >
+              {status === "sent" ? (
+                <>
+                  <span>Message sent</span>
+                  <Check size={16} color="rgb(9, 9, 11)" />
+                </>
+              ) : (
+                <>
+                  <span>{status === "sending" ? "Sending..." : "Send Message"}</span>
+                  <Send size={16} color="rgb(9, 9, 11)" />
+                </>
+              )}
             </button>
+            <p role="status" aria-live="polite" className="text-xs min-h-[1rem]">
+              {status === "sent" && <span className="text-emerald-400">Thanks! We&apos;ll get back to you soon.</span>}
+              {status === "error" && <span className="text-red-400">{errorMessage}</span>}
+            </p>
           </form>
         </div>
 
       </div>
 
       {/* Mini Footer Copyright & Centralized Admin Link */}
-      <div className="mt-24 pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center text-xs text-white/40 gap-4">
+      <div className="mt-24 pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center text-xs text-white/60 gap-4">
         <p>© {new Date().getFullYear()} BIMTECH E-Cell. All rights reserved.</p>
         
         {/* DISCRETE ADMINISTRATIVE GATEWAY */}
         <div className="flex items-center gap-4 font-mono text-[11px]">
           <Link 
             href="/admin" 
-            className="hover:text-blue-500 hover:underline transition-all duration-200"
+            className="hover:text-nebula-500 hover:underline transition-all duration-200"
           >
             Console Login
           </Link>
           <span className="text-white/10">•</span>
-          <span className="text-white/20 select-none">Built for Entrepreneurs</span>
+          <span className="text-white/50 select-none">Built for Entrepreneurs</span>
         </div>
       </div>
     </section>

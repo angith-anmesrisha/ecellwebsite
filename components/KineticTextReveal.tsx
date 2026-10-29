@@ -15,7 +15,7 @@ export default function KineticTextReveal({ text, className = "", delay = 0 }: P
   const containerRef = useRef<HTMLSpanElement>(null);
   
   
-  const isInView = useInView(containerRef, { once: false, margin: "-10% 0px" });
+  const isInView = useInView(containerRef, { once: true, margin: "-10% 0px" });
   const [displayText, setDisplayText] = useState(text);
 
   useEffect(() => {
@@ -56,11 +56,12 @@ export default function KineticTextReveal({ text, className = "", delay = 0 }: P
   }, [isInView, text, delay]);
 
   return (
-    <span ref={containerRef} className={`inline-block whitespace-nowrap overflow-visible ${className}`}>
+    <span ref={containerRef} aria-label={text} className={`inline-block whitespace-nowrap overflow-visible ${className}`}>
       <motion.span 
         initial={{ opacity: 0, y: 15 }}
         animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 15 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay }}
+        aria-hidden="true"
         className="inline-block"
       >
         {displayText}

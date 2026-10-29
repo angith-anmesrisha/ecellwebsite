@@ -83,35 +83,35 @@ export default function StudentAdmissionsPortal() {
   const activeInterviewSchedule = studentRecord && studentRecord.type === "recruitment" ? extractInterviewSlot(studentRecord.rawNotes) : null;
 
   return (
-    <div className="min-h-screen bg-black text-white py-16 px-4 font-sans antialiased selection:bg-blue-500/30 selection:text-white">
+    <div className="min-h-screen bg-transparent text-white py-16 px-4 font-sans antialiased selection:bg-nebula-500/30 selection:text-white">
       <div className="max-w-xl mx-auto space-y-8">
         
         {/* BRAND EMBLEM */}
         <div className="text-center space-y-2.5">
-          <div className="text-[10px] uppercase font-mono tracking-widest bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20 inline-block font-black">
+          <div className="text-[10px] uppercase font-mono tracking-widest bg-nebula-500/10 text-nebula-400 px-3 py-1 rounded-full border border-nebula-500/20 inline-block font-black">
             BIMTECH E-CELL OFFICIAL // RESULTS PORTAL
           </div>
           <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">Live Results Portal</h1>
-          <p className="text-xs text-white/40 max-w-sm mx-auto font-mono">Select what you are checking and enter your registered email address.</p>
+          <p className="text-xs text-white/60 max-w-sm mx-auto font-mono">Select what you are checking and enter your registered email address.</p>
         </div>
 
         {/* SECURE IDENTITY INPUT FORM PANEL */}
         <div className="bg-zinc-950 border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden space-y-4">
-          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
+          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-nebula-500/40 to-transparent" />
           
           {/* PIPELINE CHANNEL SELECTOR */}
           <div className="grid grid-cols-2 gap-2 bg-black p-1 border border-white/5 rounded-xl font-mono text-[10px]">
             <button 
               type="button" 
               onClick={() => setQueryType("recruitment")}
-              className={`py-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${queryType === "recruitment" ? "bg-white text-black" : "text-white/40 hover:text-white"}`}
+              className={`py-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${queryType === "recruitment" ? "bg-white text-black" : "text-white/60 hover:text-white"}`}
             >
               <Layers size={11} /> RECRUITMENT
             </button>
             <button 
               type="button" 
               onClick={() => setQueryType("event")}
-              className={`py-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${queryType === "event" ? "bg-white text-black" : "text-white/40 hover:text-white"}`}
+              className={`py-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${queryType === "event" ? "bg-white text-black" : "text-white/60 hover:text-white"}`}
             >
               <Trophy size={11} /> EVENTS & COMPETITIONS
             </button>
@@ -119,9 +119,9 @@ export default function StudentAdmissionsPortal() {
 
           <form onSubmit={handleQuerySubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-[9px] uppercase font-mono text-white/40 tracking-widest font-bold block">Email Address</label>
-              <div className="relative flex items-center bg-black border border-white/10 rounded-xl px-3 py-1 focus-within:border-blue-500 transition-colors">
-                <Mail size={14} className="text-white/20" />
+              <label className="text-[9px] uppercase font-mono text-white/60 tracking-widest font-bold block">Email Address</label>
+              <div className="relative flex items-center bg-black border border-white/10 rounded-xl px-3 py-1 focus-within:border-nebula-500 transition-colors">
+                <Mail size={14} className="text-white/50" />
                 <input required type="email" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} placeholder="name@domain.com" className="w-full bg-transparent px-3 py-2.5 text-xs font-mono text-white placeholder-white/10 focus:outline-none" />
               </div>
             </div>
@@ -147,13 +147,13 @@ export default function StudentAdmissionsPortal() {
               {/* STUDENT DETAIL OVERVIEW PANEL */}
               <div className="flex justify-between items-start border-b border-white/5 pb-4 font-mono">
                 <div className="space-y-0.5">
-                  <span className="text-[9px] text-white/30 uppercase tracking-wider font-bold block">
+                  <span className="text-[9px] text-white/60 uppercase tracking-wider font-bold block">
                     {studentRecord.type === "recruitment" ? "Applicant Profile" : `Event Name: ${studentRecord.eventTitle}`}
                   </span>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-1.5"><User size={13} className="text-blue-500" /> {studentRecord.name}</h3>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-1.5"><User size={13} className="text-nebula-500" /> {studentRecord.name}</h3>
                 </div>
                 <div className="text-right">
-                  <span className="text-[9px] text-white/30 uppercase tracking-wider font-bold block">
+                  <span className="text-[9px] text-white/60 uppercase tracking-wider font-bold block">
                     Score
                   </span>
                   <span className="text-xs font-bold text-white block mt-0.5">{studentRecord.score}/90</span>
@@ -166,7 +166,7 @@ export default function StudentAdmissionsPortal() {
                   {(studentRecord.status === "PENDING" || studentRecord.status === "") && (
                     <div className="space-y-4 animate-fadeIn">
                       <div className="p-4 bg-zinc-900/60 border border-white/5 rounded-xl flex items-center gap-3 font-mono text-xs text-white/70">
-                        <Clock size={20} className="text-blue-400 animate-spin" style={{ animationDuration: "12s" }} />
+                        <Clock size={20} className="text-nebula-400 animate-spin" style={{ animationDuration: "12s" }} />
                         <p className="leading-relaxed">Your round evaluations are currently being reviewed by the team. Please check back soon for updates.</p>
                       </div>
                     </div>
@@ -177,15 +177,15 @@ export default function StudentAdmissionsPortal() {
                       <div className="p-5 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-3 font-mono text-xs">
                         <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-amber-400"><Clock size={16} /> Application Under Review</div>
                         <p className="leading-relaxed text-white/80 font-sans text-justify">Thank you for participating in our recruitment rounds. Your answers have been successfully recorded.</p>
-                        <p className="leading-relaxed text-justify font-bold italic text-amber-300">"Your profile is currently on the waitlist. The panel is reviewing applications sector by sector. Please check back later for further updates."</p>
+                        <p className="leading-relaxed text-justify font-bold italic text-amber-300">&quot;Your profile is currently on the waitlist. The panel is reviewing applications sector by sector. Please check back later for further updates.&quot;</p>
                       </div>
                     </div>
                   )}
 
                   {studentRecord.status === "ROUND_2_APPROVED" && (
                     <div className="space-y-4 animate-fadeIn">
-                      <div className="p-5 bg-blue-500/5 border border-blue-500/20 rounded-xl space-y-4 font-mono text-xs">
-                        <div className="flex items-center gap-2 font-black uppercase tracking-widest text-blue-400">
+                      <div className="p-5 bg-nebula-500/5 border border-nebula-500/20 rounded-xl space-y-4 font-mono text-xs">
+                        <div className="flex items-center gap-2 font-black uppercase tracking-widest text-nebula-400">
                           <Trophy size={16} className="animate-pulse" /> ROUND 2: ACTIVE CASE SIMULATION STAGE
                         </div>
                         <p className="leading-relaxed text-white/80 font-sans text-justify">
@@ -193,15 +193,15 @@ export default function StudentAdmissionsPortal() {
                         </p>
 
                         {/* Group Number & Live Task Display */}
-                        <div className="bg-black border border-blue-500/30 rounded-xl p-4 space-y-3">
+                        <div className="bg-black border border-nebula-500/30 rounded-xl p-4 space-y-3">
                           <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                            <span className="text-[10px] text-white/40 uppercase">Assigned Group Node</span>
-                            <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded border border-blue-500/20">
+                            <span className="text-[10px] text-white/60 uppercase">Assigned Group Node</span>
+                            <span className="text-xs font-bold text-nebula-400 bg-nebula-500/10 px-2.5 py-1 rounded border border-nebula-500/20">
                               {studentRecord.groupNumber || "Awaiting Group Allocation"}
                             </span>
                           </div>
                           <div className="space-y-1">
-                            <span className="text-[10px] text-white/40 uppercase font-bold block">Live Group Task Objective:</span>
+                            <span className="text-[10px] text-white/60 uppercase font-bold block">Live Group Task Objective:</span>
                             <p className="text-xs text-white/90 leading-relaxed font-sans bg-white/5 p-3 rounded-lg border border-white/5">
                               {studentRecord.groupTask || "Waiting for admin task deployment. Check back shortly."}
                             </p>
@@ -213,29 +213,29 @@ export default function StudentAdmissionsPortal() {
 
                   {studentRecord.status === "SELECTED_FOR_PI" && (
                     <div className="space-y-4 animate-fadeIn">
-                      <div className="p-5 bg-purple-500/5 border border-purple-500/20 rounded-xl space-y-4 font-mono text-xs">
-                        <div className="flex items-center gap-2 font-black uppercase tracking-widest text-purple-400"><Calendar size={16} className="animate-pulse" /> SHORTLISTED FOR PERSONAL INTERVIEW (PI)</div>
+                      <div className="p-5 bg-accent-500/5 border border-accent-500/20 rounded-xl space-y-4 font-mono text-xs">
+                        <div className="flex items-center gap-2 font-black uppercase tracking-widest text-accent-400"><Calendar size={16} className="animate-pulse" /> SHORTLISTED FOR PERSONAL INTERVIEW (PI)</div>
                         <p className="leading-relaxed text-white/80 font-sans text-justify">Congratulations! You have successfully cleared Round 2 case simulations.</p>
                         
                         {activeInterviewSchedule ? (
-                          <div className="bg-black border-2 border-purple-500/30 rounded-xl p-4 space-y-3 relative overflow-hidden animate-fadeIn">
-                            <div className="absolute top-0 right-0 p-2 text-purple-500/20"><Radio size={40} className="animate-pulse" /></div>
-                            <span className="text-[8px] font-bold uppercase bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded tracking-widest">INTERVIEW SCHEDULE ASSIGNED</span>
+                          <div className="bg-black border-2 border-accent-500/30 rounded-xl p-4 space-y-3 relative overflow-hidden animate-fadeIn">
+                            <div className="absolute top-0 right-0 p-2 text-accent-500/20"><Radio size={40} className="animate-pulse" /></div>
+                            <span className="text-[8px] font-bold uppercase bg-accent-500/20 text-accent-300 px-2 py-0.5 rounded tracking-widest">INTERVIEW SCHEDULE ASSIGNED</span>
                             <div className="space-y-1 pt-1">
                               <p className="text-white text-xs font-black uppercase tracking-tight flex items-center gap-1.5">
-                                <Clock size={12} className="text-purple-400" /> {activeInterviewSchedule}
+                                <Clock size={12} className="text-accent-400" /> {activeInterviewSchedule}
                               </p>
                               <p className="text-[10px] text-zinc-400 font-sans">Please ensure stable internet connectivity 10 minutes prior to your slot.</p>
                             </div>
                             <button 
                               onClick={() => window.open("https://meet.google.com", "_blank")}
-                              className="w-full py-2 bg-purple-600 hover:bg-purple-500 text-black font-black text-[10px] uppercase tracking-widest rounded-lg flex items-center justify-center gap-1.5 transition shadow-lg cursor-pointer"
+                              className="w-full py-2 bg-accent-600 hover:bg-accent-500 text-black font-black text-[10px] uppercase tracking-widest rounded-lg flex items-center justify-center gap-1.5 transition shadow-lg cursor-pointer"
                             >
                               <Video size={12} /> Join Interview Room <ExternalLink size={10} />
                             </button>
                           </div>
                         ) : (
-                          <div className="p-3 bg-black border border-purple-500/10 rounded-lg text-purple-300 text-[11px] leading-relaxed font-mono border-dashed">
+                          <div className="p-3 bg-black border border-accent-500/10 rounded-lg text-accent-300 text-[11px] leading-relaxed font-mono border-dashed">
                             <strong>STATUS:</strong> SHORTLISTED FOR INTERVIEW // Your specific interview time slot details will be visible here shortly.
                           </div>
                         )}
@@ -262,8 +262,8 @@ export default function StudentAdmissionsPortal() {
               {studentRecord.type === "event" && (
                 <div className="space-y-4 animate-fadeIn">
                   {studentRecord.status === "APPROVED" || studentRecord.status === "CONFIRMED" ? (
-                    <div className="p-5 bg-blue-500/5 border border-blue-500/20 rounded-xl space-y-3 font-mono text-xs">
-                      <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-blue-400"><Calendar size={16} /> Registration Confirmed</div>
+                    <div className="p-5 bg-nebula-500/5 border border-nebula-500/20 rounded-xl space-y-3 font-mono text-xs">
+                      <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-nebula-400"><Calendar size={16} /> Registration Confirmed</div>
                       <p className="leading-relaxed text-white/80 font-sans">Your ticket registration for <strong className="text-white">{studentRecord.eventTitle}</strong> is successfully verified in our records.</p>
                     </div>
                   ) : (
@@ -283,7 +283,7 @@ export default function StudentAdmissionsPortal() {
         </AnimatePresence>
 
         {/* FOOTER METRIC INFO */}
-        <div className="text-center font-mono text-[9px] text-white/10 flex items-center justify-center gap-1.5 uppercase tracking-widest"><ShieldAlert size={11} /> SECURE GATEWAY // E-CELL MANAGEMENT PORTAL 2026</div>
+        <div className="text-center font-mono text-[9px] text-white/40 flex items-center justify-center gap-1.5 uppercase tracking-widest"><ShieldAlert size={11} /> SECURE GATEWAY // E-CELL MANAGEMENT PORTAL 2026</div>
 
       </div>
     </div>

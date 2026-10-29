@@ -4,7 +4,7 @@ import React, { useRef, useState } from "react";
 import { motion, useMotionValue, useSpring, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import FractionalTextSplitter from "./FractionalTextSplitter";
 
@@ -19,6 +19,10 @@ function MagneticNavLink({ href, label, tagline, onClick }: NavLinkProps) {
   const linkRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  // Section links only exist on the home page; elsewhere they navigate to "/#section"
+  const isSectionLink = href.startsWith("#");
+  const resolvedHref = isSectionLink && pathname !== "/" ? `/${href}` : href;
   
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -45,24 +49,21 @@ function MagneticNavLink({ href, label, tagline, onClick }: NavLinkProps) {
 
   const handleClick = (e: React.MouseEvent) => {
     if (onClick) onClick();
-    if (href.startsWith("#")) {
+    if (isSectionLink && pathname === "/") {
       e.preventDefault();
-      const targetId = href.replace("#", "");
-      const targetElement = document.getElementById(targetId);
-      
+      const targetElement = document.getElementById(href.slice(1));
       if (targetElement) {
-        targetElement.scrollIntoView({ behavior: "smooth" });
-        if (window.history.pushState) {
-          window.history.pushState(null, "", window.location.pathname);
-        }
+        if (window.ecellLenis) window.ecellLenis.scrollTo(targetElement, { offset: -80 });
+        else targetElement.scrollIntoView({ behavior: "smooth" });
       }
-    } else {
+    } else if (!isSectionLink) {
+      e.preventDefault();
       router.push(href);
     }
   };
 
   return (
-    <Link href={href} onClick={handleClick}>
+    <Link href={resolvedHref} onClick={handleClick}>
       <motion.div
         ref={linkRef}
         onMouseMove={handleMouseMove}
@@ -86,16 +87,16 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="fixed top-0 inset-x-0 z-[100] px-6 py-4 md:px-10 bg-gradient-to-b from-black/80 via-black/20 to-transparent backdrop-blur-2xs select-none overflow-visible">
+      <nav aria-label="Main" className="fixed top-0 inset-x-0 z-[100] px-6 py-4 md:px-10 bg-gradient-to-b from-black/80 via-black/20 to-transparent backdrop-blur-2xs select-none overflow-visible">
         <div className="max-w-7xl mx-auto w-full flex justify-between items-center overflow-visible">
           
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative w-8 h-8 flex items-center justify-center transition-all duration-300 group-hover:scale-105">
-              <Image 
-                src="/ecell-logo.png" 
-                alt="BIMTECH E-Cell Logo"
-                width={32}
-                height={32}
+              <Image
+                src="/ecell-mark-white.png"
+                alt="BIMTECH E-Cell logo"
+                width={26}
+                height={29}
                 className="object-contain"
                 priority
               />
@@ -106,11 +107,11 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-1 bg-zinc-950/40 border border-white/5 rounded-full px-4 py-1.5 backdrop-blur-md shadow-2xl overflow-visible">
-            <MagneticNavLink href="#ai-feed" label="Trends" tagline="live//feed" />
-            <MagneticNavLink href="#ecosystem" label="Ecosystem" tagline="network" />
-            <MagneticNavLink href="/results" label="Results" tagline="live//results" />
-            <MagneticNavLink href="#team" label="The Board" tagline="architects" />
-            <MagneticNavLink href="#simulator" label="Sandbox" tagline="model.test" />
+            <MagneticNavLink href="#ai-feed" label="Trends" tagline="what's new" />
+            <MagneticNavLink href="#ecosystem" label="Ecosystem" tagline="explore" />
+            <MagneticNavLink href="/results" label="Results" tagline="check status" />
+            <MagneticNavLink href="#team" label="The Board" tagline="our team" />
+            <MagneticNavLink href="#simulator" label="Sandbox" tagline="test an idea" />
           </div>
 
           <div className="flex items-center gap-2 overflow-visible">
@@ -123,13 +124,15 @@ export default function Navbar() {
                   whileTap={{ scale: 0.98 }}
                   className="px-6 py-3 border border-white/10 bg-zinc-950/40 rounded-full font-mono text-[10px] tracking-widest uppercase text-white transition-all duration-300 shadow-xl flex items-center justify-center overflow-visible min-w-[130px]"
                 >
-                  <FractionalTextSplitter text="Apply Portal" subText="enter//sys" isHovered={btnHover} />
+                  <FractionalTextSplitter text="Apply Portal" subText="join us" isHovered={btnHover} />
                 </motion.button>
               </Link>
             </div>
 
-            <button 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMobileMenuOpen}
               className="p-2.5 border border-white/10 bg-zinc-950/40 rounded-full text-white md:hidden hover:bg-white/5 transition"
             >
               {isMobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
@@ -148,11 +151,11 @@ export default function Navbar() {
             transition={{ duration: 0.2 }}
             className="fixed inset-x-0 top-[72px] bg-black/95 backdrop-blur-lg border-b border-white/10 z-[90] flex flex-col p-6 space-y-2 md:hidden font-mono text-center"
           >
-            <MagneticNavLink href="#ai-feed" label="Trends" tagline="live//feed" onClick={() => setIsMobileMenuOpen(false)} />
-            <MagneticNavLink href="#ecosystem" label="Ecosystem" tagline="network" onClick={() => setIsMobileMenuOpen(false)} />
-            <MagneticNavLink href="/results" label="Results" tagline="live//results" onClick={() => setIsMobileMenuOpen(false)} />
-            <MagneticNavLink href="#team" label="The Board" tagline="architects" onClick={() => setIsMobileMenuOpen(false)} />
-            <MagneticNavLink href="#simulator" label="Sandbox" tagline="model.test" onClick={() => setIsMobileMenuOpen(false)} />
+            <MagneticNavLink href="#ai-feed" label="Trends" tagline="what's new" onClick={() => setIsMobileMenuOpen(false)} />
+            <MagneticNavLink href="#ecosystem" label="Ecosystem" tagline="explore" onClick={() => setIsMobileMenuOpen(false)} />
+            <MagneticNavLink href="/results" label="Results" tagline="check status" onClick={() => setIsMobileMenuOpen(false)} />
+            <MagneticNavLink href="#team" label="The Board" tagline="our team" onClick={() => setIsMobileMenuOpen(false)} />
+            <MagneticNavLink href="#simulator" label="Sandbox" tagline="test an idea" onClick={() => setIsMobileMenuOpen(false)} />
             <div className="pt-4 border-t border-white/5">
               <Link href="/recruitment">
                 <button onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 bg-white text-black font-bold uppercase tracking-widest rounded-full text-xs">

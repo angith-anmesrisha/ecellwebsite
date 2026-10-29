@@ -18,7 +18,7 @@ export default function AnimatedWord() {
   return (
     <span className="block relative overflow-visible w-full h-[1.1em] select-none mt-1 sm:mt-2 md:mt-4">
       {/* Premium Trionn Ambient Radial Glow behind the active text line */}
-      <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-72 h-20 bg-gradient-to-r from-purple-500/10 via-indigo-500/5 to-transparent blur-[60px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-72 h-20 bg-gradient-to-r from-accent-500/10 via-accent-500/5 to-transparent blur-[60px] pointer-events-none" />
 
       <AnimatePresence mode="wait">
         <motion.span
@@ -26,7 +26,7 @@ export default function AnimatedWord() {
           
           className="absolute left-0 top-0 font-black whitespace-nowrap tracking-tighter uppercase text-zinc-900 drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
           style={{
-            WebkitTextStroke: "2px #a855f7",
+            WebkitTextStroke: "2px #fbbf24",
             transform: "translateZ(0)",
             WebkitTransform: "translateZ(0)"
           }}

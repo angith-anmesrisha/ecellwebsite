@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
-import { motion, useMotionValue, useSpring, useScroll, useTransform, useVelocity } from "framer-motion";
+import React, { useRef, useEffect } from "react";
+import { motion, useInView, useMotionValue, useSpring, useScroll, useTransform, useVelocity } from "framer-motion";
 
 export default function InfiniteMarquee() {
   const containerRef = useRef<HTMLDivElement>(null);
+  // Both the scroll loop and the pointer tracking only run while the strip is on screen
+  const isVisible = useInView(containerRef);
 
   
   const { scrollY } = useScroll();
@@ -24,6 +26,7 @@ export default function InfiniteMarquee() {
   const smoothVerticalDrift = useSpring(verticalDrift, { stiffness: 40, damping: 18 });
 
   useEffect(() => {
+    if (!isVisible) return;
     const handleGlobalMouseMove = (e: MouseEvent) => {
       if (!containerRef.current) return;
       
@@ -39,12 +42,13 @@ export default function InfiniteMarquee() {
       }
     };
 
-    window.addEventListener("mousemove", handleGlobalMouseMove);
+    window.addEventListener("mousemove", handleGlobalMouseMove, { passive: true });
     return () => window.removeEventListener("mousemove", handleGlobalMouseMove);
-  }, []);
+  }, [isVisible, verticalDrift]);
 
   
   useEffect(() => {
+    if (!isVisible) return;
     let frameId: number;
     let lastTime = performance.now();
 
@@ -70,7 +74,7 @@ export default function InfiniteMarquee() {
 
     frameId = requestAnimationFrame(renderLoop);
     return () => cancelAnimationFrame(frameId);
-  }, [smoothVelocity]);
+  }, [isVisible, smoothVelocity, basePositionX]);
 
   const xTransform = useTransform(basePositionX, (v) => `${v}%`);
 
@@ -78,8 +82,10 @@ export default function InfiniteMarquee() {
   const marqueeItems = [...items, ...items, ...items];
 
   return (
-    <div 
+    <div
       ref={containerRef}
+      aria-label="15+ events, 20+ speakers, 3000+ footfall, BIMTECH PGDM"
+      role="marquee"
       className="w-full overflow-hidden bg-zinc-950/20 backdrop-blur-sm border-y border-white/10 py-5 flex whitespace-nowrap select-none relative z-30"
     >
       <motion.div 
@@ -94,10 +100,11 @@ export default function InfiniteMarquee() {
         {marqueeItems.map((text, i) => (
           <div 
             key={i} 
-            className="flex items-center mx-12 text-xs font-mono font-black tracking-[0.3em] uppercase text-white/40"
+            aria-hidden="true"
+            className="flex items-center mx-12 text-xs font-mono font-black tracking-[0.3em] uppercase text-white/60"
           >
             <span>{text}</span>
-            <span className="ml-12 text-purple-500 font-bold">•</span>
+            <span className="ml-12 text-accent-500 font-bold">•</span>
           </div>
         ))}
       </motion.div>

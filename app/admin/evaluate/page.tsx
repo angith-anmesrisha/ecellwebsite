@@ -185,7 +185,7 @@ export default function PeerEvaluationStation() {
                 <div className="space-y-1.5">
                   <span className="text-[9px] uppercase font-bold text-emerald-500/40 flex items-center gap-1"><FileCheck size={10} /> Round 2 Case Response Payload:</span>
                   <p className="text-xs text-white/80 leading-relaxed bg-black p-4 border border-white/5 rounded-xl text-justify whitespace-pre-wrap">
-                    "{selectedCandidate.choices}"
+                    &quot;{selectedCandidate.choices}&quot;
                   </p>
                 </div>
               </div>
@@ -254,7 +254,7 @@ export default function PeerEvaluationStation() {
                           <span>Evaluator: {rev.interviewer}</span>
                           <span>Mean: {Math.round((parseFloat(rev.techScore) + parseFloat(rev.commScore) + parseFloat(rev.solveScore)) / 3)}/100</span>
                         </div>
-                        <p className="text-[11px] text-white/50 leading-relaxed italic font-sans">"{rev.feedback || "No written notes logged."}"</p>
+                        <p className="text-[11px] text-white/50 leading-relaxed italic font-sans">&quot;{rev.feedback || "No written notes logged."}&quot;</p>
                       </div>
                     ))}
                   </div>

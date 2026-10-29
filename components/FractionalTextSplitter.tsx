@@ -21,7 +21,7 @@ export default function FractionalTextSplitter({ text, subText, isHovered }: Pro
           scale: isHovered ? 1 : 0.85 
         }}
         transition={{ type: "spring", stiffness: 200, damping: 15 }}
-        className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-purple-400 tracking-normal text-center pointer-events-none z-10 uppercase"
+        className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-accent-300 tracking-normal text-center pointer-events-none z-10 uppercase"
       >
         {subText}
       </motion.span>
