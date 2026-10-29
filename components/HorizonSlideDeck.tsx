@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValueEvent, useScroll, useTransform } from "framer-motion";
-import TeamCarousel3D, { TEAM_MEMBERS } from "./TeamCarousel3D";
+import Link from "next/link";
+import TeamCarousel3D from "./TeamCarousel3D";
+import type { TeamMember } from "@/lib/content-types";
 import PitchSimulator from "./PitchSimulator";
 import KineticTextReveal from "./KineticTextReveal";
 
@@ -29,11 +31,14 @@ function BoardIntro() {
   );
 }
 
-function BoardHeader() {
+function BoardHeader({ count, tenure }: { count: number; tenure: string }) {
   return (
-    <div className="border-b border-white/10 pb-4 flex items-center justify-between font-mono text-[10px] tracking-widest uppercase">
-      <span className="text-accent-300 font-bold">01 // Executive board</span>
-      <span className="text-white/50">{TEAM_MEMBERS.length} members</span>
+    <div className="border-b border-white/10 pb-4 flex items-center justify-between gap-4 font-mono text-[10px] tracking-widest uppercase">
+      <span className="text-accent-300 font-bold">01 // Executive board {tenure}</span>
+      <span className="flex items-center gap-4">
+        <span className="text-white/50">{count} members</span>
+        <Link href="/team" className="text-white/60 hover:text-accent-300 transition-colors">Past boards</Link>
+      </span>
     </div>
   );
 }
@@ -41,7 +46,12 @@ function BoardHeader() {
 // Desktop: the section pins while the visitor scrolls, slides sideways to the team,
 // then advances one member per scroll step. Scroll values drive transforms directly
 // (no React state per frame); state only changes when the active member changes.
-function PinnedBoard() {
+interface BoardProps {
+  members: TeamMember[];
+  tenure: string;
+}
+
+function PinnedBoard({ members, tenure }: BoardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const { scrollYProgress } = useScroll({ target: containerRef, offset: ["start start", "end end"] });
@@ -50,7 +60,7 @@ function PinnedBoard() {
   useMotionValueEvent(scrollYProgress, "change", (progress) => {
     if (progress < SLIDE_PORTION) return;
     const normalized = (progress - SLIDE_PORTION) / (1 - SLIDE_PORTION);
-    const idx = Math.min(TEAM_MEMBERS.length - 1, Math.floor(normalized * TEAM_MEMBERS.length));
+    const idx = Math.min(members.length - 1, Math.floor(normalized * members.length));
     setActiveIdx((prev) => (prev === idx ? prev : idx));
   });
 
@@ -66,8 +76,8 @@ function PinnedBoard() {
           </div>
           <div className="w-screen h-full flex flex-col justify-center px-12 md:px-20 shrink-0 border-l border-white/10">
             <div className="w-full max-w-7xl mx-auto space-y-4">
-              <BoardHeader />
-              <TeamCarousel3D activeIdx={activeIdx} onChange={setActiveIdx} />
+              <BoardHeader count={members.length} tenure={tenure} />
+              <TeamCarousel3D members={members} activeIdx={activeIdx} onChange={setActiveIdx} />
             </div>
           </div>
         </motion.div>
@@ -77,20 +87,25 @@ function PinnedBoard() {
 }
 
 // Phones and tablets: a normal section with a swipeable carousel, no scroll hijacking.
-function StackedBoard() {
+function StackedBoard({ members, tenure }: BoardProps) {
   const [activeIdx, setActiveIdx] = useState(0);
   return (
     <section id="team" className="relative w-full px-6 py-24 border-t border-white/10 space-y-10 scroll-mt-20">
       <BoardIntro />
       <div className="space-y-2">
-        <BoardHeader />
-        <TeamCarousel3D activeIdx={activeIdx} onChange={setActiveIdx} />
+        <BoardHeader count={members.length} tenure={tenure} />
+        <TeamCarousel3D members={members} activeIdx={activeIdx} onChange={setActiveIdx} />
       </div>
     </section>
   );
 }
 
-export default function HorizonSlideDeck() {
+export default function HorizonSlideDeck({
+  members,
+  tenure,
+  showBoard = true,
+  showSandbox = true,
+}: BoardProps & { showBoard?: boolean; showSandbox?: boolean }) {
   const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -103,8 +118,17 @@ export default function HorizonSlideDeck() {
 
   return (
     <>
-      {isDesktop === null ? <div className="h-screen" /> : isDesktop ? <PinnedBoard /> : <StackedBoard />}
+      {showBoard &&
+        members.length > 0 &&
+        (isDesktop === null ? (
+          <div className="h-screen" />
+        ) : isDesktop ? (
+          <PinnedBoard members={members} tenure={tenure} />
+        ) : (
+          <StackedBoard members={members} tenure={tenure} />
+        ))}
 
+      {showSandbox && (
       <section id="simulator" className="relative w-full px-6 md:px-20 py-24 md:py-32 border-t border-white/10 scroll-mt-20">
         <div className="w-full max-w-6xl mx-auto space-y-6">
           <div className="border-b border-white/10 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-mono text-[10px] tracking-widest uppercase">
@@ -116,6 +140,7 @@ export default function HorizonSlideDeck() {
           </div>
         </div>
       </section>
+      )}
     </>
   );
 }

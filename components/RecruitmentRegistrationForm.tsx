@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { UserPlus } from "lucide-react";
+import Turnstile from "./Turnstile";
 
 interface Candidate {
   id: string;
@@ -28,6 +29,8 @@ export default function RecruitmentRegistrationForm({
   const [regEmail, setRegEmail] = useState("");
   const [regDept, setRegDept] = useState<"ops" | "media" | "spons">("ops");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleFileAttachmentChange = (
@@ -128,9 +131,13 @@ export default function RecruitmentRegistrationForm({
           dept: regDept,
           resumeFileBase64: base64Data,
           resumeFileName: resumeName,
+          captchaToken,
         }),
       });
-      if (!registerRes.ok) throw new Error(`Registration failed with status ${registerRes.status}`);
+      if (!registerRes.ok) {
+        setCaptchaReset((n) => n + 1);
+        throw new Error(`Registration failed with status ${registerRes.status}`);
+      }
 
       const newCandidate: Candidate = {
         id: generatedId,
@@ -231,6 +238,7 @@ export default function RecruitmentRegistrationForm({
             <option value="spons">CORPORATE ALLIANCES</option>
           </select>
         </div>
+        <Turnstile onToken={setCaptchaToken} resetKey={captchaReset} />
         <button
           type="submit"
           disabled={isSubmitting}

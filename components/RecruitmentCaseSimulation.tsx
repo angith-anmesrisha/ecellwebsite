@@ -25,6 +25,20 @@ export default function RecruitmentCaseSimulation({
   const [userR2Submission, setUserR2Submission] = useState("");
   const [r2Completed, setR2Completed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Minimum length and any custom scenarios come from the admin console
+  const [minWords, setMinWords] = useState(50);
+  const [customPools, setCustomPools] = useState<Record<string, { triggers: string[]; escalations: string[]; constraints: string[] }> | null>(null);
+
+  useEffect(() => {
+    fetch("/api/recruitment/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success) return;
+        if (data.caseMinWords) setMinWords(data.caseMinWords);
+        setCustomPools(data.casePools || {});
+      })
+      .catch(() => setCustomPools({}));
+  }, []);
 
   const scenarioPool = {
     ops: {
@@ -81,7 +95,7 @@ export default function RecruitmentCaseSimulation({
   };
 
   useEffect(() => {
-    if (round1Passed) {
+    if (round1Passed && customPools !== null) {
       const generateDeterministicIndex = (str: string, poolSize: number) => {
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
@@ -90,7 +104,11 @@ export default function RecruitmentCaseSimulation({
         return Math.abs(hash) % poolSize;
       };
 
-      const pools = scenarioPool[activeCandidate.dept];
+      const custom = customPools?.[activeCandidate.dept];
+      const pools =
+        custom && custom.triggers.length && custom.escalations.length && custom.constraints.length
+          ? custom
+          : scenarioPool[activeCandidate.dept];
       const tIdx = generateDeterministicIndex(
         activeCandidate.id + "t",
         pools.triggers.length,
@@ -116,7 +134,8 @@ export default function RecruitmentCaseSimulation({
       setUserR2Submission(existingR2Log);
       setR2Completed(true);
     }
-  }, [activeCandidate.id, round1Passed]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCandidate.id, round1Passed, customPools]);
 
   const currentWords =
     userR2Submission.trim() === ""
@@ -125,9 +144,9 @@ export default function RecruitmentCaseSimulation({
 
   const handleSubmitRound2Case = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentWords < 50) {
+    if (currentWords < minWords) {
       alert(
-        "Please write a more detailed response. Minimum requirement is 50 words.",
+        `Please write a more detailed response. Minimum requirement is ${minWords} words.`,
       );
       return;
     }
@@ -206,10 +225,10 @@ export default function RecruitmentCaseSimulation({
                 </label>
                 <span
                   className={
-                    currentWords < 50 ? "text-amber-500" : "text-emerald-400"
+                    currentWords < minWords ? "text-amber-500" : "text-emerald-400"
                   }
                 >
-                  {currentWords} / Min 50 Words
+                  {currentWords} / Min {minWords} Words
                 </span>
               </div>
               <textarea
@@ -224,7 +243,7 @@ export default function RecruitmentCaseSimulation({
             </div>
             <button
               type="submit"
-              disabled={currentWords < 50 || isSubmitting}
+              disabled={currentWords < minWords || isSubmitting}
               className="w-full py-2.5 bg-white text-black text-[10px] font-mono tracking-widest font-black uppercase rounded-xl flex items-center justify-center gap-2 transition hover:bg-zinc-200 disabled:opacity-20 cursor-pointer"
             >
               <Send size={12} /> Save Solution Framework

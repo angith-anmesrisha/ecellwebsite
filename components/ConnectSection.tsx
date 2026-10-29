@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Turnstile from "./Turnstile";
 import { Mail, Send, Check } from "lucide-react";
 import Link from "next/link";
 
@@ -9,6 +10,8 @@ type FormStatus = "idle" | "sending" | "sent" | "error";
 export default function ConnectSection() {
   const [status, setStatus] = useState<FormStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -20,7 +23,7 @@ export default function ConnectSection() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, captchaToken }),
       });
       const result = await res.json();
       if (!res.ok || !result.success) throw new Error(result.error);
@@ -29,6 +32,7 @@ export default function ConnectSection() {
     } catch (err) {
       setErrorMessage(err instanceof Error && err.message ? err.message : "Something went wrong. Please try again.");
       setStatus("error");
+      setCaptchaReset((n) => n + 1);
     }
   };
 
@@ -137,6 +141,7 @@ export default function ConnectSection() {
             ></textarea>
             {/* Honeypot: hidden from people, tempting to bots */}
             <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
+            <Turnstile onToken={setCaptchaToken} resetKey={captchaReset} />
 
             <button
               type="submit"

@@ -1,3 +1,4 @@
+import { sheetFetch } from "@/lib/sheetClient";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -8,7 +9,7 @@ export async function GET() {
     }
 
     
-    const response = await fetch(`${targetUrl}?action=get-alumni`, {
+    const response = await sheetFetch(`${targetUrl}?action=get-alumni`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       next: { revalidate: 10 } 

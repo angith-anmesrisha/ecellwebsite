@@ -1,5 +1,8 @@
+import { sheetFetch } from "@/lib/sheetClient";
 import { NextResponse } from "next/server";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
+import { readRecruitmentConfig } from "@/lib/content";
+import { limitByIp } from "@/lib/security";
 
 export async function POST(request: Request) {
   try {
@@ -10,7 +13,7 @@ export async function POST(request: Request) {
     // Full sheet wipe, used by the recruitment admin dashboard. Admin session required.
     if (body.action === "clear-all") {
       if (!(await isAdminRequest())) return unauthorizedResponse();
-      const resetHandshake = await fetch(targetUrl, {
+      const resetHandshake = await sheetFetch(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "clear-all" })
@@ -25,11 +28,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Malformed request keys." }, { status: 400 });
     }
 
-    if (caseAnswer.trim().split(/\s+/).length < 50) {
+    const limited = await limitByIp(request, "recruitment-case", 10, 600);
+    if (limited) return limited;
+
+    const { caseMinWords } = await readRecruitmentConfig();
+    if (caseAnswer.trim().split(/\s+/).length < caseMinWords) {
       return NextResponse.json({ error: "Substantive strategy text required." }, { status: 400 });
     }
 
-    const sheetHandshake = await fetch(targetUrl, {
+    const sheetHandshake = await sheetFetch(targetUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

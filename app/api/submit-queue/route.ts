@@ -1,3 +1,5 @@
+import { limitByIp } from "@/lib/security";
+import { sheetFetch } from "@/lib/sheetClient";
 import { NextResponse } from "next/server";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
 
@@ -21,7 +23,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Email query parameter missing." }, { status: 400 });
       }
       
-      const res = await fetch(`${targetUrl}?action=get-all-registrations`, {
+      const res = await sheetFetch(`${targetUrl}?action=get-all-registrations`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         cache: "no-store"
@@ -48,7 +50,7 @@ export async function GET(request: Request) {
     // Every other read is an admin dashboard query
     if (!(await isAdminRequest())) return unauthorizedResponse();
 
-    const res = await fetch(`${targetUrl}?action=${encodeURIComponent(action)}`, {
+    const res = await sheetFetch(`${targetUrl}?action=${encodeURIComponent(action)}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store" 
@@ -81,7 +83,7 @@ export async function POST(request: Request) {
       body.action === "append-quick-note"
     ) {
       if (!(await isAdminRequest())) return unauthorizedResponse();
-      const res = await fetch(targetUrl, {
+      const res = await sheetFetch(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -90,6 +92,9 @@ export async function POST(request: Request) {
       if (!res.ok) throw new Error("Spreadsheet row write failure.");
       return NextResponse.json({ success: true, message: "Admin updates saved to spreadsheet cells." });
     }
+
+    const limited = await limitByIp(request, "sandbox", 8, 600);
+    if (limited) return limited;
 
     const { type, payload } = body;
     if (!type || !payload) {
@@ -104,7 +109,7 @@ export async function POST(request: Request) {
 
     let staged = false;
     try {
-      const stageRes = await fetch(targetUrl, {
+      const stageRes = await sheetFetch(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

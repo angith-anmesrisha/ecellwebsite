@@ -9,6 +9,8 @@ import Starfield from "@/components/Starfield";
 import NativeFluidRipple from "@/components/NativeFluidRipple";
 import SiteChrome from "@/components/SiteChrome";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { SiteSettingsProvider } from "@/components/SiteSettingsProvider";
+import { getSiteSettings } from "@/lib/content";
 
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 const display = Space_Grotesk({ subsets: ["latin"], variable: "--font-display", display: "swap" });
@@ -19,7 +21,8 @@ export const metadata: Metadata = {
   description: "Official Entrepreneurship Cell of Birla Institute of Management Technology. Empowering the next generation of founders.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const settings = await getSiteSettings();
   return (
     <html lang="en" className={`scroll-smooth ${sans.variable} ${display.variable} ${mono.variable}`}>
       <body className="font-sans antialiased overflow-x-hidden relative min-h-screen bg-transparent">
@@ -33,13 +36,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           <GlowCursor />
 
-          <SmoothScroll>
-            <SiteChrome>
-              <PageTransition>
-                {children}
-              </PageTransition>
-            </SiteChrome>
-          </SmoothScroll>
+          <SiteSettingsProvider settings={settings}>
+            <SmoothScroll>
+              <SiteChrome>
+                <PageTransition>
+                  {children}
+                </PageTransition>
+              </SiteChrome>
+            </SmoothScroll>
+          </SiteSettingsProvider>
         </MotionConfig>
 
         <SpeedInsights />

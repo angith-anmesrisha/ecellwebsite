@@ -1,16 +1,134 @@
 import nodemailer from "nodemailer";
 import nodeHtmlToImage from "node-html-to-image";
 
-// 1. Initialize SMTP transport configuration
+// Outgoing mail. With RESEND_API_KEY set, mail goes through Resend (no daily cap worth
+// worrying about); otherwise through SMTP, which on Gmail tops out around 500 a day.
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.gmail.com",
   port: parseInt(process.env.SMTP_PORT || "587"),
   secure: false, // TLS
+  pool: true,
+  maxConnections: 3,
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
 } as any);
+
+export interface OutgoingMail {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+  replyTo?: string;
+  fromName?: string;
+  attachments?: { filename: string; content: Buffer; contentType: string }[];
+}
+
+export const mailProvider = () => (process.env.RESEND_API_KEY ? "resend" : "smtp");
+
+function fromAddress(name = "E-Cell BIMTECH") {
+  const address = process.env.MAIL_FROM || process.env.SMTP_USER || "ecell@bimtech.ac.in";
+  return `"${name}" <${address}>`;
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function sendViaResend(mail: OutgoingMail) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: fromAddress(mail.fromName),
+      to: [mail.to],
+      subject: mail.subject,
+      html: mail.html,
+      text: mail.text,
+      reply_to: mail.replyTo,
+      attachments: mail.attachments?.map((a) => ({ filename: a.filename, content: a.content.toString("base64") })),
+    }),
+  });
+  if (!res.ok) throw new Error(`Resend responded ${res.status}: ${await res.text()}`);
+}
+
+// Sends one email, retrying twice with a short backoff before giving up
+export async function sendMail(mail: OutgoingMail) {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      if (mailProvider() === "resend") await sendViaResend(mail);
+      else
+        await transporter.sendMail({
+          from: fromAddress(mail.fromName),
+          to: mail.to,
+          subject: mail.subject,
+          html: mail.html,
+          text: mail.text,
+          replyTo: mail.replyTo,
+          attachments: mail.attachments,
+        });
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 2) await sleep(800 * 2 ** attempt);
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Mail delivery failed.");
+}
+
+// Sends the same message to many people. Resend takes batches of 100; SMTP goes one by one.
+export async function sendBulk(recipients: string[], build: (email: string) => Omit<OutgoingMail, "to">) {
+  let sent = 0;
+  const failed: string[] = [];
+  if (mailProvider() === "resend") {
+    for (let i = 0; i < recipients.length; i += 100) {
+      const chunk = recipients.slice(i, i + 100);
+      try {
+        const res = await fetch("https://api.resend.com/emails/batch", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify(
+            chunk.map((to) => {
+              const mail = build(to);
+              return { from: fromAddress(mail.fromName), to: [to], subject: mail.subject, html: mail.html, text: mail.text };
+            }),
+          ),
+        });
+        if (!res.ok) throw new Error(`Resend batch responded ${res.status}`);
+        sent += chunk.length;
+      } catch (error) {
+        console.error("Bulk batch failed:", error);
+        failed.push(...chunk);
+      }
+    }
+  } else {
+    for (const to of recipients) {
+      try {
+        await sendMail({ to, ...build(to) });
+        sent++;
+      } catch (error) {
+        console.error(`Bulk mail to ${to} failed:`, error);
+        failed.push(to);
+      }
+    }
+  }
+  return { sent, failed };
+}
+
+export const escapeHtml = (value: string) =>
+  value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
+
+// Plain branded wrapper for notices, login codes and broadcasts. Paragraphs are escaped here.
+export function noticeHtml(heading: string, paragraphs: string[], link?: { href: string; label: string }) {
+  return `
+    <div style="background-color: #000000; color: #ffffff; font-family: -apple-system, Segoe UI, sans-serif; padding: 24px; border: 1px solid #1e3a8a; max-width: 520px; margin: auto; border-radius: 12px;">
+      <h2 style="color: #fbbf24; margin-top: 0; font-size: 17px;">${escapeHtml(heading)}</h2>
+      ${paragraphs.map((p) => `<p style="font-size: 14px; color: #d4d4d8; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(p)}</p>`).join("")}
+      ${link ? `<p><a href="${escapeHtml(link.href)}" style="display: inline-block; background: #ffffff; color: #000000; padding: 10px 16px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">${escapeHtml(link.label)}</a></p>` : ""}
+      <div style="margin-top: 24px; border-top: 1px solid #1e293b; padding-top: 12px; font-size: 11px; color: #71717a;">BIMTECH Entrepreneurship Cell</div>
+    </div>
+  `;
+}
 
 interface SendPassEmailProps {
   toEmail: string;
@@ -18,6 +136,9 @@ interface SendPassEmailProps {
   eventTitle: string;
   eventDate: string;
   passId: string;
+  // Signed code for the QR; defaults to the bare pass ID
+  passCode?: string;
+  venue?: string;
 }
 
 // 2. Main execution function: Generates image, creates attachment, and sends email.
@@ -27,10 +148,12 @@ export async function sendEventPassEmail({
   eventTitle,
   eventDate,
   passId,
+  passCode,
+  venue,
 }: SendPassEmailProps) {
   
   // Dynamic QR Code generation URL using the attendee's token
-  const qrCodeUrl = `https://quickchart.io/qr?text=${encodeURIComponent(passId)}&size=180&margin=1`;
+  const qrCodeUrl = `https://quickchart.io/qr?text=${encodeURIComponent(passCode || passId)}&size=180&margin=1`;
 
   // --- PASS CARD (IMAGE) VISUAL STRUCTURE ---
   const passCardHtml = `
@@ -61,7 +184,7 @@ export async function sendEventPassEmail({
       <div class="ticket-wrapper">
         <div class="header">
           <div class="header-tag">BIMTECH E-CELL ACCESS</div>
-          <div class="event-title">${eventTitle.toUpperCase()}</div>
+          <div class="event-title">${escapeHtml(eventTitle.toUpperCase())}</div>
         </div>
         <div class="qr-section">
           <div class="qr-container">
@@ -71,7 +194,7 @@ export async function sendEventPassEmail({
         <div class="metadata">
           <div style="grid-column: span 2;">
             <div class="meta-field">ATTENDEE NAME</div>
-            <div class="meta-value">${studentName}</div>
+            <div class="meta-value">${escapeHtml(studentName)}</div>
           </div>
           <div>
             <div class="meta-field">DATE</div>
@@ -79,7 +202,7 @@ export async function sendEventPassEmail({
           </div>
           <div>
             <div class="meta-field">LOCATION</div>
-            <div class="meta-value">BIMTECH Campus</div>
+            <div class="meta-value">${escapeHtml(venue || "BIMTECH Campus")}</div>
           </div>
         </div>
         <div class="pass-id">
@@ -96,10 +219,10 @@ export async function sendEventPassEmail({
     <div style="background-color: #000000; color: #ffffff; font-family: monospace; padding: 24px; border: 1px solid #1e3a8a; max-width: 500px; margin: auto; border-radius: 12px;">
       <h2 style="color: #3b82f6; border-bottom: 1px solid #1e293b; padding-bottom: 8px; margin-top: 0; font-size: 16px;">// SEATS CONFIRMED //</h2>
       
-      <p style="font-size: 12px; color: #a1a1aa;">Hi ${studentName.toUpperCase()},</p>
+      <p style="font-size: 12px; color: #a1a1aa;">Hi ${escapeHtml(studentName.toUpperCase())},</p>
       
       <p style="font-size: 12px; color: #a1a1aa; line-height: 1.6;">
-        Thanks for registering! Your seat for <strong>${eventTitle.toUpperCase()}</strong> is locked in.
+        Thanks for registering! Your seat for <strong>${escapeHtml(eventTitle.toUpperCase())}</strong> is locked in.
       </p>
       
       <div style="font-size: 12px; color: #ffffff; font-weight: bold; padding: 12px; background: rgba(147, 51, 234, 0.05); border: 1px solid rgba(147, 51, 234, 0.15); border-radius: 8px; margin: 16px 0;">
@@ -145,30 +268,16 @@ export async function sendEventPassEmail({
     </div>
   `;
 
-  try {
-    // B. Send the email, with the rendered pass attached when we have it
-    await transporter.sendMail({
-      from: `"E-Cell BIMTECH" <${process.env.SMTP_USER}>`,
-      to: toEmail,
-      subject: `[ENTRY PASS] Your ticket for ${eventTitle}`,
-      html: imageBuffer ? emailHtml : emailHtml.replace("<!--INLINE_QR-->", inlineQrHtml),
-      attachments: imageBuffer
-        ? [
-            {
-              filename: `ecell_pass_${passId.toLowerCase()}.png`,
-              content: imageBuffer,
-              contentType: "image/png",
-            },
-          ]
-        : [],
-    });
-
-    return { success: true, message: "Simplified entry pass email sent successfully." };
-
-  } catch (error) {
-    console.error("Failed to send entry pass:", error);
-    throw new Error("Mailer dispatch failure.");
-  }
+  // B. Send the email, with the rendered pass attached when we have it
+  await sendMail({
+    to: toEmail,
+    subject: `[ENTRY PASS] Your ticket for ${eventTitle}`,
+    html: imageBuffer ? emailHtml : emailHtml.replace("<!--INLINE_QR-->", inlineQrHtml),
+    attachments: imageBuffer
+      ? [{ filename: `ecell_pass_${passId.toLowerCase()}.png`, content: imageBuffer, contentType: "image/png" }]
+      : [],
+  });
+  return { success: true };
 }
 
 interface ContactMessageProps {
@@ -177,15 +286,13 @@ interface ContactMessageProps {
   message: string;
 }
 
-const escapeHtml = (value: string) =>
-  value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
 
 // 3. Forwards a message from the home page contact form to the E-Cell inbox.
 export async function sendContactMessage({ name, email, message }: ContactMessageProps) {
   const inbox = process.env.CONTACT_INBOX || "ecell@bimtech.ac.in";
 
-  await transporter.sendMail({
-    from: `"E-Cell Website" <${process.env.SMTP_USER}>`,
+  await sendMail({
+    fromName: "E-Cell Website",
     to: inbox,
     replyTo: `"${name.replace(/"/g, "")}" <${email}>`,
     subject: `[Website] Message from ${name}`,

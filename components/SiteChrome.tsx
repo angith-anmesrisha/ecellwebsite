@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 import SiteFooter from "./SiteFooter";
 import GlobalBackButton from "./GlobalBackButton";
+import AnnouncementBar from "./AnnouncementBar";
 
 declare global {
   interface Window {
@@ -12,7 +13,8 @@ declare global {
   }
 }
 
-const isAdminPath = (pathname: string) => pathname.startsWith("/admin") || pathname.startsWith("/recruitment/admin");
+const isAdminPath = (pathname: string) =>
+  pathname.startsWith("/admin") || pathname.startsWith("/recruitment/admin") || pathname.startsWith("/judge");
 
 // Picks the page frame: the home page brings its own navbar and footer, admin consoles
 // get a plain back button, and every other page gets the shared navbar and footer.
@@ -24,7 +26,13 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
     window.ecellPageViews = (window.ecellPageViews || 0) + 1;
   }, [pathname]);
 
-  if (pathname === "/") return <>{children}</>;
+  if (pathname === "/")
+    return (
+      <>
+        {children}
+        <AnnouncementBar />
+      </>
+    );
 
   if (isAdminPath(pathname)) {
     return (
@@ -40,6 +48,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
       <Navbar />
       <div className="pt-20">{children}</div>
       <SiteFooter />
+      <AnnouncementBar />
     </>
   );
 }

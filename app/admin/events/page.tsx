@@ -4,6 +4,10 @@ import { useAdminSession } from "@/lib/useAdminSession";
 import React, { useState, useEffect } from "react";
 import { Plus, X, BarChart2, ListFilter, Users, Upload, Image as ImageIcon, Loader2, Lock, Camera } from "lucide-react";
 import GateScanner from "@/components/GateScanner";
+import EventEditor from "@/components/admin/EventEditor";
+import EventOps from "@/components/admin/EventOps";
+import { AdminNav } from "@/components/admin/AdminKit";
+import { defaultEventMeta, type EventMeta } from "@/lib/content-types";
 
 interface EventItem {
   id: string;
@@ -36,6 +40,9 @@ export default function AdminEventsPanel() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"create" | "history">("create");
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [metaById, setMetaById] = useState<Record<string, EventMeta>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [runningId, setRunningId] = useState<string | null>(null);
 
   
   const [newTitle, setNewTitle] = useState("");
@@ -61,14 +68,17 @@ export default function AdminEventsPanel() {
   async function fetchAdminData() {
     try {
       setIsLoading(true);
-      const [eventsRes, regsRes] = await Promise.all([
+      const [eventsRes, regsRes, metaRes] = await Promise.all([
         fetch("/api/events?mode=events"),
-        fetch("/api/events?mode=registrations")
+        fetch("/api/events?mode=registrations"),
+        fetch("/api/admin/event-meta", { cache: "no-store" }),
       ]);
       const eventsData = await eventsRes.json();
       const regsData = await regsRes.json();
+      const metaData = await metaRes.json().catch(() => ({}));
       if (eventsData.success) setEvents(eventsData.data);
       if (regsData.success) setRegistrations(regsData.data);
+      if (metaData.success) setMetaById(metaData.meta);
     } catch (err) {
       console.error("Administrative Sync Error:", err);
     } finally {
@@ -211,6 +221,7 @@ export default function AdminEventsPanel() {
             <p className="text-xs text-white/40">Manage dynamic event parameters and review multi-cohort data registration histories.</p>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
+            <AdminNav />
             <button 
               onClick={() => setIsScannerOpen(true)}
               className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
@@ -327,6 +338,21 @@ export default function AdminEventsPanel() {
                               <span key={f} className="bg-white/5 px-2 py-0.5 rounded text-[9px] text-white/60 font-mono">Q: {f}</span>
                             ))}
                           </div>
+                          {metaById[ev.id] && (
+                            <p className="mt-2 text-[10px] font-mono text-white/40">
+                              {[
+                                metaById[ev.id].capacity ? `${metaById[ev.id].capacity} seats` : null,
+                                metaById[ev.id].team.enabled ? "teams" : null,
+                                metaById[ev.id].rounds.length ? `${metaById[ev.id].rounds.length} rounds` : null,
+                                metaById[ev.id].schedule.length ? "schedule" : null,
+                                metaById[ev.id].recap ? "recap" : null,
+                              ].filter(Boolean).join(" · ")}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-1.5 shrink-0 ml-3">
+                          <button onClick={() => setEditingId(ev.id)} className="px-3 py-1.5 bg-white text-black rounded-lg text-[10px] font-bold uppercase">Edit page</button>
+                          <button onClick={() => setRunningId(ev.id)} className="px-3 py-1.5 border border-white/10 text-white/80 hover:text-white rounded-lg text-[10px] font-bold uppercase">Run event</button>
                         </div>
                       </div>
                     ))}
@@ -485,7 +511,18 @@ export default function AdminEventsPanel() {
 
       </div>
       {isScannerOpen && (
-        <GateScanner onClose={() => setIsScannerOpen(false)} />
+        <GateScanner onClose={() => setIsScannerOpen(false)} events={events} />
+      )}
+      {editingId && events.find((e) => e.id === editingId) && (
+        <EventEditor
+          event={events.find((e) => e.id === editingId)!}
+          initial={metaById[editingId] || defaultEventMeta(editingId)}
+          onClose={() => setEditingId(null)}
+          onSaved={(meta) => setMetaById((m) => ({ ...m, [meta.eventId]: meta }))}
+        />
+      )}
+      {runningId && events.find((e) => e.id === runningId) && (
+        <EventOps event={events.find((e) => e.id === runningId)!} onClose={() => setRunningId(null)} />
       )}
     </div>
   );

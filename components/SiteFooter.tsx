@@ -3,6 +3,7 @@ import Link from "next/link";
 const FOOTER_LINKS = [
   { href: "/events", label: "Events" },
   { href: "/alumni", label: "Alumni" },
+  { href: "/team", label: "Our boards" },
   { href: "/graveyard", label: "Archive" },
   { href: "/results", label: "Results" },
   { href: "/recruitment", label: "Apply" },

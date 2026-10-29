@@ -1,12 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import MyEcell from "@/components/MyEcell";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Clock, AlertCircle, Mail, User, ShieldAlert, Award, Calendar, ExternalLink, Video, Radio, Layers, Trophy } from "lucide-react";
 
 export default function StudentAdmissionsPortal() {
   const [emailInput, setEmailInput] = useState("");
   const [queryType, setQueryType] = useState<"recruitment" | "event">("recruitment");
+
+  // Links to /results#my-ecell (from registration emails and forms) open the My E-Cell tab
+  useEffect(() => {
+    if (window.location.hash === "#my-ecell") setQueryType("event");
+  }, []);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [studentRecord, setStudentRecord] = useState<{ 
@@ -92,7 +98,7 @@ export default function StudentAdmissionsPortal() {
             BIMTECH E-CELL OFFICIAL // RESULTS PORTAL
           </div>
           <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">Live Results Portal</h1>
-          <p className="text-xs text-white/60 max-w-sm mx-auto font-mono">Select what you are checking and enter your registered email address.</p>
+          <p className="text-xs text-white/60 max-w-sm mx-auto font-mono">Check your recruitment status, or open My E-Cell for your event passes, teams and submissions.</p>
         </div>
 
         {/* SECURE IDENTITY INPUT FORM PANEL */}
@@ -113,10 +119,13 @@ export default function StudentAdmissionsPortal() {
               onClick={() => setQueryType("event")}
               className={`py-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${queryType === "event" ? "bg-white text-black" : "text-white/60 hover:text-white"}`}
             >
-              <Trophy size={11} /> EVENTS & COMPETITIONS
+              <Trophy size={11} /> MY E-CELL · EVENTS
             </button>
           </div>
 
+          {queryType === "event" ? (
+            <MyEcell />
+          ) : (
           <form onSubmit={handleQuerySubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-[9px] uppercase font-mono text-white/60 tracking-widest font-bold block">Email Address</label>
@@ -130,18 +139,19 @@ export default function StudentAdmissionsPortal() {
               {isSearching ? "SEARCHING..." : "CHECK MY STATUS"}
             </button>
           </form>
+          )}
         </div>
 
         {/* DYNAMIC SHORTLIST CONFIGURATION RENDERS */}
         <AnimatePresence mode="wait">
-          {searchError && (
+          {queryType === "recruitment" && searchError && (
             <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="bg-red-500/5 border border-red-500/20 p-4 rounded-xl flex items-start gap-3 font-mono text-xs text-red-400">
               <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
               <p className="leading-normal">{searchError}</p>
             </motion.div>
           )}
 
-          {studentRecord && (
+          {queryType === "recruitment" && studentRecord && (
             <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="bg-zinc-950 border border-white/10 rounded-2xl p-6 space-y-6 shadow-2xl relative">
               
               {/* STUDENT DETAIL OVERVIEW PANEL */}

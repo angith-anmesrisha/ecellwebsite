@@ -1,5 +1,8 @@
+import { sheetFetch as fetchSheet } from "@/lib/sheetClient";
 import { NextResponse } from "next/server";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
+import { readRecruitmentConfig } from "@/lib/content";
+import { captchaFailed, limitByIp, verifyTurnstile } from "@/lib/security";
 
 const ADMIN_ACTIONS = new Set([
   "dispatch-email-notice",
@@ -25,13 +28,13 @@ export async function GET(request: Request) {
 
     if (action === "get-all-registrations") {
       if (!(await isAdminRequest())) return unauthorizedResponse();
-      const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
+      const sheetFetch = await fetchSheet(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
       const sheetData = await sheetFetch.json();
       return NextResponse.json(sheetData);
     }
 
     if (action === "check-student-result" && email) {
-      const sheetFetch = await fetch(`${targetUrl}?action=check-student-result&email=${encodeURIComponent(email)}`, { method: "GET", next: { revalidate: 0 } });
+      const sheetFetch = await fetchSheet(`${targetUrl}?action=check-student-result&email=${encodeURIComponent(email)}`, { method: "GET", next: { revalidate: 0 } });
       const sheetData = await sheetFetch.json();
       return NextResponse.json(sheetData);
     }
@@ -51,6 +54,13 @@ export async function POST(request: Request) {
 
     if (ADMIN_ACTIONS.has(body.action) && !(await isAdminRequest())) return unauthorizedResponse();
 
+    // Public actions are rate limited per visitor; new profiles also pass the bot check
+    if (!ADMIN_ACTIONS.has(body.action)) {
+      const limited = await limitByIp(request, "recruitment", 30, 600);
+      if (limited) return limited;
+      if (body.action === "register-new-profile" && !(await verifyTurnstile(body.captchaToken, request))) return captchaFailed();
+    }
+
     // 1. UNIVERSAL PASSTHROUGH FOR EMAILS & STATUS/GROUP OVERRIDES
     if (
       body.action === "dispatch-email-notice" || 
@@ -58,7 +68,7 @@ export async function POST(request: Request) {
       body.action === "update-candidate-group" || 
       body.action === "assign-group-task"
     ) {
-      const sheetRes = await fetch(targetUrl, {
+      const sheetRes = await fetchSheet(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
@@ -70,7 +80,7 @@ export async function POST(request: Request) {
     // 2. CHECK INITIAL ELIGIBILITY (RESTORES RETURNING SESSION CHECK)
     if (body.action === "check-initial-eligibility") {
       const targetEmail = body.email ? body.email.trim().toLowerCase() : "";
-      const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
+      const sheetFetch = await fetchSheet(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
       const sheetData = await sheetFetch.json();
 
       if (sheetData.success && Array.isArray(sheetData.data)) {
@@ -95,7 +105,7 @@ export async function POST(request: Request) {
       const { id, name, email, dept, resumeFileBase64, resumeFileName } = body;
       const normalizedDept = dept === "ops" ? "OPS VERTICAL" : dept === "media" ? "PR & MEDIA CELL" : "CORPORATE ALLIANCES";
 
-      const sheetRes = await fetch(targetUrl, {
+      const sheetRes = await fetchSheet(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -115,7 +125,7 @@ export async function POST(request: Request) {
 
     // 4. GENERATE ROUND 2 GROUPS (CONCURRENT OPTIMIZATION)
     if (body.action === "generate-round2-groups") {
-      const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
+      const sheetFetch = await fetchSheet(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
       const sheetData = await sheetFetch.json();
 
       if (!sheetData.success || !Array.isArray(sheetData.data)) {
@@ -152,7 +162,7 @@ export async function POST(request: Request) {
         
         for (const member of currentGroupMembers) {
           concurrentTasks.push(
-            fetch(targetUrl, {
+            fetchSheet(targetUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ action: "update-candidate-group", candidateId: member.regId, groupNumber: groupName })
@@ -160,7 +170,7 @@ export async function POST(request: Request) {
           );
 
           concurrentTasks.push(
-            fetch(targetUrl, {
+            fetchSheet(targetUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ action: "dispatch-email-notice", email: member.email, name: member.name, status: "ROUND_2_APPROVED", groupNumber: groupName })
@@ -183,7 +193,7 @@ export async function POST(request: Request) {
 
     // 5. AUTOMATED TOP 70 SHORTLIST GENERATOR
     if (body.action === "generate-shortlist") {
-      const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
+      const sheetFetch = await fetchSheet(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
       const sheetData = await sheetFetch.json();
 
       if (!sheetData.success || !Array.isArray(sheetData.data)) {
@@ -225,7 +235,7 @@ export async function POST(request: Request) {
         }
 
         shortlistTasks.push(
-          fetch(targetUrl, {
+          fetchSheet(targetUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action: "update-shortlist", candidateId: candidate.regId, score: candidate.numScore, status: finalStatus })
@@ -234,7 +244,7 @@ export async function POST(request: Request) {
 
         if (finalStatus === "ROUND_2_APPROVED") {
           shortlistTasks.push(
-            fetch(targetUrl, {
+            fetchSheet(targetUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ action: "dispatch-email-notice", email: candidate.email, name: candidate.name, status: "ROUND_2_APPROVED" })
@@ -264,20 +274,25 @@ export async function POST(request: Request) {
       let finalizedScore = 0;
       const readableChoices: string[] = [];
 
-      // Your grading logic here remains exactly as you built it
+      // Custom questions from the admin console replace the built-in quiz and its answer key
+      const config = await readRecruitmentConfig();
+      const answerKey = config.questions.length > 0 ? config.questions.map((q) => q.answer) : CORRECT_ANSWERS;
+      const marksCorrect = config.questions.length > 0 ? config.marksCorrect : 3;
+      const marksWrong = config.questions.length > 0 ? config.marksWrong : -1;
+
       if (Array.isArray(round1Choices)) {
-        CORRECT_ANSWERS.forEach((correctIdx, index) => {
+        answerKey.forEach((correctIdx, index) => {
           const selectedIdx = round1Choices[index];
           if (selectedIdx === correctIdx) {
-            finalizedScore += 3;
+            finalizedScore += marksCorrect;
           } else if (selectedIdx !== undefined && selectedIdx !== -1) {
-            finalizedScore -= 1;
+            finalizedScore += marksWrong;
           }
           readableChoices.push(`Q${index + 1}: [${selectedIdx}]`);
         });
       }
 
-      const sheetRes = await fetch(targetUrl, {
+      const sheetRes = await fetchSheet(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

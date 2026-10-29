@@ -1,3 +1,4 @@
+import { limitByIp } from "@/lib/security";
 import { NextResponse } from "next/server";
 import {
   ADMIN_COOKIE,
@@ -21,6 +22,10 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+
+  // Slows down password guessing
+  const limited = await limitByIp(request, "admin-login", 10, 900);
+  if (limited) return limited;
 
   const body = await request.json().catch(() => ({}));
   if (!checkAdminPassword(body.password)) {

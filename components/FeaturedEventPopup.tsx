@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Calendar, CalendarPlus, X } from "lucide-react";
 import BlackHoleCanvas from "./BlackHoleCanvas";
+import type { FeaturedPopup } from "@/lib/content-types";
 
 // Deterministic star field so the scene renders identically every time
 const STARS = Array.from({ length: 70 }, (_, i) => {
@@ -20,53 +21,61 @@ const STARS = Array.from({ length: 70 }, (_, i) => {
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-// Event window in IST. The countdown runs to the start; during the event it shows "live".
-const EVENT_TITLE = "Startup Heist | BIMTECH E-Cell";
-const EVENT_START = new Date("2026-11-02T00:00:00+05:30");
-const EVENT_END = new Date("2026-11-04T00:00:00+05:30");
-const EVENT_LOCATION = "BIMTECH, Greater Noida";
-const EVENT_DETAILS = "Startup Heist by BIMTECH E-Cell. Entry details are on the E-Cell website.";
+// Calendar dates as YYYYMMDD for all-day entries, in IST
+const icsDate = (iso: string) =>
+  new Date(new Date(iso).getTime() + 5.5 * 3_600_000).toISOString().slice(0, 10).replace(/-/g, "");
 
-const GOOGLE_CALENDAR_URL =
-  "https://calendar.google.com/calendar/render?action=TEMPLATE" +
-  `&text=${encodeURIComponent(EVENT_TITLE)}` +
-  "&dates=20261102/20261104" +
-  `&details=${encodeURIComponent(EVENT_DETAILS)}` +
-  `&location=${encodeURIComponent(EVENT_LOCATION)}`;
+function calendarLinks(popup: FeaturedPopup) {
+  const title = popup.title.replace(/\n/g, " ");
+  const details = `${title} by BIMTECH E-Cell. Entry details are on the E-Cell website.`;
+  const valid = !Number.isNaN(new Date(popup.startsAt).getTime()) && !Number.isNaN(new Date(popup.endsAt).getTime());
+  const start = valid ? icsDate(popup.startsAt) : "";
+  const end = valid ? icsDate(popup.endsAt) : "";
+  const google =
+    "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+    `&text=${encodeURIComponent(`${title} | BIMTECH E-Cell`)}` +
+    `&dates=${start}/${end}` +
+    `&details=${encodeURIComponent(details)}` +
+    `&location=${encodeURIComponent(popup.location)}`;
 
-function downloadIcs() {
-  const ics = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//BIMTECH E-Cell//Startup Heist//EN",
-    "BEGIN:VEVENT",
-    "UID:startup-heist-2026@bimtech-ecell",
-    "DTSTAMP:20261029T000000Z",
-    "DTSTART;VALUE=DATE:20261102",
-    "DTEND;VALUE=DATE:20261104",
-    `SUMMARY:${EVENT_TITLE}`,
-    `LOCATION:${EVENT_LOCATION}`,
-    `DESCRIPTION:${EVENT_DETAILS}`,
-    "END:VEVENT",
-    "END:VCALENDAR",
-  ].join("\r\n");
-  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "startup-heist.ics";
-  link.click();
-  URL.revokeObjectURL(url);
+  const downloadIcs = () => {
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//BIMTECH E-Cell//Featured Event//EN",
+      "BEGIN:VEVENT",
+      `UID:${start}-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}@bimtech-ecell`,
+      `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`,
+      `DTSTART;VALUE=DATE:${start}`,
+      `DTEND;VALUE=DATE:${end}`,
+      `SUMMARY:${title} | BIMTECH E-Cell`,
+      `LOCATION:${popup.location}`,
+      `DESCRIPTION:${details}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.ics`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return { valid, google, downloadIcs };
 }
 
-function useCountdown() {
+function useCountdown(startsAt: string, endsAt: string) {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     setNow(Date.now());
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
-  if (now === null || now >= EVENT_END.getTime()) return null;
-  const diff = EVENT_START.getTime() - now;
+  const start = new Date(startsAt).getTime();
+  const end = new Date(endsAt).getTime();
+  if (now === null || Number.isNaN(start) || Number.isNaN(end) || now >= end) return null;
+  const diff = start - now;
   if (diff <= 0) return { live: true as const };
   return {
     live: false as const,
@@ -77,15 +86,21 @@ function useCountdown() {
   };
 }
 
-export default function StartupHeistPopup({
+// The home page's featured-event dialog. Everything in it comes from the admin console
+// (Site content > Featured popup); the defaults are the Startup Heist details.
+export default function FeaturedEventPopup({
+  popup,
   open,
   onClose,
 }: {
+  popup: FeaturedPopup;
   open: boolean;
   onClose: () => void;
 }) {
   const reduceMotion = useReducedMotion();
-  const countdown = useCountdown();
+  const countdown = useCountdown(popup.startsAt, popup.endsAt);
+  const calendar = calendarLinks(popup);
+  const titleLines = popup.title.split("\n");
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   // Escape closes; focus moves into the dialog and back to where it was afterwards
@@ -112,7 +127,7 @@ export default function StartupHeistPopup({
           exit={{ opacity: 0, transition: { duration: 0.5, delay: 0.2 } }}
           role="dialog"
           aria-modal="true"
-          aria-labelledby="startup-heist-title"
+          aria-labelledby="featured-event-title"
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6"
         >
           <style>{`
@@ -217,27 +232,31 @@ export default function StartupHeistPopup({
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-60"></span>
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-300"></span>
                   </span>
-                  Live Event Protocol Active
+                  {popup.eyebrow}
                 </motion.div>
 
                 {/* Headers */}
                 <div className="relative">
                   <motion.h2
-                    id="startup-heist-title"
+                    id="featured-event-title"
                     variants={{
                       hidden: { opacity: 0, y: 16, letterSpacing: "0.3em", filter: "blur(8px)" },
                       show: { opacity: 1, y: 0, letterSpacing: "-0.02em", filter: "blur(0px)", transition: { duration: 1.1, ease: EASE } },
                     }}
                     className="text-4xl sm:text-5xl font-black uppercase leading-[0.95] mb-3 bg-clip-text text-transparent bg-gradient-to-b from-white via-zinc-200 to-zinc-500"
                   >
-                    Startup <br /> Heist
+                    {titleLines.map((line, i) => (
+                      <span key={i} className="block">
+                        {line}
+                      </span>
+                    ))}
                   </motion.h2>
                   <motion.div
                     variants={{ hidden: { opacity: 0, x: -8 }, show: { opacity: 1, x: 0, transition: { duration: 0.6, ease: EASE } } }}
                     className="flex items-center gap-2 text-zinc-400 font-mono text-xs sm:text-sm uppercase tracking-[0.25em]"
                   >
                     <Calendar size={14} className="text-amber-300/80" />
-                    <span>Nov 2 & 3</span>
+                    <span>{popup.dateLabel}</span>
                   </motion.div>
                   {countdown && (
                     <motion.div
@@ -261,9 +280,10 @@ export default function StartupHeistPopup({
                           ))}
                         </div>
                       )}
+                      {calendar.valid && (
                       <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest">
                         <a
-                          href={GOOGLE_CALENDAR_URL}
+                          href={calendar.google}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 text-amber-200/80 hover:text-amber-100 transition-colors"
@@ -272,12 +292,13 @@ export default function StartupHeistPopup({
                           Google Calendar
                         </a>
                         <button
-                          onClick={downloadIcs}
+                          onClick={calendar.downloadIcs}
                           className="text-white/50 hover:text-white transition-colors cursor-pointer"
                         >
                           .ics
                         </button>
                       </div>
+                      )}
                     </motion.div>
                   )}
                 </div>
@@ -286,7 +307,7 @@ export default function StartupHeistPopup({
                   variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } } }}
                   className="relative text-zinc-400 text-sm font-sans leading-relaxed"
                 >
-                  The secure gateway for the Startup Heist event is currently active. Authorized participants can proceed to the assessment portal to begin.
+                  {popup.body}
                 </motion.p>
 
                 {/* Actions */}
@@ -301,10 +322,10 @@ export default function StartupHeistPopup({
                     [ Dismiss ]
                   </button>
                   <button
-                    onClick={() => (window.location.href = "/quiz-entry")}
+                    onClick={() => (window.location.href = popup.ctaHref)}
                     className="group relative overflow-hidden px-6 py-3.5 bg-white hover:bg-amber-100 text-black font-black uppercase text-xs tracking-wider rounded-lg flex items-center gap-2 transition-all duration-300 hover:shadow-[0_0_30px_rgba(251,191,36,0.45)] cursor-pointer"
                   >
-                    Take Me There
+                    {popup.ctaLabel}
                     <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
                   </button>
                 </motion.div>

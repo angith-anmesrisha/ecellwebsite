@@ -1,3 +1,4 @@
+import { sheetFetch } from "@/lib/sheetClient";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -7,7 +8,7 @@ export async function GET() {
       return NextResponse.json({ error: "Google microservice URL missing from environment variables." }, { status: 500 });
     }
 
-    const response = await fetch(`${targetUrl}?action=get-graveyard`, {
+    const response = await sheetFetch(`${targetUrl}?action=get-graveyard`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       next: { revalidate: 10 } 

@@ -1,3 +1,4 @@
+import { captchaFailed, limitByIp, verifyTurnstile } from "@/lib/security";
 import { NextResponse } from "next/server";
 import { sendContactMessage } from "@/lib/mailer";
 
@@ -5,7 +6,10 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
   try {
+    const limited = await limitByIp(request, "contact", 5, 600);
+    if (limited) return limited;
     const body = await request.json();
+    if (!(await verifyTurnstile(body.captchaToken, request))) return captchaFailed();
     const name = typeof body.name === "string" ? body.name.trim() : "";
     const email = typeof body.email === "string" ? body.email.trim() : "";
     const message = typeof body.message === "string" ? body.message.trim() : "";

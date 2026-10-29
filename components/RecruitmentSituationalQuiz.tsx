@@ -34,8 +34,26 @@ export default function RecruitmentSituationalQuiz({
   const [answersMap, setAnswersMap] = useState<Record<number, number>>({});
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
 
+  // Questions set in the admin console replace the built-in 30; null until the config has loaded
+  const [customQuestions, setCustomQuestions] = useState<{ q: string; options: string[] }[] | null | undefined>(undefined);
+  const [marking, setMarking] = useState({ correct: 3, wrong: -1 });
+
+  useEffect(() => {
+    fetch("/api/recruitment/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.questions) && data.questions.length > 0) {
+          setCustomQuestions(data.questions);
+          setMarking({ correct: data.marksCorrect, wrong: data.marksWrong });
+        } else {
+          setCustomQuestions(null);
+        }
+      })
+      .catch(() => setCustomQuestions(null));
+  }, []);
+
   // All 30 Universal CAT-Style Questions
-  const quizQuestions = [
+  const builtInQuestions = [
     { q: "During registrations, the waiting line suddenly becomes longer. What should the operations team do first?", options: ["Reduce verification steps", "Shift available volunteers", "Close new registrations", "Delay the registration process"] },
     { q: "The purpose of an event checklist is mainly to:", options: ["Promote the event", "Increase volunteer count", "Track important tasks", "Reduce event duration"] },
     { q: "A speaker is delayed by 20 minutes, and attendees are waiting. What should the team do?", options: ["Inform attendees and adjust schedule", "Remove the speaker slot", "Cancel the session completely", "Wait without updates"] },
@@ -68,8 +86,11 @@ export default function RecruitmentSituationalQuiz({
     { q: "Which activity contributes most to maintaining relationships after an event?", options: ["Publishing photographs.", "Sending appreciation messages.", "Sharing volunteer feedback.", "Updating social media."] }
   ];
 
-  // Initialize Randomization & Strict Proctoring on Mount
+  const quizQuestions = customQuestions || builtInQuestions;
+
+  // Initialize Randomization & Strict Proctoring once the question set is known
   useEffect(() => {
+    if (customQuestions === undefined) return;
     // 1. Generate an array of index numbers [0, 1, 2... 29]
     const indices = quizQuestions.map((_, i) => i);
     
@@ -100,7 +121,8 @@ export default function RecruitmentSituationalQuiz({
       window.removeEventListener("blur", handleFocusLoss);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []); // Only runs once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customQuestions]); // Runs once the question set has loaded
 
   const handleAnswerSelection = async (selectedOptionIdx: number) => {
     // Map the selected answer back to the original question index
@@ -170,7 +192,7 @@ export default function RecruitmentSituationalQuiz({
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-zinc-950 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
       <div className="p-5 border-b border-white/10 bg-white/[0.01] flex flex-col md:flex-row justify-between items-start md:items-center font-mono text-[10px] text-white/60 uppercase tracking-widest gap-2">
-        <span className="flex items-center gap-1.5"><ShieldAlert size={12} className="text-nebula-500" /> Negative Marking Active (+3/-1)</span>
+        <span className="flex items-center gap-1.5"><ShieldAlert size={12} className="text-nebula-500" /> Negative Marking Active (+{marking.correct}/{marking.wrong})</span>
         <span className="font-bold text-white bg-white/10 px-2 py-0.5 rounded">
           Question {currentQuestionIdx + 1} of {quizQuestions.length}
         </span>

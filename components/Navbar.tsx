@@ -7,6 +7,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import FractionalTextSplitter from "./FractionalTextSplitter";
+import { useSiteSettings } from "./SiteSettingsProvider";
 
 interface NavLinkProps {
   href: string;
@@ -84,6 +85,10 @@ function MagneticNavLink({ href, label, tagline, onClick }: NavLinkProps) {
 export default function Navbar() {
   const [btnHover, setBtnHover] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { nav, primaryCta, sections } = useSiteSettings();
+  // Hide links to home sections that are switched off
+  const hiddenSections = new Set(sections.filter((s) => !s.visible).map((s) => s.id as string));
+  const links = nav.filter((item) => item.visible && !hiddenSections.has(item.id));
 
   return (
     <>
@@ -107,16 +112,14 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden md:flex items-center gap-1 bg-zinc-950/40 border border-white/5 rounded-full px-4 py-1.5 backdrop-blur-md shadow-2xl overflow-visible">
-            <MagneticNavLink href="#ai-feed" label="Trends" tagline="what's new" />
-            <MagneticNavLink href="#ecosystem" label="Ecosystem" tagline="explore" />
-            <MagneticNavLink href="/results" label="Results" tagline="check status" />
-            <MagneticNavLink href="#team" label="The Board" tagline="our team" />
-            <MagneticNavLink href="#simulator" label="Sandbox" tagline="test an idea" />
+            {links.map((item) => (
+              <MagneticNavLink key={item.id} href={item.href} label={item.label} tagline={item.tagline} />
+            ))}
           </div>
 
           <div className="flex items-center gap-2 overflow-visible">
             <div className="hidden sm:block overflow-visible">
-              <Link href="/recruitment">
+              <Link href={primaryCta.href}>
                 <motion.button 
                   onMouseEnter={() => setBtnHover(true)}
                   onMouseLeave={() => setBtnHover(false)}
@@ -124,7 +127,7 @@ export default function Navbar() {
                   whileTap={{ scale: 0.98 }}
                   className="px-6 py-3 border border-white/10 bg-zinc-950/40 rounded-full font-mono text-[10px] tracking-widest uppercase text-white transition-all duration-300 shadow-xl flex items-center justify-center overflow-visible min-w-[130px]"
                 >
-                  <FractionalTextSplitter text="Apply Portal" subText="join us" isHovered={btnHover} />
+                  <FractionalTextSplitter text={primaryCta.label} subText={primaryCta.subLabel} isHovered={btnHover} />
                 </motion.button>
               </Link>
             </div>
@@ -151,15 +154,13 @@ export default function Navbar() {
             transition={{ duration: 0.2 }}
             className="fixed inset-x-0 top-[72px] bg-black/95 backdrop-blur-lg border-b border-white/10 z-[90] flex flex-col p-6 space-y-2 md:hidden font-mono text-center"
           >
-            <MagneticNavLink href="#ai-feed" label="Trends" tagline="what's new" onClick={() => setIsMobileMenuOpen(false)} />
-            <MagneticNavLink href="#ecosystem" label="Ecosystem" tagline="explore" onClick={() => setIsMobileMenuOpen(false)} />
-            <MagneticNavLink href="/results" label="Results" tagline="check status" onClick={() => setIsMobileMenuOpen(false)} />
-            <MagneticNavLink href="#team" label="The Board" tagline="our team" onClick={() => setIsMobileMenuOpen(false)} />
-            <MagneticNavLink href="#simulator" label="Sandbox" tagline="test an idea" onClick={() => setIsMobileMenuOpen(false)} />
+            {links.map((item) => (
+              <MagneticNavLink key={item.id} href={item.href} label={item.label} tagline={item.tagline} onClick={() => setIsMobileMenuOpen(false)} />
+            ))}
             <div className="pt-4 border-t border-white/5">
-              <Link href="/recruitment">
+              <Link href={primaryCta.href}>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="w-full py-3 bg-white text-black font-bold uppercase tracking-widest rounded-full text-xs">
-                  Apply Portal
+                  {primaryCta.label}
                 </button>
               </Link>
             </div>

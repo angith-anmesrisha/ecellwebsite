@@ -1,3 +1,4 @@
+import { limitByIp } from "@/lib/security";
 import { NextResponse } from "next/server";
 
 
@@ -10,6 +11,8 @@ const STRATEGIC_MARKET_KEYWORDS = [
 
 export async function POST(request: Request) {
   try {
+    const limited = await limitByIp(request, "simulate", 20, 600);
+    if (limited) return limited;
     const body = await request.json();
     const { brandName, problemStatement, domainSector, monetizationEngine, pricingMatrix } = body;
 

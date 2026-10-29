@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { Calendar, CalendarX } from "lucide-react";
+import Link from "next/link";
+import { ArrowUpRight, Calendar, CalendarX, Layers, MapPin } from "lucide-react";
 import EmptyState from "./EmptyState";
 import dynamic from "next/dynamic";
+import { eventSlug, registrationWindow, type EventMeta, type Series, type SheetEvent } from "@/lib/content-types";
 
 const RegistrationForm = dynamic(
   () => import("@/components/RegistrationForm"),
@@ -12,18 +14,18 @@ const RegistrationForm = dynamic(
   },
 );
 
-export interface EventItem {
-  id: string;
-  title: string;
-  date: string;
-  description: string;
-  status: string;
-  customFields: string[];
+export type EventItem = SheetEvent;
+
+interface EventsViewProps {
+  initialEvents: EventItem[];
+  meta: Record<string, EventMeta>;
+  series: Series[];
 }
 
-export default function EventsView({ initialEvents }: { initialEvents: EventItem[] }) {
+export default function EventsView({ initialEvents, meta, series }: EventsViewProps) {
   const events = initialEvents;
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
+  const seriesFor = (id: string) => series.find((s) => s.eventIds.includes(id));
 
   const activeEvents = events.filter((e) => e.status === "ACTIVE");
   const pastEvents = events.filter((e) => e.status === "PAST");
@@ -76,26 +78,47 @@ export default function EventsView({ initialEvents }: { initialEvents: EventItem
                         className="bg-space-900/70 border border-white/10 p-5 rounded-xl space-y-4 hover:border-white/20 transition"
                       >
                         <div className="flex justify-between items-start border-b border-white/5 pb-2">
-                          <div>
-                            <h3 className="text-base font-bold text-white">
-                              {event.title}
-                            </h3>
-                            <p className="text-xs text-accent-200/80 font-mono mt-1 flex items-center gap-1.5">
-                              <Calendar size={12} /> Event Date: {event.date}
+                          <div className="min-w-0">
+                            <Link href={`/events/${eventSlug(event, meta[event.id])}`} className="group inline-flex items-center gap-1.5">
+                              <h3 className="text-base font-bold text-white group-hover:text-accent-200 transition-colors">
+                                {event.title}
+                              </h3>
+                              <ArrowUpRight size={14} className="text-white/40 group-hover:text-accent-200 transition-colors" />
+                            </Link>
+                            <p className="text-xs text-accent-200/80 font-mono mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+                              <span className="flex items-center gap-1.5"><Calendar size={12} /> {event.date}</span>
+                              {meta[event.id]?.venue && (
+                                <span className="flex items-center gap-1.5 text-white/60"><MapPin size={12} /> {meta[event.id]?.venue}</span>
+                              )}
                             </p>
                           </div>
-                          <button
-                            onClick={() => {
-                              setSelectedEvent(event);
-                            }}
-                            className="px-4 py-1.5 bg-white text-black text-xs font-bold rounded-lg hover:bg-zinc-200 transition cursor-pointer"
-                          >
-                            Register Now
-                          </button>
+                          {(() => {
+                            const window = registrationWindow(meta[event.id]);
+                            if (window === "open")
+                              return (
+                                <button
+                                  onClick={() => setSelectedEvent(event)}
+                                  className="shrink-0 px-4 py-1.5 bg-white text-black text-xs font-bold rounded-lg hover:bg-zinc-200 transition cursor-pointer"
+                                >
+                                  Register Now
+                                </button>
+                              );
+                            return (
+                              <span className="shrink-0 px-3 py-1.5 border border-white/10 text-white/60 text-[11px] font-mono rounded-lg">
+                                {window === "not-yet" ? "Opens soon" : "Registrations closed"}
+                              </span>
+                            );
+                          })()}
                         </div>
+                        {meta[event.id]?.tagline && <p className="text-sm text-white/80">{meta[event.id]?.tagline}</p>}
                         <p className="text-xs text-white/60 leading-relaxed">
                           {event.description}
                         </p>
+                        {seriesFor(event.id) && (
+                          <p className="text-[11px] font-mono text-nebula-300 flex items-center gap-1.5">
+                            <Layers size={12} /> Part of {seriesFor(event.id)!.title}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -109,9 +132,10 @@ export default function EventsView({ initialEvents }: { initialEvents: EventItem
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {pastEvents.map((event) => (
-                    <div
+                    <Link
                       key={event.id}
-                      className="bg-space-900/60 border border-white/10 p-4 rounded-xl space-y-2"
+                      href={`/events/${eventSlug(event, meta[event.id])}`}
+                      className="block bg-space-900/60 border border-white/10 p-4 rounded-xl space-y-2 hover:border-white/25 transition"
                     >
                       <h3 className="text-sm font-bold text-white/80">
                         {event.title}
@@ -120,9 +144,10 @@ export default function EventsView({ initialEvents }: { initialEvents: EventItem
                         <Calendar size={11} /> Conducted: {event.date}
                       </p>
                       <p className="text-[11px] text-white/60 line-clamp-2">
-                        {event.description}
+                        {meta[event.id]?.recap?.summary || event.description}
                       </p>
-                    </div>
+                      {meta[event.id]?.recap && <p className="text-[10px] font-mono uppercase tracking-widest text-accent-300">Read the recap</p>}
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -133,6 +158,7 @@ export default function EventsView({ initialEvents }: { initialEvents: EventItem
               {selectedEvent ? (
                 <RegistrationForm
                   selectedEvent={selectedEvent}
+                  meta={meta[selectedEvent.id]}
                   onCancel={() => setSelectedEvent(null)}
                 />
               ) : (

@@ -19,11 +19,21 @@ export default function RecruitmentPortalLocked({
   const [hoursRemaining, setHoursRemaining] = useState("00");
   const [minutesRemaining, setMinutesRemaining] = useState("00");
   const [secondsRemaining, setSecondsRemaining] = useState("00");
+  // Launch time set in the admin console (Site content > Recruitment)
+  const [launchAt, setLaunchAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/recruitment/config")
+      .then((res) => res.json())
+      .then((data) => data.success && data.launchAt && setLaunchAt(data.launchAt))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const updateCountdown = () => {
       if (isBypassed) return;
       const targetLaunchRaw =
+        launchAt ||
         localStorage.getItem("ecell_recruitment_launch_date") ||
         "2026-07-15T00:00:00";
       const difference =
@@ -51,7 +61,7 @@ export default function RecruitmentPortalLocked({
     updateCountdown();
     const timer = setInterval(updateCountdown, 1000);
     return () => clearInterval(timer);
-  }, [isBypassed]);
+  }, [isBypassed, launchAt]);
 
   // Lets an admin preview the portal before launch. The password is checked on the server.
   const handleBypassCheck = async (e: React.FormEvent) => {

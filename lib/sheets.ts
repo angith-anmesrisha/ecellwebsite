@@ -1,12 +1,13 @@
+import { sheetConfigured, sheetGetUrl } from "./sheetClient";
+
 // Server-side reads from the Google Sheets web app, cached so public pages render
 // with data already in the HTML instead of fetching after load.
 const PUBLIC_REVALIDATE_SECONDS = 300;
 
 async function readSheet<T>(action: string, field: "data" = "data"): Promise<T[]> {
-  const targetUrl = process.env.SHEET_WEBHOOK_URL;
-  if (!targetUrl) return [];
+  if (!sheetConfigured()) return [];
   try {
-    const res = await fetch(`${targetUrl}?action=${action}`, {
+    const res = await fetch(sheetGetUrl(action), {
       next: { revalidate: PUBLIC_REVALIDATE_SECONDS, tags: [action] },
     });
     const json = await res.json();

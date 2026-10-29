@@ -1,6 +1,7 @@
 "use client";
 
 import { useAdminSession } from "@/lib/useAdminSession";
+import { AdminNav } from "@/components/admin/AdminKit";
 import React, { useState, useEffect, useRef } from "react";
 import { Lock, Cpu, BarChart3, Users, Download, ShieldAlert, CheckCircle, Clock, ArrowRight, Check, FileCheck, RefreshCw, Sparkles, MessageSquare, Plus, Award, Activity, Radio, Binary, Orbit, Search, Sliders, Mail, FileSpreadsheet, ClipboardList, Trophy, Unlock, XCircle } from "lucide-react";
 
@@ -292,7 +293,8 @@ export default function AdvancedAdminHub() {
         </div>
 
         {/* NEW: ISOLATED EVENT QUIZ ACCESS TOGGLE IN HEADER */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <AdminNav />
           <button 
             onClick={toggleEventQuizAccess}
             disabled={isSubmitting}
