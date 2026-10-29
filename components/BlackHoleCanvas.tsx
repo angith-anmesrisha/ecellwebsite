@@ -189,5 +189,7 @@ export default function BlackHoleCanvas({ animate, zoom = 1.75, resolutionScale 
     );
   }
 
-  return <canvas ref={canvasRef} aria-hidden="true" className={className} />;
+  // A fresh canvas whenever the settings change: the cleanup above loses the old WebGL
+  // context, and reusing that canvas would hand back the dead context and fall back to CSS.
+  return <canvas key={`${animate}-${zoom}-${resolutionScale}`} ref={canvasRef} aria-hidden="true" className={className} />;
 }
