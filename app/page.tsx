@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { motion, useSpring, useMotionValue, AnimatePresence } from "framer-motion";
-import { ArrowUpRight, Sparkles, Users, Skull, Calendar, X, ArrowRight } from "lucide-react";
+import { motion, useSpring, useMotionValue } from "framer-motion";
+import { ArrowUpRight, Sparkles, Users, Skull, Calendar } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const SkeletonBox = ({ height = "300px" }: { height?: string }) => (
@@ -43,6 +43,7 @@ import KineticGlitchReveal from "@/components/KineticGlitchReveal";
 import DigitalStripSplitter from "@/components/DigitalStripSplitter";
 import InfiniteMarquee from "@/components/InfiniteMarquee";
 import Preloader from "@/components/Preloader";
+import StartupHeistPopup from "@/components/StartupHeistPopup";
 
 interface ModuleNode {
   title: string;
@@ -113,90 +114,7 @@ export default function Home() {
       <Preloader />
 
       {/* --- STARTUP HEIST EVENT MODAL --- */}
-      <AnimatePresence>
-        {showEventPopup && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6"
-          >
-            {/* Backdrop Blur with a very subtle purple tint */}
-            <div 
-              className="absolute inset-0 bg-black/50 backdrop-blur-md"
-              onClick={() => setShowEventPopup(false)}
-            />
-            
-            {/* Modal Box */}
-            <motion.div
-              initial={{ scale: 0.95, y: 20, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 20, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 200, damping: 20 }}
-              className="relative w-full max-w-lg bg-zinc-950/70 backdrop-blur-xl border border-purple-500/40 rounded-2xl overflow-hidden shadow-[0_0_60px_-15px_rgba(168,85,247,0.4)] preserve-3d"
-            >
-              {/* Vibrant Inner Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-cyan-500/10 pointer-events-none" />
-
-              {/* Background ambient glow inside the popup (Bigger & Brighter) */}
-              <div className="absolute -top-32 -right-32 w-72 h-72 bg-cyan-500/25 blur-[80px] rounded-full pointer-events-none" />
-              <div className="absolute -bottom-32 -left-32 w-72 h-72 bg-purple-500/25 blur-[80px] rounded-full pointer-events-none" />
-
-              {/* Close Button */}
-              <button 
-                onClick={() => setShowEventPopup(false)}
-                className="absolute top-4 right-4 z-20 p-2 text-white/50 hover:text-purple-300 bg-white/5 hover:bg-purple-500/20 rounded-full transition-colors cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-
-              <div className="p-8 relative z-10 space-y-6">
-                
-                {/* Live Status Tag */}
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-[9px] font-mono font-bold uppercase rounded-full tracking-widest shadow-sm">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
-                  </span>
-                  Live Event Protocol Active
-                </div>
-                
-                {/* Headers */}
-                <div>
-                  <h2 className="text-4xl md:text-5xl font-black uppercase text-white tracking-tighter leading-none mb-2 drop-shadow-lg">
-                    Startup <br className="hidden sm:block" /> Heist
-                  </h2>
-                  <div className="flex items-center gap-2 text-purple-400 font-mono text-sm uppercase tracking-widest">
-                    <Calendar size={14} />
-                    <span>Nov 2 & 3</span>
-                  </div>
-                </div>
-
-                <p className="text-white/70 text-sm font-sans leading-relaxed drop-shadow-md">
-                  The secure gateway for the Startup Heist event is currently active. Authorized participants can proceed to the assessment portal to begin.
-                </p>
-
-                {/* Actions */}
-                <div className="pt-4 border-t border-purple-500/20 flex items-center justify-between gap-4 relative z-20">
-                  <button 
-                    onClick={() => setShowEventPopup(false)}
-                    className="text-[10px] font-mono font-bold text-white/40 hover:text-white uppercase tracking-widest transition cursor-pointer"
-                  >
-                    [ Dismiss ]
-                  </button>
-                  <button 
-                    onClick={() => window.location.href = '/quiz-entry'}
-                    className="px-6 py-3.5 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-black font-black uppercase text-xs rounded-xl flex items-center gap-2 transition-all hover:scale-105 shadow-[0_0_20px_rgba(6,182,212,0.4)] cursor-pointer"
-                  >
-                    Take Me There <ArrowRight size={16} />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      {/* --- END MODAL --- */}
+      <StartupHeistPopup open={showEventPopup} onClose={() => setShowEventPopup(false)} />
 
       <div
         ref={containerRef}
