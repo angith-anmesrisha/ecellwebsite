@@ -99,62 +99,10 @@ function MasterMagnet({
 
 export default function Home() {
   const containerRef = useRef(null);
-  const [liveBannerText, setLiveBannerText] = useState<string | null>(null);
-  const [bannerLink, setBannerLink] = useState<string>("/events");
-useEffect(() => {
-    async function checkLiveNodes() {
-      const CACHE_KEY = "ecell_live_banner_cache";
-      const CACHE_TIME_KEY = "ecell_live_banner_cache_timestamp";
-      const ONE_HOUR = 60 * 60 * 1000;
-
-      try {
-        const cachedData = localStorage.getItem(CACHE_KEY);
-        const cachedTimestamp = localStorage.getItem(CACHE_TIME_KEY);
-        const now = Date.now();
-
-        if (cachedData && cachedTimestamp && now - Number(cachedTimestamp) < ONE_HOUR) {
-          const parsed = JSON.parse(cachedData);
-          if (parsed.text) {
-            setLiveBannerText(parsed.text);
-            setBannerLink(parsed.link);
-            return;
-          }
-        }
-
-        const res = await fetch("/api/events?mode=events");
-        const data = await res.json();
-        
-        if (data.success && Array.isArray(data.data)) {
-          const activeEvent = data.data.find((e: any) => e.status === "ACTIVE");
-          
-          if (activeEvent) {
-            const bannerText = `EVENT LIVE: ${activeEvent.title.toUpperCase()} REGISTRATIONS ARE OPEN`;
-            const targetLink = "/events";
-
-            setLiveBannerText(bannerText);
-            setBannerLink(targetLink);
-
-            localStorage.setItem(CACHE_KEY, JSON.stringify({ text: bannerText, link: targetLink }));
-            localStorage.setItem(CACHE_TIME_KEY, now.toString());
-            return;
-          }
-        }
-
-        localStorage.removeItem(CACHE_KEY);
-        localStorage.removeItem(CACHE_TIME_KEY);
-        setLiveBannerText(null);
-
-      } catch (err) {
-        console.error("Failed to compile live system notification status matrices:", err);
-      }
-    }
-    
-    const timer = setTimeout(() => {
-      checkLiveNodes();
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, []);
+  
+  // HARDCODED BANNER FOR NOV 2 & 3 QUIZ
+  const liveBannerText = "STARTUP HEIST EVENT ACTIVE // NOV 2 & 3";
+  const bannerLink = "/quiz-entry";
 
   return (
     <>
@@ -181,11 +129,11 @@ useEffect(() => {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       onClick={() => window.location.href = bannerLink}
-                      className="cursor-pointer inline-flex items-center gap-2 text-[10px] uppercase font-mono font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3.5 py-1.5 rounded-full shadow-lg hover:bg-emerald-500/20 transition-all select-none"
+                      className="cursor-pointer inline-flex items-center gap-2 text-[10px] uppercase font-mono font-black bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-4 py-2 rounded-full shadow-lg hover:bg-cyan-500/20 hover:scale-105 transition-all select-none"
                     >
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
                       </span>
                       <span>{liveBannerText}</span>
                     </motion.div>
@@ -196,7 +144,7 @@ useEffect(() => {
                   initial={{ opacity: 0, x: -25 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6 }}
-                  className="text-purple-500 font-mono tracking-widest uppercase text-xs md:text-sm flex items-center justify-center lg:justify-start gap-2"
+                  className="text-purple-500 font-mono tracking-widest uppercase text-xs md:text-sm flex items-center justify-center lg:justify-start gap-2 mt-2"
                 >
                   <span className="inline-block w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse" />
                   {"// Where Aspiration Meets Opportunity"}
