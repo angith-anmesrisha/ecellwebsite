@@ -39,7 +39,6 @@ import Navbar from "@/components/Navbar";
 import KineticTextReveal from "@/components/KineticTextReveal";
 import FracturedTextButton from "@/components/FracturedTextButton";
 import InertialSkewText from "@/components/InertialSkewText";
-import CustomCursor from "@/components/CustomCursor";
 import KineticGlitchReveal from "@/components/KineticGlitchReveal";
 import DigitalStripSplitter from "@/components/DigitalStripSplitter";
 import InfiniteMarquee from "@/components/InfiniteMarquee";
@@ -111,7 +110,6 @@ export default function Home() {
 
   return (
     <>
-      <CustomCursor />
       <Preloader />
 
       {/* --- STARTUP HEIST EVENT MODAL --- */}

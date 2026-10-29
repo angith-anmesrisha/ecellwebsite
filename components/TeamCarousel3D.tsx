@@ -25,7 +25,7 @@ const TEAM_MEMBERS: TeamMember[] = [
   { id: 10, name: "Aditya Vats", role: "Sponsorship and Strategic Relations", image: "/team/Aditya.jpg", linkedin: "https://www.linkedin.com/in/aditya-vats-53b94521a" },
   { id: 11, name: "Koushal Ostwal", role: "Media and Communications", image: "/team/Koushal.jpg", linkedin: "https://www.linkedin.com/in/koushal-ostwal/" },
   { id: 12, name: "ThirumalaiRajan", role: "Operations/Finance", image: "/team/Thiru.jpeg", linkedin: "https://www.linkedin.com/in/thirumalai-rajan-73267720a/" },
-  { id: 13, name: "Harshit Kothari Jain", role: "Sponsorship and Strategic Relations", image: "/team/Harshit.jpg", linkedin: "https://www.linkedin.com/in/harshit-kothari-jain-b53503267/" },
+  { id: 13, name: "Harshit Kothari Jain", role: "Sponsorship and Strategic Relations", image: "/team/Harshit.jpeg", linkedin: "https://www.linkedin.com/in/harshit-kothari-jain-b53503267/" },
   { id: 14, name: "Gautam Khandelwal", role: "Media and Communications", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/gautam-khandelwal/" },
   { id: 15, name: "Aniruddh Topaz Banerjee", role: "Tech/Operations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/aniruddhbanerjee31" },
   { id: 16, name: "Naman Kurkeja", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/naman-kukreja-a753461a7/" },
@@ -41,6 +41,8 @@ interface TeamCarousel3DProps {
 export default function TeamCarousel3D({ progress }: TeamCarousel3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
+  // Members whose photo failed to load fall back to an initials tile
+  const [missingImages, setMissingImages] = useState<Set<number>>(() => new Set());
 
   
   useEffect(() => {
@@ -109,13 +111,20 @@ export default function TeamCarousel3D({ progress }: TeamCarousel3DProps) {
               >
                 {/* Visual Content Frame - Updated to show image */}
                 <div className="w-full h-2/3 bg-zinc-900 rounded-xl relative overflow-hidden border border-white/5">
-                  <img 
-                    src={member.image} 
-                    alt={member.name} 
-                    loading="lazy"
-                    decoding="async"
-                    className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
-                  />
+                  {missingImages.has(member.id) ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-900/40 to-zinc-900 text-5xl font-black tracking-tight text-white/30 uppercase">
+                      {member.name.split(" ").filter((part) => !part.endsWith(".")).slice(0, 2).map((part) => part[0]).join("")}
+                    </div>
+                  ) : (
+                    <img 
+                      src={member.image} 
+                      alt={member.name} 
+                      loading="lazy"
+                      decoding="async"
+                      onError={() => setMissingImages((prev) => new Set(prev).add(member.id))}
+                      className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                    />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent z-10 opacity-90" />
                 </div>
 
