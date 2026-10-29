@@ -8,7 +8,7 @@ const transporter = nodemailer.createTransport({
   secure: false, // TLS
   auth: {
     user: process.env.SMTP_USER,
-    password: process.env.SMTP_PASS,
+    pass: process.env.SMTP_PASS,
   },
 } as any);
 
@@ -105,13 +105,14 @@ export async function sendEventPassEmail({
       <div style="font-size: 12px; color: #ffffff; font-weight: bold; padding: 12px; background: rgba(147, 51, 234, 0.05); border: 1px solid rgba(147, 51, 234, 0.15); border-radius: 8px; margin: 16px 0;">
         YOUR PASS ID: ${passId}
       </div>
+      <!--INLINE_QR-->
 
       <p style="font-size: 11px; color: #9333ea; font-weight: bold;">
         ⚠️ IMPORTANT GATE INFO:
       </p>
       
       <p style="font-size: 11px; color: #a1a1aa; line-height: 1.5; margin-top: 4px;">
-        We have attached your official entry pass to this email as a PNG image. Please download it to your phone and show the QR code at the entry gate so we can scan you in quickly!
+        Your entry pass QR code is included with this email. Save it to your phone and show it at the entry gate so we can scan you in quickly!
       </p>
       
       <div style="margin-top: 24px; text-align: center; border-top: 1px solid #1e293b; padding-top: 16px;">
@@ -120,9 +121,12 @@ export async function sendEventPassEmail({
     </div>
   `;
 
+  // A. Render the pass card to a PNG. This needs a headless Chrome, which is not always
+  // available on serverless hosts, so a failure here falls back to an inline QR code
+  // instead of dropping the whole email.
+  let imageBuffer: Buffer | null = null;
   try {
-    // A. Create the image buffer from the Pass Card HTML layout
-    const imageBuffer = await nodeHtmlToImage({
+    imageBuffer = await nodeHtmlToImage({
       html: passCardHtml,
       type: "png",
       quality: 100,
@@ -131,26 +135,38 @@ export async function sendEventPassEmail({
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       }
     }) as Buffer;
+  } catch (error) {
+    console.error("Pass image render failed, sending inline QR instead:", error);
+  }
 
-    // B. Send the simplified email copy with the clean image pass attachment
+  const inlineQrHtml = `
+    <div style="text-align: center; margin: 16px 0;">
+      <img src="${qrCodeUrl}" width="180" height="180" alt="Entry QR code for pass ${passId}" style="background: #ffffff; padding: 8px; border-radius: 12px;" />
+    </div>
+  `;
+
+  try {
+    // B. Send the email, with the rendered pass attached when we have it
     await transporter.sendMail({
       from: `"E-Cell BIMTECH" <${process.env.SMTP_USER}>`,
       to: toEmail,
       subject: `[ENTRY PASS] Your ticket for ${eventTitle}`,
-      html: emailHtml,
-      attachments: [
-        {
-          filename: `ecell_pass_${passId.toLowerCase()}.png`,
-          content: imageBuffer,
-          contentType: "image/png",
-        },
-      ],
+      html: imageBuffer ? emailHtml : emailHtml.replace("<!--INLINE_QR-->", inlineQrHtml),
+      attachments: imageBuffer
+        ? [
+            {
+              filename: `ecell_pass_${passId.toLowerCase()}.png`,
+              content: imageBuffer,
+              contentType: "image/png",
+            },
+          ]
+        : [],
     });
 
     return { success: true, message: "Simplified entry pass email sent successfully." };
 
   } catch (error) {
-    console.error("Failed to generate or send entry pass:", error);
+    console.error("Failed to send entry pass:", error);
     throw new Error("Mailer dispatch failure.");
   }
 }

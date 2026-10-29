@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Redis } from "@upstash/redis";
+import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
 
 // Explicitly use Vercel KV environment variables
 const redis = new Redis({
@@ -19,6 +20,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if (!(await isAdminRequest())) return unauthorizedResponse();
   try {
     const body = await req.json();
     

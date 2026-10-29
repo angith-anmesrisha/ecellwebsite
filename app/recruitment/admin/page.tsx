@@ -1,5 +1,6 @@
 "use client";
 
+import { useAdminSession } from "@/lib/useAdminSession";
 import React, { useState, useEffect } from "react";
 import {
   Sliders,
@@ -34,7 +35,7 @@ interface Submission {
 
 export default function AdminDashboard() {
   const [hasMounted, setHasMounted] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, isChecking: isSessionChecking, login } = useAdminSession();
   const [password, setPassword] = useState("");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [filterDept, setFilterDept] = useState<string>("all");
@@ -102,11 +103,10 @@ export default function AdminDashboard() {
           const response = await fetch("/api/recruitment/submit-case", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: "clear_command_system_override@ecell.com",
-              caseAnswer: "RESET_ALL_DATA_ROWS_IMMEDIATELY_COHORT_2026",
-            }),
+            body: JSON.stringify({ action: "clear-all" }),
           });
+          const result = await response.json();
+          if (!response.ok || !result.success) throw new Error(result.error || "Wipe failed");
 
           localStorage.removeItem("ecell_submissions_backup_tree");
           setSubmissions([]);
@@ -124,13 +124,10 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === "ecelladmin2026") {
-      setIsAuthenticated(true);
-    } else {
-      alert("Invalid Admin Verification Credentials.");
-    }
+    const error = await login(password);
+    if (error) alert(error);
   };
 
   const handleUpdateLaunchDate = (e: React.FormEvent) => {
@@ -146,6 +143,8 @@ export default function AdminDashboard() {
     filterDept === "all"
       ? submissions
       : submissions.filter((item) => item.dept === filterDept);
+
+  if (isSessionChecking) return <div className="min-h-screen bg-black" />;
 
   if (!isAuthenticated) {
     return (

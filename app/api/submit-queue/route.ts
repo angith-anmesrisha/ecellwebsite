@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
 
 export async function GET(request: Request) {
   try {
@@ -44,7 +45,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: "Profile node credentials not found in registry." });
     }
 
-    const res = await fetch(`${targetUrl}?action=${action}`, {
+    // Every other read is an admin dashboard query
+    if (!(await isAdminRequest())) return unauthorizedResponse();
+
+    const res = await fetch(`${targetUrl}?action=${encodeURIComponent(action)}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store" 
@@ -76,6 +80,7 @@ export async function POST(request: Request) {
       body.action === "transfer-track" ||
       body.action === "append-quick-note"
     ) {
+      if (!(await isAdminRequest())) return unauthorizedResponse();
       const res = await fetch(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

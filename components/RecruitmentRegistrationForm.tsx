@@ -42,9 +42,10 @@ export default function RecruitmentRegistrationForm({
         e.target.value = "";
         return;
       }
-      if (file.size > 4 * 1024 * 1024) {
+      // Uploads go through our API, which caps request bodies at ~4.5 MB (base64 adds a third)
+      if (file.size > 3 * 1024 * 1024) {
         alert(
-          "File size bounds exceeded. Please compress your resume document sheet below 4MB.",
+          "File size bounds exceeded. Please compress your resume below 3MB.",
         );
         e.target.value = "";
         return;
@@ -110,39 +111,26 @@ export default function RecruitmentRegistrationForm({
         return;
       }
 
-      // 3. Register new profile with full payload DIRECTLY TO GOOGLE
-      const webhookUrl = process.env.NEXT_PUBLIC_SHEET_WEBHOOK_URL;
-      
-      if (!webhookUrl) {
-        alert("Configuration Error: Webhook URL is missing from environment variables.");
-        setIsSubmitting(false);
-        return;
-      }
-
+      // 3. Register the new profile through our API so the sheet URL stays server side
       const generatedId = "cand_" + Math.random().toString(36).substring(2, 11);
       const resumeName = selectedFile
         ? `${regName.trim().replace(/\s+/g, "_")}_Resume.pdf`
         : "Candidate_Resume.pdf";
       
-      // Normalize department formatting before sending to Google
-      const normalizedDept = regDept === "ops" ? "OPS VERTICAL" : regDept === "media" ? "PR & MEDIA CELL" : "CORPORATE ALLIANCES";
-
-      // Direct Client-to-Google fetch (Bypasses Vercel Serverless Bandwidth completely)
-      await fetch(webhookUrl, {
+      const registerRes = await fetch("/api/recruitment/submit", {
         method: "POST",
-        // The text/plain header is critical. It bypasses the browser's CORS preflight (OPTIONS) check.
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "register-profile",
+          action: "register-new-profile",
           id: generatedId,
           name: regName.trim(),
           email: regEmail.trim().toLowerCase(),
-          dept: normalizedDept,
+          dept: regDept,
           resumeFileBase64: base64Data,
           resumeFileName: resumeName,
-          score: 0
         }),
       });
+      if (!registerRes.ok) throw new Error(`Registration failed with status ${registerRes.status}`);
 
       const newCandidate: Candidate = {
         id: generatedId,

@@ -1,5 +1,6 @@
 import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
+import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
 
 // Securely grab the environment variables
 const url = process.env.KV_REST_API_URL || "";
@@ -35,6 +36,7 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     if (body.action === "update-global-phase") {
+      if (!(await isAdminRequest())) return unauthorizedResponse();
       if (body.phase !== undefined) {
         await redis.set("ecell_recruitment_phase", body.phase);
       }
@@ -53,17 +55,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const { passkey } = body;
-    if (!passkey) {
-      return NextResponse.json({ error: "Missing authorization token." }, { status: 400 });
-    }
-
-    const masterPasskey = process.env.NEXT_PUBLIC_ADMIN_MASTER_KEY || "ecelladmin2026";
-    if (passkey === masterPasskey) {
-      return NextResponse.json({ success: true, message: "System bypass authorized successfully." });
-    }
-
-    return NextResponse.json({ success: false, error: "Access denied." }, { status: 401 });
+    return NextResponse.json({ success: false, error: "Invalid action." }, { status: 400 });
   } catch (error: any) {
     console.error("Redis POST Error:", error.message);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

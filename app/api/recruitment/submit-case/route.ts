@@ -1,19 +1,15 @@
 import { NextResponse } from "next/server";
+import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, caseAnswer } = body;
-
-    if (!email || !caseAnswer) {
-      return NextResponse.json({ error: "Malformed request keys." }, { status: 400 });
-    }
-
     const targetUrl = process.env.SHEET_WEBHOOK_URL;
     if (!targetUrl) throw new Error("Google microservice connection dead.");
 
-    
-    if (email === "clear_command_system_override@ecell.com" && caseAnswer === "RESET_ALL_DATA_ROWS_IMMEDIATELY_COHORT_2026") {
+    // Full sheet wipe, used by the recruitment admin dashboard. Admin session required.
+    if (body.action === "clear-all") {
+      if (!(await isAdminRequest())) return unauthorizedResponse();
       const resetHandshake = await fetch(targetUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -21,6 +17,12 @@ export async function POST(request: Request) {
       });
       const resetRes = await resetHandshake.json();
       return NextResponse.json({ success: resetRes.success });
+    }
+
+    const { email, caseAnswer } = body;
+
+    if (!email || !caseAnswer) {
+      return NextResponse.json({ error: "Malformed request keys." }, { status: 400 });
     }
 
     if (caseAnswer.trim().split(/\s+/).length < 50) {
@@ -42,6 +44,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to securely execute wipe sequence." }, { status: 500 });
+    return NextResponse.json({ error: "Failed to save your case answer." }, { status: 500 });
   }
 }

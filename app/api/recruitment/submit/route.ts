@@ -1,4 +1,14 @@
 import { NextResponse } from "next/server";
+import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
+
+const ADMIN_ACTIONS = new Set([
+  "dispatch-email-notice",
+  "update-shortlist",
+  "update-candidate-group",
+  "assign-group-task",
+  "generate-round2-groups",
+  "generate-shortlist",
+]);
 
 const CORRECT_ANSWERS = [
   1, 2, 0, 2, 1, 3, 1, 0, 0, 1, 2, 1, 0, 0, 3, 0, 1, 1, 3, 1, 0, 2, 2, 1, 1, 1, 1, 2, 0, 1
@@ -14,6 +24,7 @@ export async function GET(request: Request) {
     if (!targetUrl) throw new Error("Google webhook destination variable is blank.");
 
     if (action === "get-all-registrations") {
+      if (!(await isAdminRequest())) return unauthorizedResponse();
       const sheetFetch = await fetch(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
       const sheetData = await sheetFetch.json();
       return NextResponse.json(sheetData);
@@ -37,6 +48,8 @@ export async function POST(request: Request) {
     const targetUrl = process.env.SHEET_WEBHOOK_URL;
 
     if (!targetUrl) throw new Error("Google webhook destination variable is blank.");
+
+    if (ADMIN_ACTIONS.has(body.action) && !(await isAdminRequest())) return unauthorizedResponse();
 
     // 1. UNIVERSAL PASSTHROUGH FOR EMAILS & STATUS/GROUP OVERRIDES
     if (
@@ -66,7 +79,8 @@ export async function POST(request: Request) {
           return NextResponse.json({
             success: true,
             isExistingSession: true,
-            candidate: existing,
+            // Only what the form needs to resume a session; never the full sheet row
+            candidate: { regId: existing.regId, id: existing.id, name: existing.name, email: existing.email, status: existing.status },
             progress: {
               passed: existing.status === "ROUND_2_APPROVED" || existing.status === "SELECTED_FOR_PI" || existing.status === "SELECTED_CORE"
             }
@@ -79,7 +93,6 @@ export async function POST(request: Request) {
     // 3. HANDLE NEW PROFILE REGISTRATION WITH RESUME UPLOAD
     if (body.action === "register-new-profile") {
       const { id, name, email, dept, resumeFileBase64, resumeFileName } = body;
-      console.log("CHECKING RESUME PAYLOAD -> Length:", resumeFileBase64 ? resumeFileBase64.length : "NO FILE", "Name:", resumeFileName);
       const normalizedDept = dept === "ops" ? "OPS VERTICAL" : dept === "media" ? "PR & MEDIA CELL" : "CORPORATE ALLIANCES";
 
       const sheetRes = await fetch(targetUrl, {
@@ -92,7 +105,8 @@ export async function POST(request: Request) {
           email: email.trim().toLowerCase(),
           dept: normalizedDept,
           resumeFileBase64: resumeFileBase64 || "",
-          resumeFileName: resumeFileName || "Candidate_Resume.pdf"
+          resumeFileName: resumeFileName || "Candidate_Resume.pdf",
+          score: 0
         }),
       });
       const sheetData = await sheetRes.json();

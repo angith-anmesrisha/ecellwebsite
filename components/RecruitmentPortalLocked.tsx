@@ -53,23 +53,22 @@ export default function RecruitmentPortalLocked({
     return () => clearInterval(timer);
   }, [isBypassed]);
 
-  const handleBypassCheck = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setBypassInput(val);
-    if (val.length >= 4) {
-      try {
-        const res = await fetch("/api/recruitment/admin", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ passkey: val }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setIsBypassed(true);
-          setPortalPhase("REGISTRATION_OPEN");
-        }
-      } catch (err) {}
-    }
+  // Lets an admin preview the portal before launch. The password is checked on the server.
+  const handleBypassCheck = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (bypassInput.length < 4) return;
+    try {
+      const res = await fetch("/api/admin/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: bypassInput }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsBypassed(true);
+        setPortalPhase("REGISTRATION_OPEN");
+      }
+    } catch (err) {}
   };
 
   return (
@@ -102,16 +101,17 @@ export default function RecruitmentPortalLocked({
             </div>
           ))}
         </div>
-        <div className="pt-4 max-w-xs mx-auto">
+        <form onSubmit={handleBypassCheck} className="pt-4 max-w-xs mx-auto">
           <input
             type="password"
             placeholder="Admin Passkey Override"
             value={bypassInput}
-            onChange={handleBypassCheck}
+            onChange={(e) => setBypassInput(e.target.value)}
+            aria-label="Admin passkey"
             className="w-full text-center bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-mono tracking-widest text-white placeholder-white/20 focus:outline-none focus:border-blue-500 transition-colors"
             autoComplete="off"
           />
-        </div>
+        </form>
       </div>
     </div>
   );

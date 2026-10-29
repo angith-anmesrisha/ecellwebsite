@@ -1,5 +1,6 @@
 "use client";
 
+import { useAdminSession } from "@/lib/useAdminSession";
 import React, { useState, useEffect } from "react";
 import { Lock, Award, Cpu, FileCheck, RefreshCw, Star, UserCheck, MessageSquare } from "lucide-react";
 
@@ -15,7 +16,7 @@ interface Candidate {
 }
 
 export default function PeerEvaluationStation() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, isChecking: isSessionChecking, login } = useAdminSession();
   const [passwordInput, setPasswordInput] = useState("");
   const [securityError, setSecurityError] = useState("");
 
@@ -63,15 +64,10 @@ export default function PeerEvaluationStation() {
     }
   }, [isAuthenticated]);
 
-  const handleSecurityCheck = (e: React.FormEvent) => {
+  const handleSecurityCheck = async (e: React.FormEvent) => {
     e.preventDefault();
-    const masterKey = process.env.NEXT_PUBLIC_ADMIN_MASTER_KEY;
-    if (passwordInput === masterKey || passwordInput === "1234" || passwordInput === "ecelladmin2026") {
-      setIsAuthenticated(true);
-      setSecurityError("");
-    } else {
-      setSecurityError("Access Denied: Invalid security configuration.");
-    }
+    const error = await login(passwordInput);
+    setSecurityError(error || "");
   };
 
   const commitPanelReview = async (e: React.FormEvent) => {
@@ -114,6 +110,8 @@ export default function PeerEvaluationStation() {
       setIsSubmitting(false);
     }
   };
+
+  if (isSessionChecking) return <div className="min-h-screen bg-black" />;
 
   if (!isAuthenticated) {
     return (

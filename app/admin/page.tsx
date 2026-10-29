@@ -1,5 +1,6 @@
 "use client";
 
+import { useAdminSession } from "@/lib/useAdminSession";
 import React, { useState, useEffect, useRef } from "react";
 import { Lock, Cpu, BarChart3, Users, Download, ShieldAlert, CheckCircle, Clock, ArrowRight, Check, FileCheck, RefreshCw, Sparkles, MessageSquare, Plus, Award, Activity, Radio, Binary, Orbit, Search, Sliders, Mail, FileSpreadsheet, ClipboardList, Trophy, Unlock, XCircle } from "lucide-react";
 
@@ -9,7 +10,7 @@ interface FunnelItem { stage: string; value: number; }
 interface LogEntry { text: string; type: "info" | "exec" | "warn" | "success" | "cli"; }
 
 export default function AdvancedAdminHub() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, isChecking: isSessionChecking, login } = useAdminSession();
   const [passwordInput, setPasswordInput] = useState("");
   const [securityError, setSecurityError] = useState("");
   const [activeTab, setActiveTab] = useState<"hub" | "analytics" | "recruitment" | "r2_tasks">("hub");
@@ -56,12 +57,10 @@ export default function AdvancedAdminHub() {
   useEffect(() => { setVisibleLogs(allTerminalLogs); }, [allTerminalLogs]);
   useEffect(() => { if (terminalEndRef.current) terminalEndRef.current.scrollIntoView({ behavior: "smooth" }); }, [visibleLogs]);
 
-  const handleSecurityCheck = (e: React.FormEvent) => {
+  const handleSecurityCheck = async (e: React.FormEvent) => {
     e.preventDefault();
-    const masterKeyEnvValue = process.env.NEXT_PUBLIC_ADMIN_MASTER_KEY;
-    if (passwordInput === masterKeyEnvValue || passwordInput === "1234" || passwordInput === "ecelladmin2026") {
-      setIsAuthenticated(true); setSecurityError("");
-    } else { setSecurityError("Access Denied: Incorrect password code configuration."); }
+    const error = await login(passwordInput);
+    setSecurityError(error || "");
   };
 
   const runBackgroundDatabaseCheck = async (isInitialFetch = false, isCliForced = false) => {
@@ -267,6 +266,8 @@ export default function AdvancedAdminHub() {
     const matchesTrack = guiTrackFilter === "ALL" || c.domain.toLowerCase().includes(guiTrackFilter.toLowerCase());
     return matchesSearch && matchesTrack;
   });
+
+  if (isSessionChecking) return <div className="min-h-screen bg-black" />;
 
   if (!isAuthenticated) {
     return (

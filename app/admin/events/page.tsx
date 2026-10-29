@@ -1,5 +1,6 @@
 "use client";
 
+import { useAdminSession } from "@/lib/useAdminSession";
 import React, { useState, useEffect } from "react";
 import { Plus, X, BarChart2, ListFilter, Users, Upload, Image as ImageIcon, Loader2, Lock, Camera } from "lucide-react";
 import GateScanner from "@/components/GateScanner";
@@ -26,7 +27,7 @@ interface RegistrationRecord {
 
 export default function AdminEventsPanel() {
   
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, isChecking: isSessionChecking, login } = useAdminSession();
   const [passwordInput, setPasswordInput] = useState("");
   const [securityError, setSecurityError] = useState("");
 
@@ -76,20 +77,10 @@ export default function AdminEventsPanel() {
   };
 
   
- const handleSecurityCheck = (e: React.FormEvent) => {
+ const handleSecurityCheck = async (e: React.FormEvent) => {
     e.preventDefault();
-    const globalMasterKey = process.env.NEXT_PUBLIC_ADMIN_MASTER_KEY;
-
-    if (
-      passwordInput === globalMasterKey || 
-      passwordInput === "ecelladmin2026" 
-     
-    ) {
-      setIsAuthenticated(true);
-      setSecurityError("");
-    } else {
-      setSecurityError("Invalid master key. Access denied.");
-    }
+    const error = await login(passwordInput);
+    setSecurityError(error || "");
   };
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -168,6 +159,8 @@ export default function AdminEventsPanel() {
   );
 
   
+  if (isSessionChecking) return <div className="min-h-screen bg-black" />;
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 font-sans antialiased">
