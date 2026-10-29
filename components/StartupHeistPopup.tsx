@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Calendar, X } from "lucide-react";
 
@@ -18,101 +19,167 @@ const STARS = Array.from({ length: 70 }, (_, i) => {
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-function Spacecraft() {
-  return (
-    <svg viewBox="-120 0 420 80" className="w-full h-full overflow-visible" aria-hidden="true">
-      <defs>
-        <linearGradient id="sc-hull" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#71717a" />
-          <stop offset="35%" stopColor="#3f3f46" />
-          <stop offset="70%" stopColor="#18181b" />
-          <stop offset="100%" stopColor="#27272a" />
-        </linearGradient>
-        <linearGradient id="sc-panel" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#3f3f46" />
-          <stop offset="100%" stopColor="#111113" />
-        </linearGradient>
-        <linearGradient id="sc-plume" x1="1" y1="0" x2="0" y2="0">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="15%" stopColor="#dbeafe" />
-          <stop offset="50%" stopColor="#60a5fa" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#1e3a8a" stopOpacity="0" />
-        </linearGradient>
-        <filter id="sc-glow" x="-50%" y="-200%" width="200%" height="500%">
-          <feGaussianBlur stdDeviation="3" />
-        </filter>
-      </defs>
+const VERT = `attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }`;
 
-      {/* Ion engine plumes */}
-      <g className="sc-plume" style={{ transformOrigin: "34px 40px" }}>
-        <rect x="-115" y="32" width="150" height="5" rx="2.5" fill="url(#sc-plume)" filter="url(#sc-glow)" />
-        <rect x="-115" y="43" width="150" height="5" rx="2.5" fill="url(#sc-plume)" filter="url(#sc-glow)" />
-        <rect x="-60" y="34" width="95" height="1.5" fill="url(#sc-plume)" />
-        <rect x="-60" y="44.5" width="95" height="1.5" fill="url(#sc-plume)" />
-      </g>
+// Stylised Gargantua: Keplerian accretion disk, gravitationally lensed back
+// side, photon ring and Doppler beaming. Output is premultiplied alpha so the
+// starfield behind the canvas still shows through.
+const FRAG = `
+precision highp float;
+uniform vec2 uRes;
+uniform float uTime;
 
-      {/* Radiator wings */}
-      <path d="M112 25 L86 6 L146 6 L172 24 Z" fill="url(#sc-panel)" stroke="#52525b" strokeWidth="0.6" />
-      <path d="M112 55 L86 74 L146 74 L172 56 Z" fill="url(#sc-panel)" stroke="#3f3f46" strokeWidth="0.6" />
-      {[100, 112, 124, 136].map((x) => (
-        <g key={x} stroke="#000" strokeOpacity="0.55" strokeWidth="0.6">
-          <line x1={x} y1="8" x2={x + 20} y2="23" />
-          <line x1={x} y1="72" x2={x + 20} y2="57" />
-        </g>
-      ))}
-
-      {/* Engine block */}
-      <rect x="30" y="30" width="16" height="9" rx="1" fill="#18181b" stroke="#3f3f46" strokeWidth="0.6" />
-      <rect x="30" y="41" width="16" height="9" rx="1" fill="#18181b" stroke="#3f3f46" strokeWidth="0.6" />
-      <circle cx="33" cy="34.5" r="2.4" fill="#eff6ff" />
-      <circle cx="33" cy="45.5" r="2.4" fill="#eff6ff" />
-
-      {/* Hull */}
-      <path
-        d="M44 33 L72 25 L204 23 L262 35 L284 40 L262 45 L204 57 L72 55 L44 47 Z"
-        fill="url(#sc-hull)"
-        stroke="#52525b"
-        strokeWidth="0.75"
-      />
-      {/* Dorsal spine */}
-      <path d="M92 25 L196 23.5 L222 30 L96 31 Z" fill="#52525b" opacity="0.7" />
-      {/* Warm rim light from the black hole */}
-      <path d="M204 23 L262 35 L284 40" stroke="#fbbf24" strokeOpacity="0.55" strokeWidth="0.8" fill="none" />
-
-      {/* Panel seams */}
-      {[96, 128, 160, 192, 226].map((x) => (
-        <line key={x} x1={x} y1="25" x2={x} y2="55" stroke="#000" strokeOpacity="0.5" strokeWidth="0.6" />
-      ))}
-      <line x1="72" y1="40" x2="262" y2="40" stroke="#000" strokeOpacity="0.35" strokeWidth="0.5" />
-
-      {/* Cockpit slit */}
-      <path d="M232 35.5 L262 38.5 L232 39.5 Z" fill="#fde68a" opacity="0.85" />
-
-      {/* Navigation lights */}
-      <circle cx="144" cy="7" r="1.4" fill="#f87171" className="sc-blink" />
-      <circle cx="144" cy="73" r="1.4" fill="#4ade80" className="sc-blink" style={{ animationDelay: "0.8s" }} />
-    </svg>
-  );
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+float fbm(vec2 p) {
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 5; i++) { v += a * noise(p); p *= 2.03; a *= 0.5; }
+  return v;
+}
+vec3 heat(float t) {
+  t = clamp(t, 0.0, 1.0);
+  vec3 c = mix(vec3(0.35, 0.05, 0.0), vec3(1.0, 0.42, 0.06), smoothstep(0.0, 0.4, t));
+  return mix(c, vec3(1.0, 0.93, 0.8), smoothstep(0.4, 1.0, t));
+}
+// Turbulent, differentially rotating gas between rin and rout
+float band(float r, float a, float rin, float rout, float seed) {
+  if (r < rin || r > rout) return 0.0;
+  float x = (r - rin) / (rout - rin);
+  float profile = smoothstep(0.0, 0.06, x) * pow(1.0 - x, 1.8);
+  float ang = a + uTime * 0.6 / pow(r / rin, 1.5);
+  vec2 q = vec2(cos(ang), sin(ang)) * 2.2 + vec2(r * 16.0, seed);
+  float gas = fbm(q) * 0.75 + fbm(q * 2.7 + 4.0) * 0.45;
+  return profile * (0.35 + gas * 1.1);
 }
 
-function BlackHole() {
-  return (
-    <div className="relative w-full h-full">
-      {/* Lensed halo */}
-      <div className="absolute inset-[18%] rounded-full shadow-[0_0_40px_12px_rgba(251,191,36,0.35),0_0_90px_30px_rgba(234,88,12,0.18)]" />
-      {/* Upper lensed arc of the disk */}
-      <div className="absolute inset-[12%] rounded-full border-[3px] border-amber-100/80 blur-[1.5px]" />
-      <div className="absolute inset-[14%] rounded-full border border-orange-300/60 blur-[3px]" />
-      {/* Event horizon */}
-      <div className="absolute inset-[19%] rounded-full bg-black" />
-      {/* Accretion disk crossing in front */}
-      <div
-        className="sc-anim absolute left-[-30%] right-[-30%] top-1/2 h-[16%] -translate-y-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,#fffbeb_0%,#fcd34d_25%,#ea580c_55%,transparent_75%)] blur-[2px]"
-        style={{ animation: "sc-disk 6s ease-in-out infinite" }}
-      />
-      <div className="absolute left-[-10%] right-[-10%] top-1/2 h-[4%] -translate-y-1/2 rounded-[50%] bg-white/90 blur-[1px]" />
-    </div>
-  );
+void main() {
+  vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y * 1.75;
+  float c = cos(-0.1), s = sin(-0.1);
+  p = mat2(c, -s, s, c) * p;
+
+  float rs = 0.36;
+  float r = length(p);
+  float a = atan(p.y, p.x);
+
+  // Disk plane seen nearly edge-on
+  float tilt = 0.13;
+  vec2 d = vec2(p.x, p.y / tilt);
+  float rd = length(d);
+  float ad = atan(d.y, d.x);
+  float doppler = 1.0 + 0.6 * clamp(-d.x / max(rd, 1e-3), -1.0, 1.0);
+
+  vec3 col = vec3(0.0);
+
+  // Lensed image of the far side of the disk, wrapped over and under the hole
+  float lr = r / rs;
+  float over = smoothstep(-0.1, 0.5, p.y / max(r, 1e-3));
+  float lens = band(lr, a, 1.06, 2.1, 7.0) * mix(0.3, 1.7, over);
+  lens *= 1.0 + 0.45 * clamp(-p.x / max(r, 1e-3), -1.0, 1.0);
+  col += heat(lens * 0.9) * lens * 1.4;
+
+  // Photon ring
+  float ring = exp(-pow((r - rs * 1.035) / 0.007, 2.0));
+  col += vec3(1.0, 0.85, 0.65) * ring * (0.9 + 0.4 * clamp(-p.x / r, -1.0, 1.0));
+
+  // Event horizon
+  float hole = 1.0 - smoothstep(rs * 0.985, rs * 1.0, r);
+  col *= 1.0 - hole;
+
+  // Near side of the disk crosses in front of the hole
+  float disk = band(rd, ad, rs * 1.55, rs * 4.4, 0.0) * doppler;
+  float front = p.y < 0.0 ? 1.0 : 1.0 - hole;
+  col += heat(disk * 0.8) * disk * 1.6 * front;
+
+  // Soft glow
+  col += vec3(1.0, 0.45, 0.12) * 0.05 / (0.15 + abs(p.y) * 8.0 + max(r - rs, 0.0) * 2.0) * (1.0 - hole);
+
+  col = 1.0 - exp(-col * 1.3);
+  float alpha = clamp(max(max(col.r, col.g), max(col.b, hole)), 0.0, 1.0);
+  gl_FragColor = vec4(min(col, vec3(alpha)), alpha);
+}
+`;
+
+function BlackHole({ animate }: { animate: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const gl = canvas?.getContext("webgl", { premultipliedAlpha: true, antialias: false });
+    if (!canvas || !gl) {
+      setFailed(true);
+      return;
+    }
+
+    const compile = (type: number, src: string) => {
+      const sh = gl.createShader(type)!;
+      gl.shaderSource(sh, src);
+      gl.compileShader(sh);
+      return sh;
+    };
+    const prog = gl.createProgram()!;
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      setFailed(true);
+      return;
+    }
+    gl.useProgram(prog);
+
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, "p");
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    const uRes = gl.getUniformLocation(prog, "uRes");
+    const uTime = gl.getUniformLocation(prog, "uTime");
+
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(canvas.clientWidth * dpr);
+      canvas.height = Math.round(canvas.clientHeight * dpr);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+
+    let raf = 0;
+    const start = performance.now();
+    const draw = () => {
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.uniform1f(uTime, animate ? (performance.now() - start) / 1000 : 4);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      if (animate) raf = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      gl.getExtension("WEBGL_lose_context")?.loseContext();
+    };
+  }, [animate]);
+
+  if (failed) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative w-32 h-32">
+          <div className="absolute inset-[12%] rounded-full border-[3px] border-amber-100/80 blur-[1.5px] shadow-[0_0_40px_12px_rgba(251,191,36,0.35)]" />
+          <div className="absolute inset-[19%] rounded-full bg-black" />
+          <div className="absolute left-[-40%] right-[-40%] top-1/2 h-[14%] -translate-y-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,#fffbeb_0%,#fcd34d_25%,#ea580c_55%,transparent_75%)] blur-[2px]" />
+        </div>
+      </div>
+    );
+  }
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
 }
 
 export default function StartupHeistPopup({
@@ -135,15 +202,10 @@ export default function StartupHeistPopup({
         >
           <style>{`
             @keyframes sc-twinkle { 0%,100% { opacity: var(--o) } 50% { opacity: calc(var(--o) * .3) } }
-            @keyframes sc-plume { 0%,100% { transform: scaleX(1); opacity: 1 } 50% { transform: scaleX(.94); opacity: .85 } }
-            @keyframes sc-blink { 0%,85%,100% { opacity: 0 } 88%,96% { opacity: 1 } }
-            @keyframes sc-disk { 0%,100% { transform: translateY(-50%) scaleX(1); opacity: 1 } 50% { transform: translateY(-50%) scaleX(1.06); opacity: .85 } }
             @keyframes sc-sweep { to { transform: rotate(360deg) } }
             @keyframes sc-scan { from { transform: translateY(-100%) } to { transform: translateY(400%) } }
-            .sc-plume { animation: sc-plume .4s ease-in-out infinite }
-            .sc-blink { animation: sc-blink 2.4s linear infinite }
             @media (prefers-reduced-motion: reduce) {
-              .sc-anim, .sc-plume, .sc-blink { animation: none !important }
+              .sc-anim { animation: none !important }
             }
           `}</style>
 
@@ -175,7 +237,7 @@ export default function StartupHeistPopup({
               </button>
 
               {/* --- Deep space scene --- */}
-              <div className="relative h-44 sm:h-52 overflow-hidden bg-[radial-gradient(ellipse_at_78%_45%,rgba(120,53,15,0.35),transparent_55%),radial-gradient(ellipse_at_15%_80%,rgba(30,58,138,0.25),transparent_60%),#030304]">
+              <div className="relative h-48 sm:h-60 overflow-hidden bg-[radial-gradient(ellipse_at_78%_45%,rgba(120,53,15,0.35),transparent_55%),radial-gradient(ellipse_at_15%_80%,rgba(30,58,138,0.25),transparent_60%),#030304]">
                 {STARS.map((s, i) => (
                   <span
                     key={i}
@@ -194,29 +256,13 @@ export default function StartupHeistPopup({
 
                 {/* Black hole */}
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.7 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 1.6, ease: EASE, delay: 0.2 }}
-                  className="absolute top-1/2 -translate-y-1/2 right-[6%] w-28 h-28 sm:w-36 sm:h-36"
+                  initial={{ opacity: 0, scale: 0.6, filter: "blur(10px)" }}
+                  animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                  exit={{ scale: 0.2, opacity: 0, filter: "blur(6px)", transition: { duration: 0.5, ease: [0.6, 0, 0.9, 0.3] } }}
+                  transition={{ duration: 1.8, ease: EASE, delay: 0.2 }}
+                  className="absolute inset-0"
                 >
-                  <BlackHole />
-                </motion.div>
-
-                {/* Spacecraft: glides in, drifts, then burns away toward the black hole on close */}
-                <motion.div
-                  initial={{ x: -360, y: 18, opacity: 0 }}
-                  animate={{ x: 0, y: 0, opacity: 1 }}
-                  exit={{ x: 420, y: -10, scale: 0.25, opacity: 0, transition: { duration: 0.65, ease: [0.6, 0, 0.9, 0.3] } }}
-                  transition={{ duration: 1.8, ease: EASE, delay: 0.35 }}
-                  className="absolute left-[6%] sm:left-[8%] top-1/2 -mt-[24px] sm:-mt-[28px] w-[240px] h-[46px] sm:w-[290px] sm:h-[56px]"
-                >
-                  <motion.div
-                    animate={reduceMotion ? undefined : { y: [0, -3, 0], rotate: [-2, -1, -2] }}
-                    transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                    className="w-full h-full"
-                  >
-                    <Spacecraft />
-                  </motion.div>
+                  <BlackHole animate={!reduceMotion} />
                 </motion.div>
 
                 {/* Telemetry overlay */}
