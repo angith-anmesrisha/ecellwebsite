@@ -30,7 +30,7 @@ const TEAM_MEMBERS: TeamMember[] = [
   { id: 15, name: "Aniruddh Topaz Banerjee", role: "Tech/Operations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/aniruddhbanerjee31" },
   { id: 16, name: "Naman Kurkeja", role: "Sponsorship and Strategic Relations", image: "/team/arnab.jpg", linkedin: "https://www.linkedin.com/in/naman-kukreja-a753461a7/" },
   { id: 17, name: "Mayank Handa", role: "People & Team Coordinator", image: "/team/Mayank.jpg", linkedin: "https://www.linkedin.com/in/mayank-handa-13b650166" },
-  { id: 18, name: "Madhur Kala", role: "Operations/Finance", image: "/team/Madhur.jpg", linkedin: "https://linkedin.com/in/madhur-kala" }
+  
 ];
 
 
