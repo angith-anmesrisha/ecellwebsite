@@ -82,7 +82,7 @@ export default function CrystallineParticleMatrix({ isSparse: manualSparse = fal
       // INCREASE these multipliers to lower the density
       let densityMultiplier = isMobileDevice ? 4000 : 1600; // Originally 2000 : 800[cite: 7]
       // DECREASE these caps to restrict the maximum particle count
-      let maxCapLimit = isMobileDevice ? 100 : 500;         // Originally 250 : 1000[cite: 7]
+      let maxCapLimit = isMobileDevice ? 80 : 350;         // Originally 250 : 1000[cite: 7]
 
       if (isSparse) {
         // Further restrict the sparse mode layout
