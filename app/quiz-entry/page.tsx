@@ -75,7 +75,7 @@ export default function QuizEntryTerminal() {
             {/* Text Content */}
             <div className="space-y-2">
               <h1 className="text-xl font-black uppercase tracking-widest text-white">
-                Core Cohort Assessment
+                Startup Heist Round 1 Assessment
               </h1>
               
               <div className="h-16 flex items-center justify-center">
