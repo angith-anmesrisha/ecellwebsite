@@ -1,4 +1,4 @@
-import { sheetFetch as fetchSheet } from "@/lib/sheetClient";
+import { checkStudentResult, findCandidateByEmail, listCandidates, recruitmentAction } from "@/lib/recruitmentStore";
 import { NextResponse } from "next/server";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
 import { readRecruitmentConfig } from "@/lib/content";
@@ -22,21 +22,13 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get("action");
     const email = searchParams.get("email");
-    const targetUrl = process.env.SHEET_WEBHOOK_URL;
-
-    if (!targetUrl) throw new Error("Google webhook destination variable is blank.");
-
     if (action === "get-all-registrations") {
       if (!(await isAdminRequest())) return unauthorizedResponse();
-      const sheetFetch = await fetchSheet(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
-      const sheetData = await sheetFetch.json();
-      return NextResponse.json(sheetData);
+      return NextResponse.json({ success: true, data: await listCandidates() });
     }
 
     if (action === "check-student-result" && email) {
-      const sheetFetch = await fetchSheet(`${targetUrl}?action=check-student-result&email=${encodeURIComponent(email)}`, { method: "GET", next: { revalidate: 0 } });
-      const sheetData = await sheetFetch.json();
-      return NextResponse.json(sheetData);
+      return NextResponse.json(await checkStudentResult(email));
     }
 
     return NextResponse.json({ error: "Invalid routing request parameter configuration." }, { status: 400 });
@@ -48,9 +40,6 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const targetUrl = process.env.SHEET_WEBHOOK_URL;
-
-    if (!targetUrl) throw new Error("Google webhook destination variable is blank.");
 
     if (ADMIN_ACTIONS.has(body.action) && !(await isAdminRequest())) return unauthorizedResponse();
 
@@ -68,34 +57,23 @@ export async function POST(request: Request) {
       body.action === "update-candidate-group" || 
       body.action === "assign-group-task"
     ) {
-      const sheetRes = await fetchSheet(targetUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const data = await sheetRes.json();
-      return NextResponse.json(data);
+      return NextResponse.json(await recruitmentAction(body));
     }
 
     // 2. CHECK INITIAL ELIGIBILITY (RESTORES RETURNING SESSION CHECK)
     if (body.action === "check-initial-eligibility") {
       const targetEmail = body.email ? body.email.trim().toLowerCase() : "";
-      const sheetFetch = await fetchSheet(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
-      const sheetData = await sheetFetch.json();
-
-      if (sheetData.success && Array.isArray(sheetData.data)) {
-        const existing = sheetData.data.find((c: any) => c.email && c.email.toLowerCase() === targetEmail);
-        if (existing) {
-          return NextResponse.json({
-            success: true,
-            isExistingSession: true,
-            // Only what the form needs to resume a session; never the full sheet row
-            candidate: { regId: existing.regId, id: existing.id, name: existing.name, email: existing.email, status: existing.status },
-            progress: {
-              passed: existing.status === "ROUND_2_APPROVED" || existing.status === "SELECTED_FOR_PI" || existing.status === "SELECTED_CORE"
-            }
-          });
-        }
+      const existing = targetEmail ? await findCandidateByEmail(targetEmail) : null;
+      if (existing) {
+        return NextResponse.json({
+          success: true,
+          isExistingSession: true,
+          // Only what the form needs to resume a session; never the full record
+          candidate: { regId: existing.regId, id: existing.id, name: existing.name, email: existing.email, status: existing.status },
+          progress: {
+            passed: existing.status === "ROUND_2_APPROVED" || existing.status === "SELECTED_FOR_PI" || existing.status === "SELECTED_CORE"
+          }
+        });
       }
       return NextResponse.json({ success: true, isExistingSession: false });
     }
@@ -105,10 +83,8 @@ export async function POST(request: Request) {
       const { id, name, email, dept, resumeFileBase64, resumeFileName } = body;
       const normalizedDept = dept === "ops" ? "OPS VERTICAL" : dept === "media" ? "PR & MEDIA CELL" : "CORPORATE ALLIANCES";
 
-      const sheetRes = await fetchSheet(targetUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      return NextResponse.json(
+        await recruitmentAction({
           action: "register-profile",
           id: id,
           name: name.trim(),
@@ -116,21 +92,14 @@ export async function POST(request: Request) {
           dept: normalizedDept,
           resumeFileBase64: resumeFileBase64 || "",
           resumeFileName: resumeFileName || "Candidate_Resume.pdf",
-          score: 0
+          score: 0,
         }),
-      });
-      const sheetData = await sheetRes.json();
-      return NextResponse.json(sheetData);
+      );
     }
 
     // 4. GENERATE ROUND 2 GROUPS (CONCURRENT OPTIMIZATION)
     if (body.action === "generate-round2-groups") {
-      const sheetFetch = await fetchSheet(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
-      const sheetData = await sheetFetch.json();
-
-      if (!sheetData.success || !Array.isArray(sheetData.data)) {
-        return NextResponse.json({ error: "Failed to read database state." }, { status: 500 });
-      }
+      const sheetData = { data: (await listCandidates()) as any[] };
 
       const approvedCandidates = sheetData.data.filter((c: any) => c.status === "ROUND_2_APPROVED");
 
@@ -162,19 +131,11 @@ export async function POST(request: Request) {
         
         for (const member of currentGroupMembers) {
           concurrentTasks.push(
-            fetchSheet(targetUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "update-candidate-group", candidateId: member.regId, groupNumber: groupName })
-            })
+            recruitmentAction({ action: "update-candidate-group", candidateId: member.regId, groupNumber: groupName })
           );
 
           concurrentTasks.push(
-            fetchSheet(targetUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "dispatch-email-notice", email: member.email, name: member.name, status: "ROUND_2_APPROVED", groupNumber: groupName })
-            })
+            recruitmentAction({ action: "dispatch-email-notice", email: member.email, name: member.name, status: "ROUND_2_APPROVED", groupNumber: groupName })
           );
         }
 
@@ -193,12 +154,7 @@ export async function POST(request: Request) {
 
     // 5. AUTOMATED TOP 70 SHORTLIST GENERATOR
     if (body.action === "generate-shortlist") {
-      const sheetFetch = await fetchSheet(`${targetUrl}?action=get-all-registrations`, { method: "GET", next: { revalidate: 0 } });
-      const sheetData = await sheetFetch.json();
-
-      if (!sheetData.success || !Array.isArray(sheetData.data)) {
-        return NextResponse.json({ error: "Failed to read database state." }, { status: 500 });
-      }
+      const sheetData = { data: (await listCandidates()) as any[] };
 
       const rankedCandidates = sheetData.data
         .filter((c: any) => c.status === "PENDING" || c.status === "BORDERLINE") 
@@ -235,20 +191,12 @@ export async function POST(request: Request) {
         }
 
         shortlistTasks.push(
-          fetchSheet(targetUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "update-shortlist", candidateId: candidate.regId, score: candidate.numScore, status: finalStatus })
-          })
+          recruitmentAction({ action: "update-shortlist", candidateId: candidate.regId, score: candidate.numScore, status: finalStatus })
         );
 
         if (finalStatus === "ROUND_2_APPROVED") {
           shortlistTasks.push(
-            fetchSheet(targetUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "dispatch-email-notice", email: candidate.email, name: candidate.name, status: "ROUND_2_APPROVED" })
-            })
+            recruitmentAction({ action: "dispatch-email-notice", email: candidate.email, name: candidate.name, status: "ROUND_2_APPROVED" })
           );
         }
       }
@@ -292,18 +240,13 @@ export async function POST(request: Request) {
         });
       }
 
-      const sheetRes = await fetchSheet(targetUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await recruitmentAction({
           action: "submit-quiz",
           id: "cand_" + Math.random().toString(36).substring(2, 9),
           name: name.trim(), email: email.trim().toLowerCase(), dept: normalizedDept,
           score: finalizedScore, round1Choices: readableChoices,
-          tabSwitches: tabSwitches || 0 // PROCTORING FIX: This passes the number directly to Google Sheets
-        }),
+          tabSwitches: tabSwitches || 0 // PROCTORING FIX: This passes the number straight through to the record
       });
-      await sheetRes.json();
 
       return NextResponse.json({ success: true, score: finalizedScore, passedRound1: false });
     }

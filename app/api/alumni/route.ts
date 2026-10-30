@@ -1,28 +1,11 @@
-import { sheetFetch } from "@/lib/sheetClient";
 import { NextResponse } from "next/server";
+import { getAlumni } from "@/lib/sheets";
 
 export async function GET() {
   try {
-    const targetUrl = process.env.SHEET_WEBHOOK_URL;
-    if (!targetUrl) {
-      return NextResponse.json({ error: "Google microservice URL configuration missing." }, { status: 500 });
-    }
-
-    
-    const response = await sheetFetch(`${targetUrl}?action=get-alumni`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-      next: { revalidate: 10 } 
-    });
-
-    const data = await response.json();
-    
-    if (data.success) {
-      return NextResponse.json({ success: true, alumni: data.data });
-    } else {
-      return NextResponse.json({ error: data.error || "Failed to read database cells." }, { status: 400 });
-    }
+    return NextResponse.json({ success: true, alumni: await getAlumni() });
   } catch (error) {
-    return NextResponse.json({ error: "E-Cell directory stream communication timeout." }, { status: 500 });
+    console.error("Alumni read failed:", error);
+    return NextResponse.json({ error: "Couldn't load the alumni directory." }, { status: 500 });
   }
 }

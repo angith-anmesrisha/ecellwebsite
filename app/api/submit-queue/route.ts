@@ -1,5 +1,6 @@
 import { limitByIp } from "@/lib/security";
-import { sheetFetch } from "@/lib/sheetClient";
+import { findCandidateByEmail, listCandidates, recruitmentAction } from "@/lib/recruitmentStore";
+import { stageSubmission } from "@/lib/store";
 import { NextResponse } from "next/server";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
 
@@ -13,36 +14,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Missing action route parameter." }, { status: 400 });
     }
 
-    const targetUrl = process.env.SHEET_WEBHOOK_URL;
-    if (!targetUrl) {
-      return NextResponse.json({ error: "Database backend key not configured." }, { status: 500 });
-    }
-
     if (action === "check-student-result") {
       if (!email) {
         return NextResponse.json({ error: "Email query parameter missing." }, { status: 400 });
       }
-      
-      const res = await sheetFetch(`${targetUrl}?action=get-all-registrations`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store"
-      });
-      const candidateJson = await res.json();
-      
-      if (candidateJson.success && candidateJson.data) {
-        const match = candidateJson.data.find(
-          (row: any) => row.email?.toLowerCase() === email.trim().toLowerCase()
-        );
-        
-        if (match) {
-          return NextResponse.json({
-            success: true,
-            name: match.name,
-            status: match.status ? match.status.toString().toUpperCase() : "PENDING",
-            score: parseInt(match.rollNumber) || 0
-          });
-        }
+      const match = await findCandidateByEmail(email);
+      if (match) {
+        return NextResponse.json({
+          success: true,
+          name: match.name,
+          status: match.status ? match.status.toString().toUpperCase() : "PENDING",
+          score: parseInt(String(match.rollNumber)) || 0
+        });
       }
       return NextResponse.json({ success: false, error: "No application found for this email address." });
     }
@@ -50,47 +33,31 @@ export async function GET(request: Request) {
     // Every other read is an admin dashboard query
     if (!(await isAdminRequest())) return unauthorizedResponse();
 
-    const res = await sheetFetch(`${targetUrl}?action=${encodeURIComponent(action)}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-      cache: "no-store" 
-    });
-
-    if (!res.ok) throw new Error("Google Sheets network drop.");
-    
-    const data = await res.json();
-    return NextResponse.json(data);
+    if (action === "get-all-registrations") {
+      return NextResponse.json({ success: true, data: await listCandidates() });
+    }
+    return NextResponse.json({ success: false, error: "Unknown action." }, { status: 400 });
   } catch (error) {
     console.error("Admin API Read Error:", error);
-    return NextResponse.json({ success: false, error: "Database link synchronization failure." }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Couldn't read recruitment records." }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const targetUrl = process.env.SHEET_WEBHOOK_URL;
-    
-    if (!targetUrl) {
-      return NextResponse.json({ error: "Sheets webhook token target not defined." }, { status: 500 });
-    }
 
     if (
-      body.action === "update-shortlist" || 
+      body.action === "update-shortlist" ||
       body.action === "submit-peer-review" ||
       body.action === "bulk-waitlist" ||
       body.action === "transfer-track" ||
       body.action === "append-quick-note"
     ) {
       if (!(await isAdminRequest())) return unauthorizedResponse();
-      const res = await sheetFetch(targetUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) throw new Error("Spreadsheet row write failure.");
-      return NextResponse.json({ success: true, message: "Admin updates saved to spreadsheet cells." });
+      const result = await recruitmentAction(body);
+      if (!result.success) return NextResponse.json(result, { status: 400 });
+      return NextResponse.json({ success: true, message: "Admin updates saved." });
     }
 
     const limited = await limitByIp(request, "sandbox", 8, 600);
@@ -109,18 +76,9 @@ export async function POST(request: Request) {
 
     let staged = false;
     try {
-      const stageRes = await sheetFetch(targetUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "stage-submission",
-          type,
-          payload
-        })
-      });
-      staged = stageRes.ok;
-    } catch (sheetError) {
-      console.error("Sheets Ledger Sync Warning:", sheetError);
+      staged = await stageSubmission(String(type).slice(0, 40), typeof payload === "object" ? payload : { value: payload });
+    } catch (stageError) {
+      console.error("Staging submission failed:", stageError);
     }
 
     // Alumni and archive submissions only need staging for review; the AI analysis

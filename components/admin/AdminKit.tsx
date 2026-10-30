@@ -14,6 +14,7 @@ const ADMIN_LINKS = [
   { href: "/admin/events", label: "Events" },
   { href: "/admin/competitions", label: "Judging" },
   { href: "/admin/analytics", label: "Analytics" },
+  { href: "/admin/database", label: "Data" },
 ];
 
 export function AdminNav() {

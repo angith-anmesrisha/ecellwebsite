@@ -164,6 +164,23 @@ export default function AdminEventsPanel() {
     }
   };
 
+  // Close, reopen or delete an event (works once the site runs on the database)
+  const updateEvent = async (ev: EventItem, patch: Partial<EventItem> | null) => {
+    if (patch === null && !confirm(`Delete "${ev.title}"? Its registrations stay in the database and the CSV download.`)) return;
+    try {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch === null ? { action: "delete-event", id: ev.id } : { action: "update-event", id: ev.id, ...patch }),
+      });
+      const data = await res.json();
+      if (!data.success) alert(data.error || "Couldn't update the event.");
+      fetchAdminData();
+    } catch {
+      alert("Couldn't update the event.");
+    }
+  };
+
   const filteredRegistrations = registrations.filter(
     r => selectedEventFilter === "all" || r.eventId === selectedEventFilter
   );
@@ -353,6 +370,8 @@ export default function AdminEventsPanel() {
                         <div className="flex flex-col gap-1.5 shrink-0 ml-3">
                           <button onClick={() => setEditingId(ev.id)} className="px-3 py-1.5 bg-white text-black rounded-lg text-[10px] font-bold uppercase">Edit page</button>
                           <button onClick={() => setRunningId(ev.id)} className="px-3 py-1.5 border border-white/10 text-white/80 hover:text-white rounded-lg text-[10px] font-bold uppercase">Run event</button>
+                          <button onClick={() => updateEvent(ev, { status: ev.status === "ACTIVE" ? "CLOSED" : "ACTIVE" })} className="px-3 py-1.5 border border-white/10 text-white/60 hover:text-white rounded-lg text-[10px] font-bold uppercase">{ev.status === "ACTIVE" ? "Close" : "Reopen"}</button>
+                          <button onClick={() => updateEvent(ev, null)} className="px-3 py-1.5 border border-red-500/30 text-red-300 hover:bg-red-500/10 rounded-lg text-[10px] font-bold uppercase">Delete</button>
                         </div>
                       </div>
                     ))}
@@ -459,8 +478,14 @@ export default function AdminEventsPanel() {
                         ))}
                       </select>
                     </div>
-                    <div className="text-[11px] font-bold text-white/40 flex items-center gap-1.5">
+                    <div className="text-[11px] font-bold text-white/40 flex items-center gap-3">
                       Synced Row Blocks: {filteredRegistrations.length} Entries
+                      <a
+                        href={`/api/admin/export?what=registrations${selectedEventFilter === "all" ? "" : `&eventId=${encodeURIComponent(selectedEventFilter)}`}`}
+                        className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 text-black rounded-lg text-[10px] uppercase"
+                      >
+                        Download CSV
+                      </a>
                     </div>
                   </div>
 

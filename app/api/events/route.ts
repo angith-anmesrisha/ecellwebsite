@@ -1,8 +1,8 @@
 import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
-import { getEventRegistrations, sheetGet, sheetPost } from "@/lib/sheetClient";
 import { getEvents } from "@/lib/sheets";
+import { createEvent, deleteEvent, listEventRegistrations, listEvents, updateEvent, usingDatabase, type EventInput } from "@/lib/store";
 import { readEventMeta } from "@/lib/content";
 import { registerForEvent, sendPass, type Applicant } from "@/lib/registrations";
 import { registrationWindow, type SheetEvent } from "@/lib/content-types";
@@ -16,11 +16,11 @@ export async function GET(request: Request) {
     if (mode === "registrations") {
       // Full list for the admin dashboard only. Students see their own passes in My E-Cell.
       if (!(await isAdminRequest())) return unauthorizedResponse();
-      const data = await getEventRegistrations({ fresh: true });
+      const data = await listEventRegistrations({ fresh: true });
       return NextResponse.json({ success: true, data }, { headers: { "Cache-Control": "private, no-store" } });
     }
 
-    const data = await sheetGet("get-events", {}, { next: { revalidate: 60 } } as RequestInit);
+    const data = { success: true, data: await listEvents() };
 
     return NextResponse.json(data, {
       status: 200,
@@ -110,6 +110,17 @@ async function handleRegistration(request: Request, body: any) {
   });
 }
 
+function readEventInput(body: any): Partial<EventInput> {
+  const input: Partial<EventInput> = {};
+  if (body.title !== undefined) input.title = cleanText(body.title, 200);
+  if (body.date !== undefined) input.date = cleanText(body.date, 60);
+  if (body.description !== undefined) input.description = cleanText(body.description, 5000);
+  if (body.status !== undefined) input.status = cleanText(body.status, 30).toUpperCase() || "ACTIVE";
+  if (body.bannerUrl !== undefined) input.bannerUrl = cleanText(body.bannerUrl, 1000);
+  if (Array.isArray(body.customFields)) input.customFields = body.customFields.map((f: unknown) => cleanText(f, 120)).filter(Boolean).slice(0, 30);
+  return input;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -119,7 +130,21 @@ export async function POST(request: Request) {
     // Everything else (creating events etc.) is admin only
     if (!(await isAdminRequest())) return unauthorizedResponse();
 
-    const data = await sheetPost(body);
+    let data: { success: boolean; error?: string; id?: string };
+    if (body.action === "create-event") {
+      data = await createEvent(readEventInput(body));
+    } else if (body.action === "update-event" || body.action === "delete-event") {
+      // Editing and removing events needs the database; on the Sheet they're edited in the Sheet itself
+      if (!(await usingDatabase())) {
+        return NextResponse.json({ success: false, error: "Switch to the database first (Admin → Database)." }, { status: 400 });
+      }
+      const id = cleanText(body.id, 80);
+      if (body.action === "delete-event") await deleteEvent(id);
+      else await updateEvent(id, readEventInput(body));
+      data = { success: true };
+    } else {
+      return NextResponse.json({ success: false, error: "Unknown action." }, { status: 400 });
+    }
 
     // Admin changes to the event list should show on /events straight away
     if (data.success) revalidateTag("get-events", { expire: 0 });

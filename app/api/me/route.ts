@@ -2,7 +2,7 @@ import { NextResponse, after } from "next/server";
 import { randomInt } from "crypto";
 import { getRedis, KEYS } from "@/lib/redis";
 import { getEvents } from "@/lib/sheets";
-import { sheetGet } from "@/lib/sheetClient";
+import { checkStudentResult } from "@/lib/recruitmentStore";
 import { readAllEventMeta, readSeries } from "@/lib/content";
 import { eventSlug, type SheetEvent } from "@/lib/content-types";
 import {
@@ -110,7 +110,7 @@ async function buildProfile(email: string) {
 
   let recruitment = null;
   try {
-    const data = await sheetGet("check-student-result", { email }, { cache: "no-store" });
+    const data = await checkStudentResult(email);
     if (data?.success && data.status) recruitment = { status: String(data.status).toUpperCase(), name: data.name || "" };
   } catch {
     // Recruitment lookup is a nice-to-have here

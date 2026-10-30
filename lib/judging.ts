@@ -1,5 +1,5 @@
 import { getRedis, KEYS } from "./redis";
-import { getEventRegistrations } from "./sheetClient";
+import { listEventRegistrations } from "./store";
 import { getTeams } from "./registrations";
 import type { CompetitionRound, EventMeta } from "./content-types";
 
@@ -64,7 +64,7 @@ export async function getEntrants(eventId: string, meta: EventMeta): Promise<Ent
       .filter((t) => t.members.length > 0)
       .map((t) => ({ id: t.id, name: t.name, members: t.members.map((m) => m.name), emails: t.members.map((m) => m.email) }));
   }
-  const rows = (await getEventRegistrations()).filter((r) => r.eventId === eventId && !cancelled.has(r.regId));
+  const rows = (await listEventRegistrations({ eventId })).filter((r) => !cancelled.has(r.regId));
   return rows.map((r) => ({ id: r.regId, name: r.name, members: [r.name], emails: [r.email] }));
 }
 

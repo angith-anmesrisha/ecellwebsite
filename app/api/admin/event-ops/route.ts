@@ -2,7 +2,7 @@ import { NextResponse, after } from "next/server";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
 import { getRedis, KEYS } from "@/lib/redis";
 import { getEvents } from "@/lib/sheets";
-import { getEventRegistrations } from "@/lib/sheetClient";
+import { listEventRegistrations } from "@/lib/store";
 import { readEventMeta } from "@/lib/content";
 import { getTeams, getWaitlist, lookupRegistration, promoteFromWaitlist, seatsTaken, sendPass } from "@/lib/registrations";
 import { mailProvider, noticeHtml, sendBulk } from "@/lib/mailer";
@@ -88,8 +88,8 @@ export async function POST(request: Request) {
     } else {
       const registered = [
         ...new Set(
-          (await getEventRegistrations({ fresh: true }))
-            .filter((r) => r.eventId === eventId && !cancelled.has(r.regId) && r.email)
+          (await listEventRegistrations({ fresh: true, eventId }))
+            .filter((r) => !cancelled.has(r.regId) && r.email)
             .map((r) => r.email),
         ),
       ];

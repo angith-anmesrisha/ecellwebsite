@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
 import { getRedis, KEYS } from "@/lib/redis";
 import { getEvents } from "@/lib/sheets";
-import { getEventRegistrations } from "@/lib/sheetClient";
+import { listEventRegistrations } from "@/lib/store";
 import { readEventMeta } from "@/lib/content";
 import { checkinCounts } from "@/lib/checkin";
 import { getTeams, getWaitlist, istDay } from "@/lib/registrations";
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   if (!(await isAdminRequest())) return unauthorizedResponse();
   const eventId = new URL(request.url).searchParams.get("eventId");
   const redis = getRedis();
-  const [events, registrations] = await Promise.all([getEvents<SheetEvent>(), getEventRegistrations({ fresh: true })]);
+  const [events, registrations] = await Promise.all([getEvents<SheetEvent>(), listEventRegistrations({ fresh: true })]);
 
   if (!eventId) {
     // Overview of every event

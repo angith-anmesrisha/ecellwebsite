@@ -1,13 +1,14 @@
 import { getRedis, KEYS } from "./redis";
-import { getEventRegistrations, sheetPost, type SheetRegistration } from "./sheetClient";
+import type { SheetRegistration } from "./sheetClient";
+import { insertRegistration, listEventRegistrations } from "./store";
 import { signPass } from "./security";
 import { sendEventPassEmail } from "./mailer";
 import type { EventMeta, SheetEvent } from "./content-types";
 
-// Registration bookkeeping that the Google Sheet can't do: one sign-up per email, seat limits,
-// a waitlist, cancellations, teams, and a fast index for the gate scanner. The sheet stays the
-// record of who registered; Redis only adds to it. Without Redis everything falls back to the
-// old behaviour (straight to the sheet).
+// Registration bookkeeping on top of the record store (Sheet or database, see lib/store.ts):
+// one sign-up per email, seat limits, a waitlist, cancellations, teams, and a fast index for the
+// gate scanner. The store stays the record of who registered; Redis only adds to it. Without
+// Redis everything falls back to the old behaviour (straight to the store).
 
 export interface RegistrationRecord {
   regId: string;
@@ -72,7 +73,7 @@ export async function ensureSeeded(eventId: string) {
   if (await redis.get(KEYS.regSeeded(eventId))) return;
   let rows: SheetRegistration[];
   try {
-    rows = (await getEventRegistrations({ fresh: true })).filter((r) => r.eventId === eventId);
+    rows = await listEventRegistrations({ fresh: true, eventId });
   } catch (error) {
     console.error("Seeding registrations failed:", error);
     return;
@@ -106,8 +107,8 @@ export async function lookupRegistration(regId: string): Promise<RegistrationRec
     const hit = await redis.get<RegistrationRecord>(KEYS.registration(regId));
     if (hit) return hit;
   }
-  // Older passes: find the row in the sheet (cached for 30 seconds) and index it for next time
-  const rows = await getEventRegistrations();
+  // Older passes: find the row in the store (the Sheet read is cached for 30 seconds) and index it for next time
+  const rows = await listEventRegistrations();
   const row = rows.find((r) => r.regId === regId);
   if (!row) return null;
   const record: RegistrationRecord = {
@@ -135,9 +136,9 @@ export async function registrationsForEmail(email: string): Promise<Registration
       rows.forEach((r) => r && found.set(r.regId, r));
     }
   }
-  // The sheet is the source of truth; merge in anything Redis hasn't seen
+  // The store is the source of truth; merge in anything Redis hasn't seen
   try {
-    const rows = (await getEventRegistrations()).filter((r) => r.email === email);
+    const rows = await listEventRegistrations({ email });
     for (const row of rows) {
       if (!found.has(row.regId)) {
         found.set(row.regId, {
@@ -152,7 +153,7 @@ export async function registrationsForEmail(email: string): Promise<Registration
       }
     }
   } catch (error) {
-    console.error("Sheet lookup for email failed:", error);
+    console.error("Registration lookup for email failed:", error);
   }
   return [...found.values()];
 }
@@ -178,8 +179,8 @@ export async function getTeamForMember(eventId: string, email: string) {
   return (await getTeams(eventId)).find((t) => t.members.some((m) => m.email === email)) || null;
 }
 
-// Sends one applicant to the sheet and does everything that follows a confirmed seat
-async function submitToSheet(event: SheetEvent, meta: EventMeta, applicant: Applicant): Promise<RegisterResult> {
+// Saves one applicant to the store and does everything that follows a confirmed seat
+async function saveRegistration(event: SheetEvent, meta: EventMeta, applicant: Applicant): Promise<RegisterResult> {
   const redis = getRedis();
   const answers = { ...applicant.customAnswers };
   let team: Team | null = null;
@@ -206,8 +207,7 @@ async function submitToSheet(event: SheetEvent, meta: EventMeta, applicant: Appl
     answers["Team code"] = team.code;
   }
 
-  const data = await sheetPost<{ success: boolean; registrationId?: string; error?: string }>({
-    action: "submit-registration",
+  const data = await insertRegistration({
     eventId: event.id,
     eventTitle: event.title,
     eventDate: event.date,
@@ -215,7 +215,10 @@ async function submitToSheet(event: SheetEvent, meta: EventMeta, applicant: Appl
     email: applicant.email,
     rollNumber: applicant.rollNumber,
     customAnswers: answers,
-  }).catch((error) => ({ success: false, registrationId: undefined, error: String(error) }));
+  }).catch((error) => {
+    console.error("Saving registration failed:", error);
+    return { success: false, registrationId: undefined, error: undefined };
+  });
 
   if (!data.success || !data.registrationId) {
     return { status: "error", code: "sheet", message: data.error || "We couldn't save your registration. Please try again." };
@@ -263,7 +266,7 @@ export async function sendPass(event: Pick<SheetEvent, "title" | "date">, meta: 
 
 export async function registerForEvent(event: SheetEvent, meta: EventMeta, applicant: Applicant): Promise<RegisterResult> {
   const redis = getRedis();
-  if (!redis) return submitToSheet(event, meta, applicant);
+  if (!redis) return saveRegistration(event, meta, applicant);
 
   await ensureSeeded(event.id);
   if (await redis.hexists(KEYS.waitlist(event.id), applicant.email)) {
@@ -290,7 +293,7 @@ export async function registerForEvent(event: SheetEvent, meta: EventMeta, appli
     }
   }
 
-  const result = await submitToSheet(event, meta, applicant);
+  const result = await saveRegistration(event, meta, applicant);
   if (result.status !== "registered") await redis.srem(KEYS.regEmails(event.id), applicant.email);
   return result;
 }
@@ -311,7 +314,7 @@ export async function promoteFromWaitlist(event: SheetEvent, meta: EventMeta, em
   if (!next) return null;
   await redis.hdel(KEYS.waitlist(event.id), next.email);
   await redis.sadd(KEYS.regEmails(event.id), next.email);
-  const result = await submitToSheet(event, meta, next);
+  const result = await saveRegistration(event, meta, next);
   if (result.status !== "registered") {
     await redis.srem(KEYS.regEmails(event.id), next.email);
     await redis.hset(KEYS.waitlist(event.id), { [next.email]: next });
