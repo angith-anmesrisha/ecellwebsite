@@ -211,7 +211,7 @@ export default function FeaturedEventPopup({
                     <img
                       src={resolvedBanner}
                       alt={popup.title.replace(/\n/g, " ")}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-top"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#060608] via-[#060608]/25 to-black/30" />
                   </motion.div>
