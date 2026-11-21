@@ -15,6 +15,8 @@ export interface FeaturedPopup {
   ctaLabel: string;
   ctaHref: string;
   hideAfterEnd: boolean;
+  eventId?: string;
+  bannerUrl?: string;
 }
 
 export type HomeSectionId = "trends" | "ecosystem" | "board" | "sandbox" | "resources" | "recruitment" | "connect";

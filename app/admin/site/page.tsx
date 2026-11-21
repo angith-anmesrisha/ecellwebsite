@@ -106,11 +106,32 @@ function SetupStatus({ setup }: { setup: Setup }) {
   );
 }
 
-function PopupTab({ initial, onSaved }: { initial: SiteSettings; onSaved: (v: SiteSettings) => void }) {
+function PopupTab({
+  initial,
+  events,
+  onSaved,
+}: {
+  initial: SiteSettings;
+  events: SheetEvent[];
+  onSaved: (v: SiteSettings) => void;
+}) {
   const s = useSaver<SiteSettings>("settings", initial, onSaved);
   if (!s.value) return null;
   const v = s.value;
   const popup = (patch: Partial<SiteSettings["popup"]>) => s.update({ ...v, popup: { ...v.popup, ...patch } });
+
+  const handleSelectEvent = (eventId: string) => {
+    if (!eventId) {
+      popup({ eventId: undefined, bannerUrl: undefined });
+      return;
+    }
+    const ev = events.find((e) => e.id === eventId);
+    popup({
+      eventId,
+      bannerUrl: ev?.bannerUrl || undefined,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Panel title="Featured event popup" description="The dialog that opens on the home page. Point it at your next big event.">
@@ -119,6 +140,40 @@ function PopupTab({ initial, onSaved }: { initial: SiteSettings; onSaved: (v: Si
             <Toggle checked={v.popup.enabled} onChange={(enabled) => popup({ enabled })} label="Show the popup" />
             <Toggle checked={v.popup.hideAfterEnd} onChange={(hideAfterEnd) => popup({ hideAfterEnd })} label="Stop showing it after the event ends" />
           </div>
+
+          <Field
+            label="Linked event banner (optional)"
+            hint="Uses the banner uploaded in Admin → Events. Leave unselected to show the default black hole visual."
+          >
+            <select
+              value={v.popup.eventId || ""}
+              onChange={(e) => handleSelectEvent(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">Default space visual (or auto-match from button link)</option>
+              {events.map((ev) => (
+                <option key={ev.id} value={ev.id}>
+                  {ev.title} ({ev.date}){ev.bannerUrl ? " — Banner attached" : " — No banner"}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          {v.popup.bannerUrl && (
+            <div className="rounded-xl border border-white/10 overflow-hidden bg-black/40 p-2 flex items-center justify-between gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={v.popup.bannerUrl} alt="Linked event banner" className="h-16 w-32 object-cover rounded-lg border border-white/10" />
+              <span className="text-[11px] text-emerald-400 font-mono flex-1">Event banner active for popup</span>
+              <button
+                type="button"
+                onClick={() => popup({ eventId: undefined, bannerUrl: undefined })}
+                className="text-[11px] text-red-400 hover:underline px-2 cursor-pointer"
+              >
+                Clear banner
+              </button>
+            </div>
+          )}
+
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Small label above the title">
               <TextInput value={v.popup.eyebrow} onChange={(eyebrow) => popup({ eyebrow })} />
@@ -559,7 +614,13 @@ export default function SiteContentAdmin() {
               </button>
             ))}
           </div>
-          {tab === "popup" && <PopupTab initial={data.settings} onSaved={(settings) => setData({ ...data, settings })} />}
+          {tab === "popup" && (
+            <PopupTab
+              initial={data.settings}
+              events={events}
+              onSaved={(settings) => setData({ ...data, settings })}
+            />
+          )}
           {tab === "layout" && <LayoutTab initial={data.settings} onSaved={(settings) => setData({ ...data, settings })} />}
           {tab === "announcements" && (
             <AnnouncementsTab initial={data.announcements} events={events} onSaved={(announcements) => setData({ ...data, announcements })} />

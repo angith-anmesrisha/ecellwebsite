@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Calendar, CalendarPlus, X } from "lucide-react";
 import BlackHoleCanvas from "./BlackHoleCanvas";
-import type { FeaturedPopup } from "@/lib/content-types";
+import { slugify, type FeaturedPopup, type SheetEvent } from "@/lib/content-types";
 
 // Deterministic star field so the scene renders identically every time
 const STARS = Array.from({ length: 70 }, (_, i) => {
@@ -86,8 +86,6 @@ function useCountdown(startsAt: string, endsAt: string) {
   };
 }
 
-// The home page's featured-event dialog. Everything in it comes from the admin console
-// (Site content > Featured popup); the defaults are the Startup Heist details.
 export default function FeaturedEventPopup({
   popup,
   open,
@@ -102,8 +100,41 @@ export default function FeaturedEventPopup({
   const calendar = calendarLinks(popup);
   const titleLines = popup.title.split("\n");
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [resolvedBanner, setResolvedBanner] = useState<string>(popup.bannerUrl || "");
 
-  // Escape closes; focus moves into the dialog and back to where it was afterwards
+  // Keep banner synced with the linked event (or match by ctaHref slug / title)
+  useEffect(() => {
+    if (popup.bannerUrl) {
+      setResolvedBanner(popup.bannerUrl);
+    }
+    if (!open) return;
+
+    let cancelled = false;
+    fetch("/api/events?mode=events")
+      .then((r) => r.json())
+      .then((d) => {
+        if (cancelled || !d?.success || !Array.isArray(d.data)) return;
+        const events = d.data as SheetEvent[];
+        const hrefSlug = (popup.ctaHref || "").split("/").filter(Boolean).pop()?.toLowerCase() || "";
+        const titleSlug = slugify(popup.title.replace(/\n/g, " "));
+
+        const matched =
+          (popup.eventId ? events.find((e) => e.id === popup.eventId) : undefined) ||
+          events.find((e) => e.id.toLowerCase() === hrefSlug) ||
+          events.find((e) => slugify(e.title) === hrefSlug) ||
+          events.find((e) => slugify(e.title) === titleSlug);
+
+        if (matched?.bannerUrl) {
+          setResolvedBanner(matched.bannerUrl);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, popup.eventId, popup.bannerUrl, popup.ctaHref, popup.title]);
+
   useEffect(() => {
     if (!open) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
@@ -167,45 +198,63 @@ export default function FeaturedEventPopup({
                 <X size={16} />
               </button>
 
-              {/* --- Deep space scene --- */}
+              {/* --- Top Visual: Uploaded Event Banner or Default Deep Space Black Hole --- */}
               <div className="relative h-48 sm:h-60 overflow-hidden bg-[radial-gradient(ellipse_at_78%_45%,rgba(120,53,15,0.35),transparent_55%),radial-gradient(ellipse_at_15%_80%,rgba(30,58,138,0.25),transparent_60%),#030304]">
-                {STARS.map((s, i) => (
-                  <span
-                    key={i}
-                    className="sc-anim absolute rounded-full bg-white"
-                    style={{
-                      left: `${s.left}%`,
-                      top: `${s.top}%`,
-                      width: s.size,
-                      height: s.size,
-                      opacity: s.opacity,
-                      ["--o" as string]: s.opacity,
-                      animation: `sc-twinkle ${s.duration}s ease-in-out ${s.delay}s infinite`,
-                    }}
-                  />
-                ))}
+                {resolvedBanner ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 1.05 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.9, ease: EASE }}
+                    className="absolute inset-0"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={resolvedBanner}
+                      alt={popup.title.replace(/\n/g, " ")}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#060608] via-[#060608]/25 to-black/30" />
+                  </motion.div>
+                ) : (
+                  <>
+                    {STARS.map((s, i) => (
+                      <span
+                        key={i}
+                        className="sc-anim absolute rounded-full bg-white"
+                        style={{
+                          left: `${s.left}%`,
+                          top: `${s.top}%`,
+                          width: s.size,
+                          height: s.size,
+                          opacity: s.opacity,
+                          ["--o" as string]: s.opacity,
+                          animation: `sc-twinkle ${s.duration}s ease-in-out ${s.delay}s infinite`,
+                        }}
+                      />
+                    ))}
 
-                {/* Black hole */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.6, filter: "blur(10px)" }}
-                  animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                  exit={{ scale: 0.2, opacity: 0, filter: "blur(6px)", transition: { duration: 0.5, ease: [0.6, 0, 0.9, 0.3] } }}
-                  transition={{ duration: 1.8, ease: EASE, delay: 0.2 }}
-                  className="absolute inset-0"
-                >
-                  <BlackHoleCanvas animate={!reduceMotion} />
-                </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.6, filter: "blur(10px)" }}
+                      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                      exit={{ scale: 0.2, opacity: 0, filter: "blur(6px)", transition: { duration: 0.5, ease: [0.6, 0, 0.9, 0.3] } }}
+                      transition={{ duration: 1.8, ease: EASE, delay: 0.2 }}
+                      className="absolute inset-0"
+                    >
+                      <BlackHoleCanvas animate={!reduceMotion} />
+                    </motion.div>
 
-                {/* Telemetry overlay */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.2, duration: 0.8 }}
-                  className="absolute left-4 bottom-3 font-mono text-[8px] sm:text-[9px] tracking-[0.25em] uppercase text-white/35 leading-relaxed"
-                >
-                  <div>Vector 047.2 // Gargantua</div>
-                  <div>Signal: locked</div>
-                </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 1.2, duration: 0.8 }}
+                      className="absolute left-4 bottom-3 font-mono text-[8px] sm:text-[9px] tracking-[0.25em] uppercase text-white/35 leading-relaxed"
+                    >
+                      <div>Vector 047.2 // Gargantua</div>
+                      <div>Signal: locked</div>
+                    </motion.div>
+                  </>
+                )}
+
                 <span
                   className="sc-anim absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-transparent via-white/[0.03] to-transparent pointer-events-none"
                   style={{ animation: "sc-scan 5s linear infinite" }}
@@ -281,23 +330,23 @@ export default function FeaturedEventPopup({
                         </div>
                       )}
                       {calendar.valid && (
-                      <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest">
-                        <a
-                          href={calendar.google}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-amber-200/80 hover:text-amber-100 transition-colors"
-                        >
-                          <CalendarPlus size={12} />
-                          Google Calendar
-                        </a>
-                        <button
-                          onClick={calendar.downloadIcs}
-                          className="text-white/50 hover:text-white transition-colors cursor-pointer"
-                        >
-                          .ics
-                        </button>
-                      </div>
+                        <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest">
+                          <a
+                            href={calendar.google}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-amber-200/80 hover:text-amber-100 transition-colors"
+                          >
+                            <CalendarPlus size={12} />
+                            Google Calendar
+                          </a>
+                          <button
+                            onClick={calendar.downloadIcs}
+                            className="text-white/50 hover:text-white transition-colors cursor-pointer"
+                          >
+                            .ics
+                          </button>
+                        </div>
                       )}
                     </motion.div>
                   )}
