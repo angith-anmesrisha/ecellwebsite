@@ -158,7 +158,7 @@ export default function FeaturedEventPopup({
           role="dialog"
           aria-modal="true"
           aria-labelledby="featured-event-title"
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
         >
           <style>{`
             @keyframes sc-twinkle { 0%,100% { opacity: var(--o) } 50% { opacity: calc(var(--o) * .3) } }
@@ -170,7 +170,7 @@ export default function FeaturedEventPopup({
           `}</style>
 
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/75 backdrop-blur-md" onClick={onClose} />
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md" onClick={onClose} />
 
           {/* Card with a slow light sweep around its border */}
           <motion.div
@@ -178,7 +178,7 @@ export default function FeaturedEventPopup({
             animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0, scale: 0.97, y: 12, filter: "blur(8px)", transition: { duration: 0.45, delay: 0.2, ease: "easeIn" } }}
             transition={{ duration: 0.9, ease: EASE }}
-            className="relative w-full max-w-lg rounded-2xl p-px overflow-hidden shadow-[0_30px_120px_-20px_rgba(234,88,12,0.25)]"
+            className="relative my-auto w-full max-w-lg rounded-2xl p-px overflow-hidden shadow-[0_30px_120px_-20px_rgba(234,88,12,0.25)]"
           >
             <div className="absolute inset-0 bg-white/10" />
             <div
@@ -192,91 +192,81 @@ export default function FeaturedEventPopup({
                 ref={closeButtonRef}
                 onClick={onClose}
                 aria-label="Close"
-                className="absolute top-3 right-3 z-30 p-2 text-white/70 hover:text-white bg-black/60 hover:bg-white/15 border border-white/15 rounded-full backdrop-blur-sm transition-colors cursor-pointer"
+                className="absolute top-3 right-3 z-30 p-2 text-white/80 hover:text-white bg-black/65 hover:bg-white/15 border border-white/15 rounded-full backdrop-blur-sm transition-colors cursor-pointer"
               >
                 <X size={16} />
               </button>
 
-              {/* --- Top Visual: Full Poster with Blurred Ambient Fill or Black Hole Fallback --- */}
-              <div className="relative h-64 sm:h-72 overflow-hidden bg-[#030304]">
-                {resolvedBanner ? (
+              {/* --- Top Visual: Full Poster Showcase or Default Deep Space Black Hole --- */}
+              {resolvedBanner ? (
+                <div className="relative w-full bg-[#09090c] pt-4 px-4 sm:px-6">
                   <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, ease: EASE }}
-                    className="relative w-full h-full flex items-center justify-center p-3 sm:p-4"
+                    className="relative mx-auto w-full max-w-[340px] sm:max-w-[360px] rounded-xl overflow-hidden border border-white/15 shadow-[0_18px_50px_rgba(0,0,0,0.85)] bg-black"
                   >
-                    {/* Blurred ambient fill so side margins match the poster's palette */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={resolvedBanner}
-                      alt=""
-                      aria-hidden="true"
-                      className="absolute inset-0 w-full h-full object-cover scale-125 blur-xl opacity-45 brightness-75 pointer-events-none"
-                    />
-                    {/* Crisp uncropped poster */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={resolvedBanner}
                       alt={popup.title.replace(/\n/g, " ")}
-                      className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain rounded-lg shadow-[0_12px_36px_rgba(0,0,0,0.75)] border border-white/10"
+                      className="w-full max-h-[38vh] object-contain mx-auto block"
                     />
-                    <div className="absolute inset-x-0 bottom-0 h-10 z-20 bg-gradient-to-t from-[#060608] to-transparent pointer-events-none" />
                   </motion.div>
-                ) : (
-                  <div className="relative w-full h-full bg-[radial-gradient(ellipse_at_78%_45%,rgba(120,53,15,0.35),transparent_55%),radial-gradient(ellipse_at_15%_80%,rgba(30,58,138,0.25),transparent_60%),#030304]">
-                    {STARS.map((s, i) => (
-                      <span
-                        key={i}
-                        className="sc-anim absolute rounded-full bg-white"
-                        style={{
-                          left: `${s.left}%`,
-                          top: `${s.top}%`,
-                          width: s.size,
-                          height: s.size,
-                          opacity: s.opacity,
-                          ["--o" as string]: s.opacity,
-                          animation: `sc-twinkle ${s.duration}s ease-in-out ${s.delay}s infinite`,
-                        }}
-                      />
-                    ))}
+                  <div className="h-4 bg-gradient-to-b from-transparent to-[#060608]" />
+                </div>
+              ) : (
+                <div className="relative h-48 sm:h-60 overflow-hidden bg-[radial-gradient(ellipse_at_78%_45%,rgba(120,53,15,0.35),transparent_55%),radial-gradient(ellipse_at_15%_80%,rgba(30,58,138,0.25),transparent_60%),#030304]">
+                  {STARS.map((s, i) => (
+                    <span
+                      key={i}
+                      className="sc-anim absolute rounded-full bg-white"
+                      style={{
+                        left: `${s.left}%`,
+                        top: `${s.top}%`,
+                        width: s.size,
+                        height: s.size,
+                        opacity: s.opacity,
+                        ["--o" as string]: s.opacity,
+                        animation: `sc-twinkle ${s.duration}s ease-in-out ${s.delay}s infinite`,
+                      }}
+                    />
+                  ))}
 
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.6, filter: "blur(10px)" }}
-                      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                      exit={{ scale: 0.2, opacity: 0, filter: "blur(6px)", transition: { duration: 0.5, ease: [0.6, 0, 0.9, 0.3] } }}
-                      transition={{ duration: 1.8, ease: EASE, delay: 0.2 }}
-                      className="absolute inset-0"
-                    >
-                      <BlackHoleCanvas animate={!reduceMotion} />
-                    </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.6, filter: "blur(10px)" }}
+                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                    exit={{ scale: 0.2, opacity: 0, filter: "blur(6px)", transition: { duration: 0.5, ease: [0.6, 0, 0.9, 0.3] } }}
+                    transition={{ duration: 1.8, ease: EASE, delay: 0.2 }}
+                    className="absolute inset-0"
+                  >
+                    <BlackHoleCanvas animate={!reduceMotion} />
+                  </motion.div>
 
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 1.2, duration: 0.8 }}
-                      className="absolute left-4 bottom-3 font-mono text-[8px] sm:text-[9px] tracking-[0.25em] uppercase text-white/35 leading-relaxed"
-                    >
-                      <div>Vector 047.2 // Gargantua</div>
-                      <div>Signal: locked</div>
-                    </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1.2, duration: 0.8 }}
+                    className="absolute left-4 bottom-3 font-mono text-[8px] sm:text-[9px] tracking-[0.25em] uppercase text-white/35 leading-relaxed"
+                  >
+                    <div>Vector 047.2 // Gargantua</div>
+                    <div>Signal: locked</div>
+                  </motion.div>
+                  <span
+                    className="sc-anim absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-transparent via-white/[0.03] to-transparent pointer-events-none"
+                    style={{ animation: "sc-scan 5s linear infinite" }}
+                  />
 
-                    <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-[#060608] pointer-events-none" />
-                  </div>
-                )}
-
-                <span
-                  className="sc-anim z-20 absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-transparent via-white/[0.03] to-transparent pointer-events-none"
-                  style={{ animation: "sc-scan 5s linear infinite" }}
-                />
-              </div>
+                  <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-[#060608]" />
+                </div>
+              )}
 
               {/* --- Content --- */}
               <motion.div
                 initial="hidden"
                 animate="show"
-                variants={{ show: { transition: { staggerChildren: 0.1, delayChildren: 0.6 } } }}
-                className="relative px-6 sm:px-8 pb-7 pt-3 space-y-5"
+                variants={{ show: { transition: { staggerChildren: 0.1, delayChildren: 0.4 } } }}
+                className="relative px-6 sm:px-8 pb-7 pt-2 space-y-5"
               >
                 <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 w-80 h-48 bg-orange-600/10 blur-[80px] rounded-full pointer-events-none" />
 
