@@ -1,7 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
-import { getEvents } from "@/lib/sheets";
 import { createEvent, deleteEvent, listEventRegistrations, listEvents, updateEvent, usingDatabase, type EventInput } from "@/lib/store";
 import { readEventMeta } from "@/lib/content";
 import { registerForEvent, sendPass, type Applicant } from "@/lib/registrations";
@@ -48,7 +47,8 @@ function readApplicant(body: any): Applicant | string {
   const customAnswers: Record<string, string> = {};
   if (body.customAnswers && typeof body.customAnswers === "object") {
     for (const [key, value] of Object.entries(body.customAnswers).slice(0, 30)) {
-      customAnswers[cleanText(key, 80)] = cleanText(value, 1000);
+      const cleanKey = cleanText(key, 80);
+      if (cleanKey) customAnswers[cleanKey] = cleanText(value, 1000);
     }
   }
 
@@ -68,7 +68,7 @@ async function handleRegistration(request: Request, body: any) {
   const applicant = readApplicant(body);
   if (typeof applicant === "string") return NextResponse.json({ success: false, error: applicant }, { status: 400 });
 
-  const events = await getEvents<SheetEvent>();
+  const events = await listEvents<SheetEvent>();
   const event = events.find((e) => e.id === String(body.eventId));
   if (!event || event.status !== "ACTIVE") {
     return NextResponse.json({ success: false, error: "Registrations for this event are closed." }, { status: 400 });
@@ -96,8 +96,6 @@ async function handleRegistration(request: Request, body: any) {
     return NextResponse.json({ success: false, error: result.message, code: result.code }, { status });
   }
 
-  // after() keeps the serverless function alive until the email is sent;
-  // a bare un-awaited promise can be frozen as soon as the response goes out.
   after(() =>
     sendPass(event, meta, { email: applicant.email, name: applicant.name, regId: result.regId }).catch((err) => console.error(err)),
   );
@@ -109,15 +107,6 @@ async function handleRegistration(request: Request, body: any) {
     team: result.team,
   });
 }
-function readBannerUrl(raw: unknown): string {
-  const value = typeof raw === "string" ? raw.trim() : "";
-  if (!value) return "";
-  if (value.startsWith("data:image/")) {
-    // Allow base64 image data URLs up to ~3MB string length
-    return value.length <= 3_000_000 ? value : "";
-  }
-  return cleanText(value, 1000);
-}
 
 function readEventInput(body: any): Partial<EventInput> {
   const input: Partial<EventInput> = {};
@@ -125,26 +114,25 @@ function readEventInput(body: any): Partial<EventInput> {
   if (body.date !== undefined) input.date = cleanText(body.date, 60);
   if (body.description !== undefined) input.description = cleanText(body.description, 5000);
   if (body.status !== undefined) input.status = cleanText(body.status, 30).toUpperCase() || "ACTIVE";
-  if (body.bannerUrl !== undefined) input.bannerUrl = readBannerUrl(body.bannerUrl);
+  if (body.bannerUrl !== undefined) input.bannerUrl = cleanText(body.bannerUrl, 3_000_000);
   if (Array.isArray(body.customFields)) {
     input.customFields = body.customFields.map((f: unknown) => cleanText(f, 120)).filter(Boolean).slice(0, 30);
   }
   return input;
 }
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
     if (body.action === "submit-registration") return handleRegistration(request, body);
 
-    // Everything else (creating events etc.) is admin only
     if (!(await isAdminRequest())) return unauthorizedResponse();
 
     let data: { success: boolean; error?: string; id?: string };
     if (body.action === "create-event") {
       data = await createEvent(readEventInput(body));
     } else if (body.action === "update-event" || body.action === "delete-event") {
-      // Editing and removing events needs the database; on the Sheet they're edited in the Sheet itself
       if (!(await usingDatabase())) {
         return NextResponse.json({ success: false, error: "Switch to the database first (Admin → Database)." }, { status: 400 });
       }
@@ -156,7 +144,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Unknown action." }, { status: 400 });
     }
 
-    // Admin changes to the event list should show on /events straight away
     if (data.success) revalidateTag("get-events", { expire: 0 });
 
     return NextResponse.json(data);

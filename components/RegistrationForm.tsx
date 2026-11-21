@@ -56,7 +56,13 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
     setIsSubmitting(true);
     setError("");
 
-    const answers = { ...customAnswers };
+    const answers: Record<string, string> = {};
+    for (const field of selectedEvent.customFields || []) {
+      const key = field.trim();
+      if (key) {
+        answers[key] = String(customAnswers[field] ?? customAnswers[key] ?? "").trim();
+      }
+    }
     if (meta?.collectCollege) {
       answers["College"] = college.trim();
       answers["City"] = city.trim();
@@ -83,7 +89,12 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
       if (data.success && data.waitlisted) {
         setOutcome({ kind: "waitlisted", position: data.position });
       } else if (data.success) {
-        setOutcome({ kind: "registered", passId: data.registrationId, passCode: data.passCode || data.registrationId, team: data.team });
+        setOutcome({
+          kind: "registered",
+          passId: data.registrationId,
+          passCode: data.passCode || data.registrationId,
+          team: data.team,
+        });
       } else {
         setError(data.error || "Registration failed. Please try again.");
         setCaptchaReset((n) => n + 1);

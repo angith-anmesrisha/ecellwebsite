@@ -157,6 +157,7 @@ export default function EventsView({ initialEvents, meta, series }: EventsViewPr
             <div className="lg:col-span-1">
               {selectedEvent ? (
                 <RegistrationForm
+                  key={selectedEvent.id}
                   selectedEvent={selectedEvent}
                   meta={meta[selectedEvent.id]}
                   onCancel={() => setSelectedEvent(null)}
