@@ -197,23 +197,24 @@ export default function FeaturedEventPopup({
                 <X size={16} />
               </button>
 
-              {/* --- Top Visual: Full Poster Showcase or Default Deep Space Black Hole --- */}
+              {/* --- Top Visual: Full-Bleed Stretched Banner or Default Deep Space Black Hole --- */}
               {resolvedBanner ? (
-                <div className="relative w-full bg-[#09090c] pt-4 px-4 sm:px-6">
+                <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-[#030304]">
                   <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{ duration: 0.7, ease: EASE }}
-                    className="relative mx-auto w-full max-w-[340px] sm:max-w-[360px] rounded-xl overflow-hidden border border-white/15 shadow-[0_18px_50px_rgba(0,0,0,0.85)] bg-black"
+                    className="relative w-full h-full"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={resolvedBanner}
                       alt={popup.title.replace(/\n/g, " ")}
-                      className="w-full max-h-[38vh] object-contain mx-auto block"
+                      style={{ objectPosition: "50% 62%" }}
+                      className="w-full h-full object-cover block"
                     />
+                    <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-[#060608] pointer-events-none" />
                   </motion.div>
-                  <div className="h-4 bg-gradient-to-b from-transparent to-[#060608]" />
                 </div>
               ) : (
                 <div className="relative h-48 sm:h-60 overflow-hidden bg-[radial-gradient(ellipse_at_78%_45%,rgba(120,53,15,0.35),transparent_55%),radial-gradient(ellipse_at_15%_80%,rgba(30,58,138,0.25),transparent_60%),#030304]">
