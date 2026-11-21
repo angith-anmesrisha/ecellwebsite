@@ -109,6 +109,15 @@ async function handleRegistration(request: Request, body: any) {
     team: result.team,
   });
 }
+function readBannerUrl(raw: unknown): string {
+  const value = typeof raw === "string" ? raw.trim() : "";
+  if (!value) return "";
+  if (value.startsWith("data:image/")) {
+    // Allow base64 image data URLs up to ~3MB string length
+    return value.length <= 3_000_000 ? value : "";
+  }
+  return cleanText(value, 1000);
+}
 
 function readEventInput(body: any): Partial<EventInput> {
   const input: Partial<EventInput> = {};
@@ -116,11 +125,12 @@ function readEventInput(body: any): Partial<EventInput> {
   if (body.date !== undefined) input.date = cleanText(body.date, 60);
   if (body.description !== undefined) input.description = cleanText(body.description, 5000);
   if (body.status !== undefined) input.status = cleanText(body.status, 30).toUpperCase() || "ACTIVE";
-  if (body.bannerUrl !== undefined) input.bannerUrl = cleanText(body.bannerUrl, 1000);
-  if (Array.isArray(body.customFields)) input.customFields = body.customFields.map((f: unknown) => cleanText(f, 120)).filter(Boolean).slice(0, 30);
+  if (body.bannerUrl !== undefined) input.bannerUrl = readBannerUrl(body.bannerUrl);
+  if (Array.isArray(body.customFields)) {
+    input.customFields = body.customFields.map((f: unknown) => cleanText(f, 120)).filter(Boolean).slice(0, 30);
+  }
   return input;
 }
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
