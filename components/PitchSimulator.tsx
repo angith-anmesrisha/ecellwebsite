@@ -21,6 +21,8 @@ import {
   Users,
   Activity,
   ShieldCheck,
+  Shuffle,
+  Loader2,
 } from "lucide-react";
 
 interface RoadmapStep {
@@ -38,10 +40,10 @@ interface DecisionOption {
   label: string;
   tag: string;
   detail: string;
-  runwayDelta: number; // months
-  tractionDelta: number; // 0-100 scale
-  marginDelta: number; // 0-100 scale
-  opsDelta: number; // 0-100 scale
+  runwayDelta: number;
+  tractionDelta: number;
+  marginDelta: number;
+  opsDelta: number;
   takeaway: string;
 }
 
@@ -53,174 +55,338 @@ interface DecisionStage {
   options: DecisionOption[];
 }
 
-const DECISION_STAGES: DecisionStage[] = [
-  {
-    id: "acquisition",
-    stepLabel: "Stage 01 // Customer Acquisition",
-    title: "How do you win your first 500 users?",
-    prompt: "You have ₹6 Lakhs in seed grants and 12 months of baseline runway. Pick your primary GTM engine.",
-    options: [
-      {
-        id: "community",
-        label: "Campus & Community-Led Seeding",
-        tag: "Low CAC · High Trust",
-        detail: "Launch pilot cohorts across colleges/communities with referral loops and founder-led onboarding.",
-        runwayDelta: 1,
-        tractionDelta: 16,
-        marginDelta: 12,
-        opsDelta: 8,
-        takeaway: "Strong organic retention and low CAC, though top-of-funnel scale starts measured.",
-      },
-      {
-        id: "paid",
-        label: "Aggressive Performance Ads",
-        tag: "Fast Spike · High Burn",
-        detail: "Run targeted Meta/Google acquisition campaigns immediately to test conversion velocity.",
-        runwayDelta: -3,
-        tractionDelta: 24,
-        marginDelta: -10,
-        opsDelta: -4,
-        takeaway: "Fast early user volume, but paid CAC compresses margins before retention is proven.",
-      },
-      {
-        id: "b2b_partners",
-        label: "Channel & Institutional Pilots",
-        tag: "High ACV · Longer Cycle",
-        detail: "Sign 3–5 anchor institutions or mid-market partners for co-branded distribution.",
-        runwayDelta: 0,
-        tractionDelta: 14,
-        marginDelta: 16,
-        opsDelta: 6,
-        takeaway: "Predictable bulk distribution with strong unit economics once procurement clears.",
-      },
-    ],
-  },
-  {
-    id: "pricing",
-    stepLabel: "Stage 02 // Monetization & Pricing",
-    title: "How do you capture value?",
-    prompt: "Early adopters are active. Choose the revenue model that shapes your cash conversion cycle.",
-    options: [
-      {
-        id: "annual_upfront",
-        label: "Upfront Quarterly / Annual Plans",
-        tag: "Cash-Flow Positive",
-        detail: "Offer a 20% discount for upfront commitment to fund operations from customer cash.",
-        runwayDelta: 3,
-        tractionDelta: -4,
-        marginDelta: 18,
-        opsDelta: 6,
-        takeaway: "Upfront cash extends runway substantially and filters for high-intent buyers.",
-      },
-      {
-        id: "freemium",
-        label: "Freemium + Usage Add-Ons",
-        tag: "Viral Wedge · Delayed Revenue",
-        detail: "Keep core workflows free to maximize adoption and monetize power features later.",
-        runwayDelta: -2,
-        tractionDelta: 22,
-        marginDelta: -6,
-        opsDelta: -4,
-        takeaway: "Maximizes top-of-funnel growth, requiring tight infra cost caps on free users.",
-      },
-      {
-        id: "commission",
-        label: "Outcome / Transaction Take-Rate",
-        tag: "Aligned ROI · Variable Cash",
-        detail: "Charge a percentage fee only when your product delivers a verified transaction or saving.",
-        runwayDelta: 0,
-        tractionDelta: 14,
-        marginDelta: 10,
-        opsDelta: 2,
-        takeaway: "Easy yes for hesitant customers; revenue scales directly with platform throughput.",
-      },
-    ],
-  },
-  {
-    id: "burn",
-    stepLabel: "Stage 03 // Capital & Team Allocation",
-    title: "Where does your next ₹3 Lakhs go?",
-    prompt: "Demand is picking up and your small founding team is stretched thin.",
-    options: [
-      {
-        id: "lean_automation",
-        label: "Automate Core Workflows + Lean Ops",
-        tag: "High Leverage · Disciplined Burn",
-        detail: "Invest in internal tooling, self-serve onboarding, and part-time specialist contractors.",
-        runwayDelta: 2,
-        tractionDelta: 8,
-        marginDelta: 14,
-        opsDelta: 18,
-        takeaway: "Protects runway while raising revenue-per-team-member before full-time hiring.",
-      },
-      {
-        id: "sales_blitz",
-        label: "Hire Full-Time Growth & Field Reps",
-        tag: "Pipeline Push · Fixed Overhead",
-        detail: "Bring on dedicated outbound reps and campus ambassadors to double monthly demos.",
-        runwayDelta: -3,
-        tractionDelta: 20,
-        marginDelta: -8,
-        opsDelta: -6,
-        takeaway: "Accelerates pipeline growth, but raises fixed monthly burn immediately.",
-      },
-      {
-        id: "product_moat",
-        label: "Deep Product & Reliability Sprint",
-        tag: "Defensibility · Slower GTM",
-        detail: "Focus engineering bandwidth on proprietary features, security, and uptime SLAs.",
-        runwayDelta: -1,
-        tractionDelta: 4,
-        marginDelta: 8,
-        opsDelta: 20,
-        takeaway: "Builds durable product moat and slashes churn, though short-term growth pauses.",
-      },
-    ],
-  },
-  {
-    id: "bottleneck",
-    stepLabel: "Stage 04 // Operations & Supply Shock",
-    title: "A sudden fulfillment bottleneck hits.",
-    prompt: "Order/usage volume jumps 3x in one week, exposing a weak link in delivery and support.",
-    options: [
-      {
-        id: "buffer_sla",
-        label: "Cap Intake + Set Tiered SLAs",
-        tag: "Protects Quality & Margin",
-        detail: "Introduce a waitlist for new cohorts while guaranteeing 24-hour SLA for active users.",
-        runwayDelta: 1,
-        tractionDelta: -4,
-        marginDelta: 14,
-        opsDelta: 22,
-        takeaway: "Preserves NPS and unit margins under stress instead of burning trust with delays.",
-      },
-      {
-        id: "absorb_cost",
-        label: "Expedite Fulfillment at Any Cost",
-        tag: "Zero Churn · Margin Hit",
-        detail: "Pay rush vendor/cloud premiums and overtime support so every user gets served on time.",
-        runwayDelta: -2,
-        tractionDelta: 16,
-        marginDelta: -14,
-        opsDelta: 10,
-        takeaway: "Keeps every customer happy during the spike, at the cost of temporary margin compression.",
-      },
-      {
-        id: "self_serve_pivot",
-        label: "Ship Self-Serve Batch Fulfillment",
-        tag: "Scalable Fix · Medium Effort",
-        detail: "Standardize packages and batch daily operations to clear the queue sustainably.",
-        runwayDelta: 0,
-        tractionDelta: 10,
-        marginDelta: 12,
-        opsDelta: 18,
-        takeaway: "Turns a one-off bottleneck into a repeatable operating playbook.",
-      },
-    ],
-  },
-];
-
 const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(max, val));
+
+// Dynamic scenario pool used to assemble unique user scenarios locally if AI generation is unavailable
+const STAGE_POOLS: Record<
+  "acquisition" | "pricing" | "burn" | "bottleneck",
+  Array<{
+    title: string;
+    promptTemplate: (entity: string, sector: string) => string;
+    options: DecisionOption[];
+  }>
+> = {
+  acquisition: [
+    {
+      title: "First 500 Users: Go-To-Market Wedge",
+      promptTemplate: (entity, sector) =>
+        `${entity} is launching in ${sector} with ₹6 Lakhs in seed capital. Which acquisition channel do you bet on first?`,
+      options: [
+        {
+          id: "community",
+          label: "Campus & Niche Community Seeding",
+          tag: "Low CAC · High Trust",
+          detail: "Launch invite-only cohorts inside targeted communities with referral incentives and founder-led onboarding.",
+          runwayDelta: 1,
+          tractionDelta: 16,
+          marginDelta: 12,
+          opsDelta: 8,
+          takeaway: "High organic retention and near-zero CAC, though top-of-funnel scale builds steadily.",
+        },
+        {
+          id: "paid",
+          label: "Performance Ad Blitz (Meta / Search)",
+          tag: "Fast Spike · High Burn",
+          detail: "Deploy ₹2.5 Lakhs immediately into targeted paid campaigns to validate conversion velocity.",
+          runwayDelta: -3,
+          tractionDelta: 24,
+          marginDelta: -10,
+          opsDelta: -4,
+          takeaway: "Rapid user acquisition, but paid CAC compresses margins before repeat retention is proven.",
+        },
+        {
+          id: "b2b_partners",
+          label: "Institutional & Channel Pilots",
+          tag: "High ACV · Longer Cycle",
+          detail: "Sign 3–5 anchor partners or campuses for co-branded bulk distribution.",
+          runwayDelta: 0,
+          tractionDelta: 14,
+          marginDelta: 16,
+          opsDelta: 6,
+          takeaway: "Predictable bulk volume with strong unit economics once procurement clears.",
+        },
+      ],
+    },
+    {
+      title: "Cold Start: Breaking Market Inertia",
+      promptTemplate: (entity, sector) =>
+        `Early prospects in ${sector} like ${entity}'s pitch but hesitate to switch from existing habits. How do you unlock adoption?`,
+      options: [
+        {
+          id: "concierge_mvp",
+          label: "White-Glove Concierge Onboarding",
+          tag: "Zero Friction · Manual Effort",
+          detail: "Migrate the first 50 customers manually so they see value within 24 hours.",
+          runwayDelta: -1,
+          tractionDelta: 18,
+          marginDelta: 6,
+          opsDelta: -6,
+          takeaway: "Produces strong early case studies and word-of-mouth, though manual setup won't scale forever.",
+        },
+        {
+          id: "viral_tool",
+          label: "Free Micro-Tool / Diagnostic Lead Magnet",
+          tag: "Self-Serve · Viral Loop",
+          detail: "Release a lightweight free utility that solves one urgent pain point and funnels users into the core product.",
+          runwayDelta: 0,
+          tractionDelta: 22,
+          marginDelta: 8,
+          opsDelta: 4,
+          takeaway: "Creates a compounding organic funnel with low acquisition cost.",
+        },
+        {
+          id: "influencer_demo",
+          label: "Creator & Industry Demo Sprints",
+          tag: "High Reach · Variable ROI",
+          detail: "Partner with respected domain creators for live teardown videos and exclusive trial codes.",
+          runwayDelta: -2,
+          tractionDelta: 20,
+          marginDelta: -4,
+          opsDelta: 2,
+          takeaway: "Builds immediate brand credibility and spikes trial signups.",
+        },
+      ],
+    },
+  ],
+  pricing: [
+    {
+      title: "Monetization & Cash Conversion",
+      promptTemplate: (entity) =>
+        `Active users are engaging weekly with ${entity}. How do you structure pricing to balance growth and cash flow?`,
+      options: [
+        {
+          id: "annual_upfront",
+          label: "Upfront Quarterly / Annual Commitments",
+          tag: "Cash-Flow Positive",
+          detail: "Offer a 20% discount for upfront payment to fund operations directly from customer revenue.",
+          runwayDelta: 3,
+          tractionDelta: -4,
+          marginDelta: 18,
+          opsDelta: 6,
+          takeaway: "Upfront cash extends runway dramatically and filters for committed buyers.",
+        },
+        {
+          id: "freemium",
+          label: "Freemium Core + Paid Power Tiers",
+          tag: "Viral Wedge · Delayed Cash",
+          detail: "Keep base usage free to maximize market share and monetize analytics, automation, or team seats.",
+          runwayDelta: -2,
+          tractionDelta: 22,
+          marginDelta: -6,
+          opsDelta: -4,
+          takeaway: "Maximizes user growth, requiring strict usage caps on free accounts.",
+        },
+        {
+          id: "commission",
+          label: "Outcome / Transaction Take-Rate",
+          tag: "Aligned ROI · Variable Cash",
+          detail: "Charge a percentage fee only when your platform delivers a completed order or verified saving.",
+          runwayDelta: 0,
+          tractionDelta: 14,
+          marginDelta: 10,
+          opsDelta: 2,
+          takeaway: "Removes upfront buyer resistance; revenue scales directly with platform volume.",
+        },
+      ],
+    },
+    {
+      title: "Enterprise Push vs. Self-Serve Velocity",
+      promptTemplate: (entity) =>
+        `Two larger buyers ask ${entity} for custom billing and SLAs while retail users want instant checkout. What's your move?`,
+      options: [
+        {
+          id: "tiered_hybrid",
+          label: "Self-Serve Tiers + Custom Enterprise Plan",
+          tag: "Balanced · Clear Expansion",
+          detail: "Keep transparent card/UPI checkout for small teams and gate custom SLAs behind a higher annual floor.",
+          runwayDelta: 2,
+          tractionDelta: 12,
+          marginDelta: 14,
+          opsDelta: 4,
+          takeaway: "Captures both fast self-serve signups and high-margin enterprise expansion.",
+        },
+        {
+          id: "usage_metered",
+          label: "Pure Pay-As-You-Go Metering",
+          tag: "Low Entry · Revenue Volatility",
+          detail: "Bill strictly on monthly consumption with zero minimum commitment.",
+          runwayDelta: -1,
+          tractionDelta: 18,
+          marginDelta: 2,
+          opsDelta: 0,
+          takeaway: "Easy onboarding, though monthly revenue fluctuates with seasonal usage.",
+        },
+        {
+          id: "anchor_retainer",
+          label: "Focus on 5 High-Ticket Retainers",
+          tag: "High Margin · Concentration Risk",
+          detail: "Prioritize high-touch annual contracts with guaranteed minimum billing.",
+          runwayDelta: 3,
+          tractionDelta: -6,
+          marginDelta: 20,
+          opsDelta: 8,
+          takeaway: "Locks in predictable runway early, though losing one client hurts.",
+        },
+      ],
+    },
+  ],
+  burn: [
+    {
+      title: "Capital Allocation Under Pressure",
+      promptTemplate: (entity) =>
+        `Demand for ${entity} is climbing and your founding team is hitting capacity. Where do you deploy the next ₹3 Lakhs?`,
+      options: [
+        {
+          id: "lean_automation",
+          label: "Workflow Automation + Lean Ops",
+          tag: "High Leverage · Disciplined Burn",
+          detail: "Build self-serve onboarding, automated billing, and bring on part-time domain specialists.",
+          runwayDelta: 2,
+          tractionDelta: 8,
+          marginDelta: 14,
+          opsDelta: 18,
+          takeaway: "Extends runway while lifting revenue-per-person before adding fixed payroll.",
+        },
+        {
+          id: "sales_blitz",
+          label: "Hire Full-Time Growth & Field Reps",
+          tag: "Pipeline Push · Fixed Overhead",
+          detail: "Recruit dedicated outbound reps and campus leads to double weekly demos.",
+          runwayDelta: -3,
+          tractionDelta: 20,
+          marginDelta: -8,
+          opsDelta: -6,
+          takeaway: "Accelerates top-line pipeline, but increases fixed monthly burn immediately.",
+        },
+        {
+          id: "product_moat",
+          label: "Core Reliability & Product Moat Sprint",
+          tag: "Defensibility · Measured GTM",
+          detail: "Dedicate engineering bandwidth to proprietary features, data pipelines, and uptime.",
+          runwayDelta: -1,
+          tractionDelta: 4,
+          marginDelta: 8,
+          opsDelta: 20,
+          takeaway: "Cuts churn and deepens competitive defensibility.",
+        },
+      ],
+    },
+  ],
+  bottleneck: [
+    {
+      title: "Sudden 3x Demand & Supply Bottleneck",
+      promptTemplate: (entity, sector) =>
+        `A viral mention triggers a 3x spike in ${sector} demand for ${entity}, straining fulfillment and support. How do you respond?`,
+      options: [
+        {
+          id: "buffer_sla",
+          label: "Cohort Waitlist + Strict 24h SLA",
+          tag: "Protects Quality & Margin",
+          detail: "Gate new signups into weekly cohorts while guaranteeing fast turnaround for active users.",
+          runwayDelta: 1,
+          tractionDelta: -4,
+          marginDelta: 14,
+          opsDelta: 22,
+          takeaway: "Protects NPS and gross margins under pressure instead of breaking delivery promises.",
+        },
+        {
+          id: "absorb_cost",
+          label: "Expedite Everything at Rush Rates",
+          tag: "Zero Churn · Margin Hit",
+          detail: "Pay overtime support and rush vendor/cloud premiums so every order clears immediately.",
+          runwayDelta: -2,
+          tractionDelta: 16,
+          marginDelta: -14,
+          opsDelta: 10,
+          takeaway: "Keeps every user happy during the surge, at the expense of short-term unit margin.",
+        },
+        {
+          id: "self_serve_pivot",
+          label: "Standardize & Batch Fulfillment",
+          tag: "Scalable Fix · Repeatable Ops",
+          detail: "Replace custom edge-cases with standardized tiers and scheduled daily batch processing.",
+          runwayDelta: 0,
+          tractionDelta: 10,
+          marginDelta: 12,
+          opsDelta: 18,
+          takeaway: "Converts a one-off spike into a durable operating SOP.",
+        },
+      ],
+    },
+    {
+      title: "Key Vendor / Infrastructure Rate Hike",
+      promptTemplate: (entity) =>
+        `Your primary third-party vendor raises API/supply rates by 35% overnight, threatening ${entity}'s unit economics. What's your play?`,
+      options: [
+        {
+          id: "multi_vendor",
+          label: "Split Routing Across Backup Vendors",
+          tag: "Resilient Supply · Engineering Lift",
+          detail: "Route standard workloads to a lower-cost secondary provider and reserve the premium vendor for priority tiers.",
+          runwayDelta: 1,
+          tractionDelta: 4,
+          marginDelta: 16,
+          opsDelta: 20,
+          takeaway: "Eliminates single-vendor lock-in and restores gross margins.",
+        },
+        {
+          id: "pass_through",
+          label: "Introduce Transparent Fuel / Infra Surcharge",
+          tag: "Margin Neutral · Churn Test",
+          detail: "Grandfather existing annual plans and pass partial cost increases onto new signups.",
+          runwayDelta: 2,
+          tractionDelta: -6,
+          marginDelta: 14,
+          opsDelta: 6,
+          takeaway: "Protects cash runway while testing true price elasticity.",
+        },
+        {
+          id: "absorb_growth",
+          label: "Absorb Cost to Undercut Competitors",
+          tag: "Share Grab · Burn Heavy",
+          detail: "Hold prices flat while rivals hike theirs to capture switching customers.",
+          runwayDelta: -3,
+          tractionDelta: 18,
+          marginDelta: -15,
+          opsDelta: 2,
+          takeaway: "Captures market share aggressively, but requires close runway monitoring.",
+        },
+      ],
+    },
+  ],
+};
+
+function buildLocalDynamicStages(entityName: string, sector: string, seed: number): DecisionStage[] {
+  const entity = entityName.trim() || "Your Venture";
+  const keys: Array<"acquisition" | "pricing" | "burn" | "bottleneck"> = [
+    "acquisition",
+    "pricing",
+    "burn",
+    "bottleneck",
+  ];
+  const labels = [
+    "Stage 01 // Customer Acquisition",
+    "Stage 02 // Monetization & Pricing",
+    "Stage 03 // Capital & Team Allocation",
+    "Stage 04 // Operations & Supply Shock",
+  ];
+
+  return keys.map((key, index) => {
+    const pool = STAGE_POOLS[key];
+    const picked = pool[(seed + index * 7) % pool.length];
+    // Shuffle option order slightly per seed so each user gets a fresh layout
+    const rotatedOptions = picked.options.map(
+      (_, i) => picked.options[(i + ((seed + index) % picked.options.length)) % picked.options.length],
+    );
+    return {
+      id: key,
+      stepLabel: labels[index],
+      title: picked.title,
+      prompt: picked.promptTemplate(entity, sector),
+      options: rotatedOptions,
+    };
+  });
+}
 
 export default function PitchSimulator() {
   const [mode, setMode] = useState<"ai" | "game">("ai");
@@ -244,18 +410,91 @@ export default function PitchSimulator() {
   const [dynamicPhases, setDynamicPhases] = useState<RoadmapStep[]>([]);
   const [dynamicHurdles, setDynamicHurdles] = useState<HurdleStep[]>([]);
 
-  // Mode 2: Branching Venture Decision Game state
+  // Mode 2: Auto-generated Branching Venture Decision Game state
+  const [scenarioSeed, setScenarioSeed] = useState<number>(() => Math.floor(Math.random() * 100_000));
+  const [stages, setStages] = useState<DecisionStage[]>(() =>
+    buildLocalDynamicStages("Your Venture", "Artificial Intelligence", Math.floor(Math.random() * 100_000)),
+  );
+  const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
+  const [scenarioSource, setScenarioSource] = useState<"dynamic" | "ai">("dynamic");
   const [currentStageIdx, setCurrentStageIdx] = useState(0);
   const [choices, setChoices] = useState<Record<string, DecisionOption>>({});
   const [copiedSummary, setCopiedSummary] = useState(false);
 
-  const gameMetrics = useMemo(() => {
-    let runway = 12; // months
-    let traction = 32; // %
-    let margin = 45; // %
-    let ops = 45; // %
+  const generateFreshScenario = async (nextSeed?: number) => {
+    const seed = nextSeed ?? Math.floor(Math.random() * 1_000_000);
+    setScenarioSeed(seed);
+    setChoices({});
+    setCurrentStageIdx(0);
+    setCopiedSummary(false);
+    setIsGeneratingScenario(true);
 
-    // Baseline modifiers from initial setup
+    // Immediately set a fresh seeded scenario so there is zero blank state
+    const localFallback = buildLocalDynamicStages(startupTitle, selectedSector, seed);
+    setStages(localFallback);
+    setScenarioSource("dynamic");
+
+    try {
+      const res = await fetch("/api/submit-queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "VENTURE_DECISION_SCENARIO",
+          payload: {
+            seed,
+            startupTitle: startupTitle.trim() || "Campus Startup",
+            problemStatement: problemStatement.trim() || `Solving a key workflow bottleneck in ${selectedSector}`,
+            selectedSector,
+            selectedModel,
+            selectedPricing,
+          },
+        }),
+      });
+      const data = await res.json();
+      const aiStages = data?.aiAnalysis?.stages || data?.stages;
+      if (res.ok && Array.isArray(aiStages) && aiStages.length === 4) {
+        const sanitized: DecisionStage[] = aiStages.map((st: any, idx: number) => ({
+          id: String(st.id || `stage_${idx + 1}`),
+          stepLabel: String(st.stepLabel || `Stage 0${idx + 1}`),
+          title: String(st.title || localFallback[idx].title),
+          prompt: String(st.prompt || localFallback[idx].prompt),
+          options: Array.isArray(st.options) && st.options.length >= 2
+            ? st.options.slice(0, 3).map((opt: any, oIdx: number) => ({
+                id: String(opt.id || `opt_${idx}_${oIdx}`),
+                label: String(opt.label || `Option ${oIdx + 1}`),
+                tag: String(opt.tag || "Strategic Trade-off"),
+                detail: String(opt.detail || ""),
+                runwayDelta: clamp(Number(opt.runwayDelta) || 0, -4, 4),
+                tractionDelta: clamp(Number(opt.tractionDelta) || 0, -15, 25),
+                marginDelta: clamp(Number(opt.marginDelta) || 0, -20, 22),
+                opsDelta: clamp(Number(opt.opsDelta) || 0, -15, 25),
+                takeaway: String(opt.takeaway || ""),
+              }))
+            : localFallback[idx].options,
+        }));
+        setStages(sanitized);
+        setScenarioSource("ai");
+      }
+    } catch {
+      // Keep localFallback seamlessly
+    } finally {
+      setIsGeneratingScenario(false);
+    }
+  };
+
+  const switchToGameMode = () => {
+    setMode("game");
+    if (Object.keys(choices).length === 0) {
+      generateFreshScenario();
+    }
+  };
+
+  const gameMetrics = useMemo(() => {
+    let runway = 12;
+    let traction = 32;
+    let margin = 45;
+    let ops = 45;
+
     if (selectedModel === "B2B Enterprise Contracts") {
       margin += 8;
       traction -= 4;
@@ -311,33 +550,28 @@ export default function PitchSimulator() {
   }, [choices, selectedModel, selectedPricing]);
 
   const completedCount = Object.keys(choices).length;
-  const isGameComplete = completedCount === DECISION_STAGES.length;
+  const isGameComplete = completedCount === stages.length;
 
   const handleSelectOption = (stage: DecisionStage, option: DecisionOption) => {
     const nextChoices = { ...choices, [stage.id]: option };
     setChoices(nextChoices);
-    if (currentStageIdx < DECISION_STAGES.length - 1) {
+    if (currentStageIdx < stages.length - 1) {
       setCurrentStageIdx((idx) => idx + 1);
     }
   };
 
-  const resetGame = () => {
-    setChoices({});
-    setCurrentStageIdx(0);
-    setCopiedSummary(false);
-  };
-
   const buildReadinessSummaryText = () => {
     const entity = startupTitle.trim() || "Untitled Campus Venture";
-    const chosenLines = DECISION_STAGES.map((stage) => {
-      const picked = choices[stage.id];
-      return picked ? `- ${stage.title}: ${picked.label} (${picked.tag})` : "";
-    })
+    const chosenLines = stages
+      .map((stage) => {
+        const picked = choices[stage.id];
+        return picked ? `- ${stage.title}: ${picked.label} (${picked.tag})` : "";
+      })
       .filter(Boolean)
       .join("\n");
 
     return [
-      `BIMTECH E-CELL // FOUNDER READINESS SCORECARD`,
+      `BIMTECH E-CELL // FOUNDER READINESS SCORECARD (Scenario #${scenarioSeed})`,
       `Venture: ${entity} (${selectedSector})`,
       `Readiness Score: ${gameMetrics.readinessScore}/100 — Tier: ${gameMetrics.tier}`,
       `Runway: ${gameMetrics.runway} mos | Market Traction: ${gameMetrics.traction}% | Unit Margin: ${gameMetrics.margin}% | Ops Resilience: ${gameMetrics.ops}%`,
@@ -367,17 +601,19 @@ export default function PitchSimulator() {
     }
 
     const entity = startupTitle.trim() || "Campus Venture";
-    const rowsHtml = DECISION_STAGES.map((stage) => {
-      const picked = choices[stage.id];
-      if (!picked) return "";
-      return `
+    const rowsHtml = stages
+      .map((stage) => {
+        const picked = choices[stage.id];
+        if (!picked) return "";
+        return `
         <div class="step-container">
           <h4 class="step-header">${stage.stepLabel} — ${stage.title}</h4>
           <p style="margin:0 0 4px 0; font-size:12px; font-weight:700; color:#0f172a;">${picked.label} (${picked.tag})</p>
           <p style="margin:0; font-size:11px; color:#334155;">${picked.takeaway}</p>
         </div>
       `;
-    }).join("");
+      })
+      .join("");
 
     printWindow.document.open();
     printWindow.document.write(`
@@ -401,7 +637,7 @@ export default function PitchSimulator() {
           <div class="header-container">
             <div>
               <h1 class="branding-title">BIMTECH E-CELL // FOUNDER READINESS SUMMARY</h1>
-              <div style="font-size:12px; color:#475569; margin-top:4px;">Venture: <strong>${entity}</strong> · Sector: <strong>${selectedSector}</strong></div>
+              <div style="font-size:12px; color:#475569; margin-top:4px;">Venture: <strong>${entity}</strong> · Sector: <strong>${selectedSector}</strong> · Run #${scenarioSeed}</div>
             </div>
             <div style="text-align: right; font-family: monospace; font-size: 12px;">
               <div>Score: <strong>${gameMetrics.readinessScore}/100</strong></div>
@@ -606,7 +842,7 @@ export default function PitchSimulator() {
             </button>
             <button
               type="button"
-              onClick={() => setMode("game")}
+              onClick={switchToGameMode}
               className={`py-2 px-3 rounded-lg font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer ${
                 mode === "game" ? "bg-amber-400 text-black shadow" : "text-white/60 hover:text-white"
               }`}
@@ -735,9 +971,15 @@ export default function PitchSimulator() {
             <span>{isLoading ? "Analysing your idea..." : "Get AI feedback"}</span>
           </button>
         ) : (
-          <div className="p-3 rounded-xl bg-amber-400/5 border border-amber-400/20 text-[11px] text-amber-100/80 font-mono leading-relaxed">
-            Make 4 operating decisions on the right to see how your runway, market traction, and unit margins hold up.
-          </div>
+          <button
+            type="button"
+            disabled={isGeneratingScenario}
+            onClick={() => generateFreshScenario()}
+            className="w-full py-3 bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 disabled:opacity-40 transition cursor-pointer"
+          >
+            {isGeneratingScenario ? <Loader2 size={14} className="animate-spin" /> : <Shuffle size={14} />}
+            <span>{isGeneratingScenario ? "Generating unique scenario..." : "Generate New Scenario"}</span>
+          </button>
         )}
       </form>
 
@@ -747,10 +989,12 @@ export default function PitchSimulator() {
           <div className="space-y-5">
             {/* LIVE RUNWAY & TRACTION TELEMETRY BAR */}
             <div className="border border-white/10 bg-white/[0.02] p-4 rounded-xl space-y-3">
-              <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-white/60">
-                <span>Live Venture Telemetry</span>
+              <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-wider text-white/60">
+                <span className="flex items-center gap-1.5">
+                  {scenarioSource === "ai" ? "AI Tailored Scenario" : "Dynamic Scenario"} · #{scenarioSeed}
+                </span>
                 <span>
-                  Decisions: {completedCount}/{DECISION_STAGES.length}
+                  Decisions: {completedCount}/{stages.length}
                 </span>
               </div>
 
@@ -792,7 +1036,7 @@ export default function PitchSimulator() {
 
               {/* Stage Stepper Pills */}
               <div className="grid grid-cols-4 gap-1.5 pt-1">
-                {DECISION_STAGES.map((stage, idx) => {
+                {stages.map((stage, idx) => {
                   const answered = Boolean(choices[stage.id]);
                   const active = !isGameComplete && idx === currentStageIdx;
                   return (
@@ -817,7 +1061,7 @@ export default function PitchSimulator() {
             <AnimatePresence mode="wait">
               {!isGameComplete ? (
                 <motion.div
-                  key={DECISION_STAGES[currentStageIdx].id}
+                  key={`${scenarioSeed}-${stages[currentStageIdx].id}`}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
@@ -826,20 +1070,20 @@ export default function PitchSimulator() {
                 >
                   <div className="space-y-1">
                     <div className="text-[10px] font-mono uppercase tracking-widest text-amber-300 font-bold">
-                      {DECISION_STAGES[currentStageIdx].stepLabel}
+                      {stages[currentStageIdx].stepLabel}
                     </div>
-                    <h4 className="text-base font-bold text-white">{DECISION_STAGES[currentStageIdx].title}</h4>
-                    <p className="text-xs text-white/60 leading-relaxed">{DECISION_STAGES[currentStageIdx].prompt}</p>
+                    <h4 className="text-base font-bold text-white">{stages[currentStageIdx].title}</h4>
+                    <p className="text-xs text-white/60 leading-relaxed">{stages[currentStageIdx].prompt}</p>
                   </div>
 
                   <div className="space-y-2.5">
-                    {DECISION_STAGES[currentStageIdx].options.map((option) => {
-                      const isSelected = choices[DECISION_STAGES[currentStageIdx].id]?.id === option.id;
+                    {stages[currentStageIdx].options.map((option) => {
+                      const isSelected = choices[stages[currentStageIdx].id]?.id === option.id;
                       return (
                         <button
                           key={option.id}
                           type="button"
-                          onClick={() => handleSelectOption(DECISION_STAGES[currentStageIdx], option)}
+                          onClick={() => handleSelectOption(stages[currentStageIdx], option)}
                           className={`w-full text-left p-4 rounded-xl border transition cursor-pointer space-y-1.5 ${
                             isSelected
                               ? "bg-amber-400/10 border-amber-400/50"
@@ -870,8 +1114,12 @@ export default function PitchSimulator() {
                     >
                       ← Previous stage
                     </button>
-                    <button type="button" onClick={resetGame} className="hover:text-white flex items-center gap-1 cursor-pointer">
-                      <RotateCcw size={11} /> Reset choices
+                    <button
+                      type="button"
+                      onClick={() => generateFreshScenario()}
+                      className="hover:text-white flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCcw size={11} /> New random scenario
                     </button>
                   </div>
                 </motion.div>
@@ -893,7 +1141,9 @@ export default function PitchSimulator() {
                           {startupTitle.trim() || "Campus Venture"} ·{" "}
                           <span className="text-amber-300">{gameMetrics.tier}</span>
                         </h4>
-                        <p className="text-[11px] text-white/60 font-mono">{selectedSector}</p>
+                        <p className="text-[11px] text-white/60 font-mono">
+                          {selectedSector} · Scenario #{scenarioSeed}
+                        </p>
                       </div>
                       <div className="text-right font-mono shrink-0">
                         <div className="text-2xl font-black text-white">{gameMetrics.readinessScore}</div>
@@ -904,7 +1154,7 @@ export default function PitchSimulator() {
                     <p className="text-xs text-white/80 leading-relaxed">{gameMetrics.verdict}</p>
 
                     <div className="space-y-2">
-                      {DECISION_STAGES.map((stage) => {
+                      {stages.map((stage) => {
                         const picked = choices[stage.id];
                         if (!picked) return null;
                         return (
@@ -941,10 +1191,10 @@ export default function PitchSimulator() {
                     </button>
                     <button
                       type="button"
-                      onClick={resetGame}
+                      onClick={() => generateFreshScenario()}
                       className="px-3.5 py-2 bg-white/5 border border-white/10 text-white/70 rounded-lg hover:text-white transition flex items-center gap-1.5 cursor-pointer"
                     >
-                      <RotateCcw size={12} /> Replay Scenario
+                      <Shuffle size={12} /> Play New Scenario
                     </button>
                   </div>
                 </motion.div>

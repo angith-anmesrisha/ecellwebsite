@@ -24,7 +24,7 @@ export async function GET(request: Request) {
           success: true,
           name: match.name,
           status: match.status ? match.status.toString().toUpperCase() : "PENDING",
-          score: parseInt(String(match.rollNumber)) || 0
+          score: parseInt(String(match.rollNumber)) || 0,
         });
       }
       return NextResponse.json({ success: false, error: "No application found for this email address." });
@@ -68,11 +68,84 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Staging package fields missing parameters." }, { status: 400 });
     }
 
-    const { startupTitle, problemStatement, selectedSector, selectedModel, selectedPricing } = payload;
-    const problemTextClean = (problemStatement || "").trim().toLowerCase();
-    const titleTextClean = (startupTitle || "").trim().toLowerCase();
+    const { startupTitle, problemStatement, selectedSector, selectedModel, selectedPricing, seed } = payload;
 
-    
+    // Auto-generate a fresh, unique 4-stage decision scenario per user/run
+    if (type === "VENTURE_DECISION_SCENARIO") {
+      if (!process.env.GROQ_API_KEY) {
+        return NextResponse.json({ success: false, error: "Groq API key not configured." }, { status: 500 });
+      }
+
+      const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-oss-120b",
+          response_format: { type: "json_object" },
+          temperature: 0.85,
+          messages: [
+            {
+              role: "system",
+              content: `You generate unique, realistic 4-stage founder decision scenarios for an entrepreneurship simulator.
+Every scenario MUST vary based on the provided seed and venture profile so each user/run faces distinct situations, numbers, and trade-offs.
+
+Return ONLY raw JSON matching this structure:
+{
+  "stages": [
+    {
+      "id": "stage_1",
+      "stepLabel": "Stage 01 // ...",
+      "title": "Short stage title",
+      "prompt": "2-sentence realistic situation specific to the startup, sector, and seed.",
+      "options": [
+        {
+          "id": "opt_1",
+          "label": "Actionable choice label",
+          "tag": "Concise trade-off tag (e.g. Low CAC · Slow Ramp)",
+          "detail": "1-2 sentence explanation of what this choice does.",
+          "runwayDelta": number between -4 and 4,
+          "tractionDelta": number between -12 and 24,
+          "marginDelta": number between -16 and 20,
+          "opsDelta": number between -12 and 22,
+          "takeaway": "1-sentence founder lesson from this choice."
+        }
+      ]
+    }
+  ]
+}
+Include exactly 4 stages covering: (1) Customer Acquisition, (2) Pricing/Monetization, (3) Burn/Resource Allocation, and (4) Sector-Specific Operations/Supply/Regulatory Shock. Each stage must have exactly 3 distinct options.`,
+            },
+            {
+              role: "user",
+              content: `Scenario Seed: ${seed ?? Date.now()}
+Venture Name: ${startupTitle || "Campus Startup"}
+Sector: ${selectedSector || "General"}
+Problem: ${problemStatement || "Early-stage market validation"}
+Model: ${selectedModel || "SaaS Subscription"}
+Pricing: ${selectedPricing || "Value-Based Tiering"}`,
+            },
+          ],
+        }),
+      });
+
+      const groqData = await groqResponse.json();
+      if (!groqResponse.ok) {
+        return NextResponse.json(
+          { success: false, error: groqData.error?.message || "Failed to generate scenario" },
+          { status: groqResponse.status },
+        );
+      }
+
+      const rawScenario = groqData.choices?.[0]?.message?.content?.trim() || "{}";
+      const parsedScenario = JSON.parse(rawScenario);
+      return NextResponse.json({
+        success: true,
+        aiAnalysis: parsedScenario,
+      });
+    }
 
     let staged = false;
     try {
@@ -96,12 +169,12 @@ export async function POST(request: Request) {
     const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-oss-120b", 
-        response_format: { type: "json_object" }, 
+        model: "openai/gpt-oss-120b",
+        response_format: { type: "json_object" },
         temperature: 0.3,
         messages: [
           {
@@ -128,46 +201,48 @@ Return ONLY a raw JSON object with this exact structure:
     { "h": "If isValidBusiness is false, put 'N/A'. Otherwise, list specific industry vulnerability 1", "s": "Tactical counter-strategy." },
     { "h": "If isValidBusiness is false, put 'N/A'. Otherwise, list specific industry vulnerability 2", "s": "Tactical counter-strategy." }
   ]
-}`
+}`,
           },
           {
             role: "user",
             content: `Venture Profile to Evaluate:
-            - Brand Name: ${startupTitle}
-            - Domain Cluster: ${selectedSector}
-            - Problem Statement: ${problemStatement}
-            - Monetization Framework: ${selectedModel}
-            - Pricing Strategy: ${selectedPricing}`
-          }
-        ]
-      })
+- Brand Name: ${startupTitle}
+- Domain Cluster: ${selectedSector}
+- Problem Statement: ${problemStatement}
+- Monetization Framework: ${selectedModel}
+- Pricing Strategy: ${selectedPricing}`,
+          },
+        ],
+      }),
     });
 
     const groqData = await groqResponse.json();
     if (!groqResponse.ok) {
-      return NextResponse.json({ success: false, error: groqData.error?.message || "Groq Inference Failure" }, { status: groqResponse.status });
+      return NextResponse.json(
+        { success: false, error: groqData.error?.message || "Groq Inference Failure" },
+        { status: groqResponse.status },
+      );
     }
 
     const rawContent = groqData.choices[0].message.content.trim();
     const aiAnalysis = JSON.parse(rawContent);
 
-    // INTEGRATED VALIDATION LOGIC
-    // If the LLM marks the concept as completely unviable, empty, or gibberish
     if (!aiAnalysis.isValidBusiness) {
-      return NextResponse.json({
-        success: false,
-        isInvalidBusiness: true,
-        error: `Invalid Venture Profile: ${aiAnalysis.assessmentBrief}`,
-        aiAnalysis // Still passing the structure in case your UI needs the fallback parameters
-      }, { status: 422 }); // 422 Unprocessable Entity perfectly suits semantic valuation failures
+      return NextResponse.json(
+        {
+          success: false,
+          isInvalidBusiness: true,
+          error: `Invalid Venture Profile: ${aiAnalysis.assessmentBrief}`,
+          aiAnalysis,
+        },
+        { status: 422 },
+      );
     }
 
-    // Valid business pathway: render the dashboard
-    return NextResponse.json({ 
-      success: true, 
-      aiAnalysis 
+    return NextResponse.json({
+      success: true,
+      aiAnalysis,
     });
-
   } catch (error) {
     console.error("Submit Queue Internal Error:", error);
     return NextResponse.json({ error: "Handshake channel error on simulation middleware pipelines." }, { status: 500 });
