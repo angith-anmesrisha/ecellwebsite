@@ -192,27 +192,36 @@ export default function FeaturedEventPopup({
                 ref={closeButtonRef}
                 onClick={onClose}
                 aria-label="Close"
-                className="absolute top-3 right-3 z-30 p-2 text-white/60 hover:text-white bg-black/50 hover:bg-white/10 border border-white/10 rounded-full backdrop-blur-sm transition-colors cursor-pointer"
+                className="absolute top-3 right-3 z-30 p-2 text-white/70 hover:text-white bg-black/60 hover:bg-white/15 border border-white/15 rounded-full backdrop-blur-sm transition-colors cursor-pointer"
               >
                 <X size={16} />
               </button>
 
-              {/* --- Top Visual: Full Banner (Uncropped) or Default Deep Space Black Hole --- */}
-              <div className="relative h-52 sm:h-64 overflow-hidden bg-[#030304]">
+              {/* --- Top Visual: Full Poster with Blurred Ambient Fill or Black Hole Fallback --- */}
+              <div className="relative h-64 sm:h-72 overflow-hidden bg-[#030304]">
                 {resolvedBanner ? (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.8, ease: EASE }}
-                    className="relative w-full h-full flex items-center justify-center bg-[#030304]"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.7, ease: EASE }}
+                    className="relative w-full h-full flex items-center justify-center p-3 sm:p-4"
                   >
+                    {/* Blurred ambient fill so side margins match the poster's palette */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={resolvedBanner}
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-0 w-full h-full object-cover scale-125 blur-xl opacity-45 brightness-75 pointer-events-none"
+                    />
+                    {/* Crisp uncropped poster */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={resolvedBanner}
                       alt={popup.title.replace(/\n/g, " ")}
-                      className="w-full h-full object-contain relative z-10"
+                      className="relative z-10 max-h-full max-w-full w-auto h-auto object-contain rounded-lg shadow-[0_12px_36px_rgba(0,0,0,0.75)] border border-white/10"
                     />
-                    <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#060608] via-transparent to-black/35 pointer-events-none" />
+                    <div className="absolute inset-x-0 bottom-0 h-10 z-20 bg-gradient-to-t from-[#060608] to-transparent pointer-events-none" />
                   </motion.div>
                 ) : (
                   <div className="relative w-full h-full bg-[radial-gradient(ellipse_at_78%_45%,rgba(120,53,15,0.35),transparent_55%),radial-gradient(ellipse_at_15%_80%,rgba(30,58,138,0.25),transparent_60%),#030304]">
@@ -251,6 +260,8 @@ export default function FeaturedEventPopup({
                       <div>Vector 047.2 // Gargantua</div>
                       <div>Signal: locked</div>
                     </motion.div>
+
+                    <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-[#060608] pointer-events-none" />
                   </div>
                 )}
 
@@ -258,8 +269,6 @@ export default function FeaturedEventPopup({
                   className="sc-anim z-20 absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-transparent via-white/[0.03] to-transparent pointer-events-none"
                   style={{ animation: "sc-scan 5s linear infinite" }}
                 />
-
-                <div className="z-20 absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-[#060608] pointer-events-none" />
               </div>
 
               {/* --- Content --- */}
