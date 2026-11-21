@@ -102,7 +102,6 @@ export default function FeaturedEventPopup({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [resolvedBanner, setResolvedBanner] = useState<string>(popup.bannerUrl || "");
 
-  // Keep banner synced with the linked event (or match by ctaHref slug / title)
   useEffect(() => {
     if (popup.bannerUrl) {
       setResolvedBanner(popup.bannerUrl);
@@ -198,25 +197,25 @@ export default function FeaturedEventPopup({
                 <X size={16} />
               </button>
 
-              {/* --- Top Visual: Uploaded Event Banner or Default Deep Space Black Hole --- */}
-              <div className="relative h-48 sm:h-60 overflow-hidden bg-[radial-gradient(ellipse_at_78%_45%,rgba(120,53,15,0.35),transparent_55%),radial-gradient(ellipse_at_15%_80%,rgba(30,58,138,0.25),transparent_60%),#030304]">
+              {/* --- Top Visual: Full Banner (Uncropped) or Default Deep Space Black Hole --- */}
+              <div className="relative h-52 sm:h-64 overflow-hidden bg-[#030304]">
                 {resolvedBanner ? (
                   <motion.div
-                    initial={{ opacity: 0, scale: 1.05 }}
+                    initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.9, ease: EASE }}
-                    className="absolute inset-0"
+                    transition={{ duration: 0.8, ease: EASE }}
+                    className="relative w-full h-full flex items-center justify-center bg-[#030304]"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={resolvedBanner}
                       alt={popup.title.replace(/\n/g, " ")}
-                      className="w-full h-full object-cover object-top"
+                      className="w-full h-full object-contain relative z-10"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#060608] via-[#060608]/25 to-black/30" />
+                    <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#060608] via-transparent to-black/35 pointer-events-none" />
                   </motion.div>
                 ) : (
-                  <>
+                  <div className="relative w-full h-full bg-[radial-gradient(ellipse_at_78%_45%,rgba(120,53,15,0.35),transparent_55%),radial-gradient(ellipse_at_15%_80%,rgba(30,58,138,0.25),transparent_60%),#030304]">
                     {STARS.map((s, i) => (
                       <span
                         key={i}
@@ -252,15 +251,15 @@ export default function FeaturedEventPopup({
                       <div>Vector 047.2 // Gargantua</div>
                       <div>Signal: locked</div>
                     </motion.div>
-                  </>
+                  </div>
                 )}
 
                 <span
-                  className="sc-anim absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-transparent via-white/[0.03] to-transparent pointer-events-none"
+                  className="sc-anim z-20 absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-transparent via-white/[0.03] to-transparent pointer-events-none"
                   style={{ animation: "sc-scan 5s linear infinite" }}
                 />
 
-                <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-[#060608]" />
+                <div className="z-20 absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-[#060608] pointer-events-none" />
               </div>
 
               {/* --- Content --- */}
