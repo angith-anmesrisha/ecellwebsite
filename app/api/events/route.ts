@@ -141,7 +141,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Unknown action." }, { status: 400 });
     }
 
-    if (data.success) revalidateTag("get-events");
+   if (data.success) revalidateTag("get-events", "max");
 
     return NextResponse.json(data);
   } catch (error) {
