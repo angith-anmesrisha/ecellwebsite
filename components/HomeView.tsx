@@ -108,10 +108,12 @@ export default function HomeView({ team }: { team: TeamMember[] }) {
   const currentTeam = team.filter((m) => m.tenure === settings.currentTenure);
   const boardMembers = currentTeam.length > 0 ? currentTeam : team;
 
-  // Trigger popup shortly after initial load for a smooth entrance
   useEffect(() => {
     if (!popup.enabled) return;
-    if (popup.hideAfterEnd && new Date(popup.endsAt).getTime() <= Date.now()) return;
+    if (popup.hideAfterEnd && popup.endsAt) {
+      const endMs = new Date(popup.endsAt).getTime();
+      if (!Number.isNaN(endMs) && endMs <= Date.now()) return;
+    }
     const timer = setTimeout(() => {
       setShowEventPopup(true);
     }, 800);

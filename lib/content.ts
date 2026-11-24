@@ -14,9 +14,9 @@ import {
 } from "./content-types";
 
 // Admin-editable content lives in Redis. Public pages read it through the Next cache,
-// and every admin save clears the "site-content" tag so changes show straight away.
+// and every admin save revalidates the "site-content" tag so changes update cleanly.
 export const CONTENT_TAG = "site-content";
-const CONTENT_REVALIDATE_SECONDS = 300;
+const CONTENT_REVALIDATE_SECONDS = 3600;
 
 async function readKey<T>(key: string): Promise<T | null> {
   const redis = getRedis();
@@ -100,10 +100,10 @@ export const getAllEventMeta = cached(readAllEventMeta, "event-meta");
 // Writes (admin only; callers check the session)
 export async function writeKey(key: string, value: unknown) {
   await requireRedis().set(key, value);
-  revalidateTag(CONTENT_TAG, { expire: 0 });
+  revalidateTag(CONTENT_TAG, "max");
 }
 
 export async function writeEventMeta(meta: EventMeta) {
   await requireRedis().hset(KEYS.eventMeta, { [meta.eventId]: meta });
-  revalidateTag(CONTENT_TAG, { expire: 0 });
+  revalidateTag(CONTENT_TAG, "max");
 }
