@@ -64,16 +64,19 @@ function cleanAnnouncements(value: unknown): Announcement[] {
 
 function cleanTeam(value: unknown): TeamMember[] {
   if (!Array.isArray(value)) throw new Error("Team must be a list.");
-  return value.slice(0, 200).map((m: any) => ({
-    id: str(m.id, 40) || id(),
-    name: str(m.name, 80),
-    role: str(m.role, 80),
-    image: str(m.image) || null,
-    linkedin: str(m.linkedin),
-    tenure: str(m.tenure, 20),
-  })).filter((m) => m.name);
+  return value.slice(0, 200).map((m: any) => {
+    const rawImage = str(m.image);
+    const safeImage = rawImage && !rawImage.startsWith("data:") ? rawImage : null;
+    return {
+      id: str(m.id, 40) || id(),
+      name: str(m.name, 80),
+      role: str(m.role, 80),
+      image: safeImage,
+      linkedin: str(m.linkedin),
+      tenure: str(m.tenure, 20),
+    };
+  }).filter((m) => m.name);
 }
-
 function cleanSeries(value: unknown): Series[] {
   if (!Array.isArray(value)) throw new Error("Series must be a list.");
   return value.slice(0, 50).map((s: any) => ({
@@ -95,6 +98,9 @@ export async function PUT(request: Request) {
     switch (key) {
       case "settings": {
         const merged = mergeSettings(value);
+        if (merged.popup?.bannerUrl?.startsWith("data:")) {
+          merged.popup.bannerUrl = "";
+        }
         await writeKey(KEYS.settings, merged);
         return NextResponse.json({ success: true, value: merged });
       }
