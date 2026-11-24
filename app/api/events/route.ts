@@ -1,31 +1,24 @@
 import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
-import { createEvent, deleteEvent, listEventRegistrations, listEvents, updateEvent, usingDatabase, type EventInput } from "@/lib/store";
+import { createEvent, deleteEvent, listEvents, updateEvent, usingDatabase, type EventInput } from "@/lib/store";
 import { readEventMeta } from "@/lib/content";
 import { registerForEvent, sendPass, type Applicant } from "@/lib/registrations";
 import { registrationWindow, type SheetEvent } from "@/lib/content-types";
 import { EMAIL_PATTERN, captchaFailed, cleanText, limitByIp, verifyTurnstile } from "@/lib/security";
 
-export async function GET(request: Request) {
+// Cache public event list at the Edge for 1 hour; invalidated on admin POST via revalidateTag
+export const revalidate = 3600;
+
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const mode = searchParams.get("mode") || "events";
-
-    if (mode === "registrations") {
-      // Full list for the admin dashboard only. Students see their own passes in My E-Cell.
-      if (!(await isAdminRequest())) return unauthorizedResponse();
-      const data = await listEventRegistrations({ fresh: true });
-      return NextResponse.json({ success: true, data }, { headers: { "Cache-Control": "private, no-store" } });
-    }
-
     const data = { success: true, data: await listEvents() };
 
     return NextResponse.json(data, {
       status: 200,
       headers: {
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=240",
-        "CDN-Cache-Control": "public, s-maxage=60",
+        "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+        "CDN-Cache-Control": "public, s-maxage=3600",
       },
     });
   } catch (error) {
@@ -114,7 +107,11 @@ function readEventInput(body: any): Partial<EventInput> {
   if (body.date !== undefined) input.date = cleanText(body.date, 60);
   if (body.description !== undefined) input.description = cleanText(body.description, 5000);
   if (body.status !== undefined) input.status = cleanText(body.status, 30).toUpperCase() || "ACTIVE";
-  if (body.bannerUrl !== undefined) input.bannerUrl = cleanText(body.bannerUrl, 3_000_000);
+  if (body.bannerUrl !== undefined) {
+    const url = cleanText(body.bannerUrl, 2048);
+    // Reject base64 data URIs so large images never bloat JSON origin transfer
+    input.bannerUrl = url.startsWith("data:") ? "" : url;
+  }
   if (Array.isArray(body.customFields)) {
     input.customFields = body.customFields.map((f: unknown) => cleanText(f, 120)).filter(Boolean).slice(0, 30);
   }
@@ -144,7 +141,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Unknown action." }, { status: 400 });
     }
 
-    if (data.success) revalidateTag("get-events", { expire: 0 });
+    if (data.success) revalidateTag("get-events");
 
     return NextResponse.json(data);
   } catch (error) {

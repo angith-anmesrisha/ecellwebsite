@@ -39,6 +39,11 @@ interface RegistrationRecord {
   customAnswers: Record<string, string>;
 }
 
+const isSafeBannerUrl = (url: string) => {
+  const trimmed = url.trim();
+  return !trimmed || trimmed.startsWith("https://") || trimmed.startsWith("http://") || trimmed.startsWith("/");
+};
+
 export default function AdminEventsPanel() {
   const { isAuthenticated, isChecking: isSessionChecking, login } = useAdminSession();
   const [passwordInput, setPasswordInput] = useState("");
@@ -119,10 +124,10 @@ export default function AdminEventsPanel() {
       body: formData,
     });
     const data = await res.json();
-    if (!res.ok || !data.success || !data.url) {
-      throw new Error(data.error || "Banner upload failed.");
+    if (!res.ok || !data.success || !data.url || !isSafeBannerUrl(String(data.url))) {
+      throw new Error(data.error || "Banner upload failed or returned an unsupported URL.");
     }
-    return data.url as string;
+    return String(data.url);
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,7 +186,7 @@ export default function AdminEventsPanel() {
     setEditDate(ev.date);
     setEditDesc(ev.description || "");
     setEditStatus(ev.status || "ACTIVE");
-    setEditBannerUrl(ev.bannerUrl || "");
+    setEditBannerUrl(isSafeBannerUrl(ev.bannerUrl || "") ? ev.bannerUrl || "" : "");
     setEditCustomFields(Array.isArray(ev.customFields) ? [...ev.customFields] : []);
     setEditFieldInput("");
   };
@@ -198,6 +203,10 @@ export default function AdminEventsPanel() {
   const handleSaveEditedForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingFormEvent || !editTitle.trim() || !editDate.trim()) return;
+    if (!isSafeBannerUrl(editBannerUrl)) {
+      alert("Banner must be uploaded via Cloudinary, not a base64 string.");
+      return;
+    }
 
     setIsSavingEdit(true);
     try {
@@ -211,7 +220,7 @@ export default function AdminEventsPanel() {
           date: editDate.trim(),
           description: editDesc,
           status: editStatus,
-          bannerUrl: editBannerUrl,
+          bannerUrl: editBannerUrl.trim(),
           customFields: editCustomFields,
         }),
       });
@@ -232,6 +241,10 @@ export default function AdminEventsPanel() {
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle || !newDate) return;
+    if (!isSafeBannerUrl(bannerUrl)) {
+      alert("Banner must be uploaded via Cloudinary, not a base64 string.");
+      return;
+    }
 
     try {
       const res = await fetch("/api/events", {
@@ -244,7 +257,7 @@ export default function AdminEventsPanel() {
           description: newDesc,
           status: newStatus,
           customFields: customFields,
-          bannerUrl: bannerUrl,
+          bannerUrl: bannerUrl.trim(),
         }),
       });
 
