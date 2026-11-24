@@ -1,7 +1,15 @@
 import { NextResponse, after } from "next/server";
 import { revalidateTag } from "next/cache";
 import { isAdminRequest, unauthorizedResponse } from "@/lib/adminAuth";
-import { createEvent, deleteEvent, listEvents, updateEvent, usingDatabase, type EventInput } from "@/lib/store";
+import {
+  createEvent,
+  deleteEvent,
+  listEventRegistrations,
+  listEvents,
+  updateEvent,
+  usingDatabase,
+  type EventInput,
+} from "@/lib/store";
 import { readEventMeta } from "@/lib/content";
 import { registerForEvent, sendPass, type Applicant } from "@/lib/registrations";
 import { registrationWindow, type SheetEvent } from "@/lib/content-types";
@@ -10,8 +18,20 @@ import { EMAIL_PATTERN, captchaFailed, cleanText, limitByIp, verifyTurnstile } f
 // Cache public event list at the Edge for 1 hour; invalidated on admin POST via revalidateTag
 export const revalidate = 3600;
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const mode = searchParams.get("mode");
+
+    if (mode === "registrations") {
+      if (!(await isAdminRequest())) return unauthorizedResponse();
+      const data = await listEventRegistrations({ fresh: true });
+      return NextResponse.json(
+        { success: true, data },
+        { headers: { "Cache-Control": "private, no-store" } },
+      );
+    }
+
     const data = { success: true, data: await listEvents() };
 
     return NextResponse.json(data, {
@@ -35,7 +55,7 @@ function readApplicant(body: any): Applicant | string {
   const rollNumber = cleanText(body.rollNumber, 60);
   if (!name) return "Please enter your name.";
   if (!EMAIL_PATTERN.test(email)) return "Please enter a valid email address.";
-  if (!rollNumber) return "Please enter your roll or registration number.";
+  if (rollNumber) return "Please enter your roll or registration number.";
 
   const customAnswers: Record<string, string> = {};
   if (body.customAnswers && typeof body.customAnswers === "object") {
@@ -141,7 +161,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Unknown action." }, { status: 400 });
     }
 
-   if (data.success) revalidateTag("get-events", "max");
+    if (data.success) revalidateTag("get-events", "max");
 
     return NextResponse.json(data);
   } catch (error) {
