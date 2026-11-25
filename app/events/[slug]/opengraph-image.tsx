@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { findEventBySlug, formatIst } from "@/lib/eventLookup";
 
+export const revalidate = 3600;
 export const alt = "BIMTECH E-Cell event";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";

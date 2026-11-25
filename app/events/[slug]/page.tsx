@@ -1,32 +1,58 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { ArrowLeft, Calendar, ExternalLink, Layers, MapPin, Quote } from "lucide-react";
 import EventLive from "@/components/EventLive";
 import EventRegisterPanel from "@/components/EventRegisterPanel";
 import { findEventBySlug, formatIst } from "@/lib/eventLookup";
 import type { ScheduleItem } from "@/lib/content-types";
 
-export const revalidate = 300;
+// 1 hour ISR window (on-demand revalidation still updates immediately on admin edits)
+export const revalidate = 3600;
 
 type Props = { params: Promise<{ slug: string }> };
 
-// Pages are built on first visit and then cached like the events list
+// Deduplicate lookup between generateMetadata and EventPage within the same render pass
+const getCachedEvent = cache(async (slug: string) => findEventBySlug(slug));
+
+// Never embed multi-megabyte base64 data URIs into ISR HTML/RSC payloads, and auto-optimize Cloudinary URLs
+function safeMediaUrl(url?: string | null, transform = "f_auto,q_auto"): string {
+  if (!url) return "";
+  const trimmed = url.trim();
+  if (!trimmed || trimmed.startsWith("data:")) return "";
+  if (trimmed.includes("res.cloudinary.com") && trimmed.includes("/upload/") && !trimmed.includes("/upload/f_auto")) {
+    return trimmed.replace("/upload/", `/upload/${transform}/`);
+  }
+  return trimmed;
+}
+
 export async function generateStaticParams() {
   return [];
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const found = await findEventBySlug(slug);
+  const found = await getCachedEvent(slug);
   if (!found) return { title: "Event not found | BIMTECH E-Cell" };
   const { event, meta } = found;
   const description = meta.tagline || event.description.slice(0, 160) || "An event by BIMTECH E-Cell.";
+  const ogImage = safeMediaUrl(event.bannerUrl, "f_auto,q_auto,w_1200");
   return {
     title: `${event.title} | BIMTECH E-Cell`,
     description,
-    openGraph: { title: event.title, description, type: "website" },
-    twitter: { card: "summary_large_image", title: event.title, description },
+    openGraph: {
+      title: event.title,
+      description,
+      type: "website",
+      ...(ogImage ? { images: [ogImage] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: event.title,
+      description,
+      ...(ogImage ? { images: [ogImage] } : {}),
+    },
   };
 }
 
@@ -46,11 +72,13 @@ const eyebrow = "font-mono text-[10px] uppercase tracking-widest";
 
 export default async function EventPage({ params }: Props) {
   const { slug } = await params;
-  const found = await findEventBySlug(slug);
+  const found = await getCachedEvent(slug);
   if (!found) notFound();
   const { event, meta, series } = found;
   const isPast = event.status !== "ACTIVE";
+  const bannerSrc = safeMediaUrl(event.bannerUrl, "f_auto,q_auto,w_1400");
   const recap = isPast ? meta.recap : undefined;
+  const recapPhotos = recap ? recap.photos.map((src) => safeMediaUrl(src, "f_auto,q_auto,w_800")).filter(Boolean) : [];
   const tiers = [...new Set(meta.sponsors.map((s) => s.tier))];
   const seriesIndex = series ? series.events.findIndex((e) => e.id === event.id) : -1;
 
@@ -62,9 +90,15 @@ export default async function EventPage({ params }: Props) {
         </Link>
 
         <header className="space-y-6">
-          {event.bannerUrl && (
+          {bannerSrc && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={event.bannerUrl} alt="" className="w-full max-h-80 object-cover rounded-2xl border border-white/10" />
+            <img
+              src={bannerSrc}
+              alt=""
+              fetchPriority="high"
+              decoding="async"
+              className="w-full max-h-80 object-cover rounded-2xl border border-white/10"
+            />
           )}
           <div className="space-y-3">
             <p className={`${eyebrow} ${isPast ? "text-white/50" : "text-accent-300"}`}>{isPast ? "Past event" : "Upcoming event"}</p>
@@ -135,12 +169,12 @@ export default async function EventPage({ params }: Props) {
                     <Quote size={16} className="shrink-0 text-accent-300 mt-1" /> {recap.quote}
                   </blockquote>
                 )}
-                {recap.photos.length > 0 && (
+                {recapPhotos.length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {recap.photos.map((src) => (
+                    {recapPhotos.map((src) => (
                       <a key={src} href={src} target="_blank" rel="noopener noreferrer" className="block aspect-[4/3] overflow-hidden rounded-lg border border-white/10">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={src} alt="" loading="lazy" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                        <img src={src} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                       </a>
                     ))}
                   </div>
@@ -184,27 +218,30 @@ export default async function EventPage({ params }: Props) {
               <section className="space-y-4">
                 <h2 className={sectionTitle}>Speakers</h2>
                 <ul className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {meta.speakers.map((s) => (
-                    <li key={s.name} className="rounded-xl border border-white/10 bg-space-900/60 p-4 space-y-3">
-                      {s.photo ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={s.photo} alt={s.name} className="w-16 h-16 rounded-full object-cover border border-white/10" />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-accent-500/10 border border-accent-300/20 flex items-center justify-center font-display font-bold text-accent-200">
-                          {s.name.split(" ").slice(0, 2).map((p) => p[0]).join("")}
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-sm font-bold text-white">{s.name}</p>
-                        <p className="text-xs text-white/60">{s.role}</p>
-                        {s.link && (
-                          <a href={s.link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent-300 hover:text-accent-200 inline-flex items-center gap-1 mt-1">
-                            Profile <ExternalLink size={10} />
-                          </a>
+                  {meta.speakers.map((s) => {
+                    const photoSrc = safeMediaUrl(s.photo, "f_auto,q_auto,w_256");
+                    return (
+                      <li key={s.name} className="rounded-xl border border-white/10 bg-space-900/60 p-4 space-y-3">
+                        {photoSrc ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={photoSrc} alt={s.name} loading="lazy" decoding="async" className="w-16 h-16 rounded-full object-cover border border-white/10" />
+                        ) : (
+                          <div className="w-16 h-16 rounded-full bg-accent-500/10 border border-accent-300/20 flex items-center justify-center font-display font-bold text-accent-200">
+                            {s.name.split(" ").slice(0, 2).map((p) => p[0]).join("")}
+                          </div>
                         )}
-                      </div>
-                    </li>
-                  ))}
+                        <div>
+                          <p className="text-sm font-bold text-white">{s.name}</p>
+                          <p className="text-xs text-white/60">{s.role}</p>
+                          {s.link && (
+                            <a href={s.link} target="_blank" rel="noopener noreferrer" className="text-[11px] text-accent-300 hover:text-accent-200 inline-flex items-center gap-1 mt-1">
+                              Profile <ExternalLink size={10} />
+                            </a>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
             )}
@@ -243,9 +280,10 @@ export default async function EventPage({ params }: Props) {
                       {meta.sponsors
                         .filter((s) => s.tier === tier)
                         .map((s) => {
-                          const inner = s.logo ? (
+                          const logoSrc = safeMediaUrl(s.logo, "f_auto,q_auto,w_320");
+                          const inner = logoSrc ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={s.logo} alt={s.name} className="h-10 max-w-[140px] object-contain" />
+                            <img src={logoSrc} alt={s.name} loading="lazy" decoding="async" className="h-10 max-w-[140px] object-contain" />
                           ) : (
                             <span className="text-sm font-semibold text-white">{s.name}</span>
                           );
@@ -269,7 +307,7 @@ export default async function EventPage({ params }: Props) {
           </div>
 
           <aside className="space-y-6 lg:sticky lg:top-24">
-            <EventRegisterPanel event={event} meta={meta} />
+            <EventRegisterPanel event={{ ...event, bannerUrl: bannerSrc }} meta={meta} />
             {series && (
               <div className="rounded-2xl border border-white/10 bg-space-900/60 p-5 space-y-3">
                 <p className={`${eyebrow} text-nebula-300`}>{series.title}</p>
