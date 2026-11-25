@@ -55,7 +55,7 @@ function readApplicant(body: any): Applicant | string {
   const rollNumber = cleanText(body.rollNumber, 60);
   if (!name) return "Please enter your name.";
   if (!EMAIL_PATTERN.test(email)) return "Please enter a valid email address.";
-  if (rollNumber) return "Please enter your roll or registration number.";
+  if (!rollNumber) return "Please enter your roll or registration number.";
 
   const customAnswers: Record<string, string> = {};
   if (body.customAnswers && typeof body.customAnswers === "object") {
