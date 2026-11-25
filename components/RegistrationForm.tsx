@@ -2,7 +2,20 @@
 
 import React, { useRef, useState } from "react";
 import Link from "next/link";
-import { User, Mail, FileText, Loader2, Download, CheckCircle, Calendar, Users, Clock, Copy, Building2, MapPin } from "lucide-react";
+import {
+  User,
+  Mail,
+  FileText,
+  Loader2,
+  Download,
+  CheckCircle,
+  Calendar,
+  Users,
+  Clock,
+  Copy,
+  Building2,
+  MapPin,
+} from "lucide-react";
 import Turnstile from "./Turnstile";
 import type { EventMeta, SheetEvent } from "@/lib/content-types";
 
@@ -16,7 +29,8 @@ type Outcome =
   | { kind: "registered"; passId: string; passCode: string; team?: { name: string; code: string } }
   | { kind: "waitlisted"; position: number };
 
-const qrUrl = (code: string) => `https://quickchart.io/qr?text=${encodeURIComponent(code)}&size=220&margin=1`;
+const qrUrl = (code: string) =>
+  `https://quickchart.io/qr?text=${encodeURIComponent(code)}&size=220&margin=1&format=webp`;
 
 const inputClass =
   "w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-nebula-500";
@@ -51,8 +65,25 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const teamEnabled = Boolean(meta?.team.enabled);
 
+  const updateCustomAnswer = (field: string, value: string) => {
+    setCustomAnswers((prev) => ({ ...prev, [field]: value }));
+  };
+
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    const trimmedName = studentName.trim();
+    const trimmedEmail = studentEmail.trim();
+    const trimmedRoll = rollNumber.trim();
+    const trimmedTeamName = teamName.trim();
+    const trimmedTeamCode = teamCode.trim().toUpperCase();
+
+    if (!trimmedName || !trimmedEmail || !trimmedRoll) {
+      setError("Please fill in your full name, email, and roll or registration number.");
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
 
@@ -69,19 +100,24 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
     }
 
     try {
+      const website = String(new FormData(e.currentTarget).get("website") || "");
       const res = await fetch("/api/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "submit-registration",
           eventId: selectedEvent.id,
-          name: studentName,
-          email: studentEmail,
-          rollNumber,
+          name: trimmedName,
+          email: trimmedEmail,
+          rollNumber: trimmedRoll,
           customAnswers: answers,
-          team: teamEnabled ? (teamMode === "create" ? { mode: "create", name: teamName } : { mode: "join", code: teamCode }) : undefined,
+          team: teamEnabled
+            ? teamMode === "create"
+              ? { mode: "create", name: trimmedTeamName }
+              : { mode: "join", code: trimmedTeamCode }
+            : undefined,
           captchaToken,
-          website: (new FormData(e.currentTarget).get("website") as string) || "",
+          website,
         }),
       });
 
@@ -128,8 +164,8 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
 
     const rows: [string, string][] = [
       ["EVENT TITLE :", selectedEvent.title.toUpperCase().slice(0, 32)],
-      ["ATTENDEE    :", studentName.toUpperCase()],
-      ["ROLL NUMBER :", rollNumber.toUpperCase()],
+      ["ATTENDEE    :", studentName.trim().toUpperCase()],
+      ["ROLL NUMBER :", rollNumber.trim().toUpperCase()],
       ["DATE        :", selectedEvent.date || "EVENT DATE"],
     ];
     rows.forEach(([label, value], i) => {
@@ -160,7 +196,9 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
     if (outcome?.kind !== "registered") return;
     const formattedDate = (selectedEvent.date || "").replace(/-/g, "");
     const title = encodeURIComponent(`E-Cell: ${selectedEvent.title}`);
-    const details = encodeURIComponent(`Your entry pass ID is ${outcome.passId}. Show the QR from your email or My E-Cell at the entrance.`);
+    const details = encodeURIComponent(
+      `Your entry pass ID is ${outcome.passId}. Show the QR from your email or My E-Cell at the entrance.`,
+    );
     const location = encodeURIComponent(meta?.venue || "BIMTECH Campus, Greater Noida");
     window.open(
       `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${formattedDate}/${formattedDate}&details=${details}&location=${location}`,
@@ -174,9 +212,14 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
         <Clock className="text-amber-400 mx-auto" size={30} />
         <h3 className="text-sm font-bold text-white uppercase tracking-wider">You&apos;re on the waitlist</h3>
         <p className="text-xs text-white/60 leading-relaxed">
-          {selectedEvent.title} is full right now. You&apos;re number {outcome.position} in line. If a seat opens up, we&apos;ll email your pass to {studentEmail}.
+          {selectedEvent.title} is full right now. You&apos;re number {outcome.position} in line. If a seat opens up,
+          we&apos;ll email your pass to {studentEmail.trim()}.
         </p>
-        <button onClick={onCancel} className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white border border-white/10 font-bold uppercase tracking-wider text-[10px] rounded-xl transition">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white border border-white/10 font-bold uppercase tracking-wider text-[10px] rounded-xl transition"
+        >
           Done
         </button>
       </div>
@@ -189,17 +232,31 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
         <div className="flex flex-col items-center gap-2">
           <CheckCircle className="text-green-500" size={32} />
           <h3 className="text-sm font-bold text-white uppercase tracking-wider">Registration confirmed</h3>
-          <p className="text-[11px] text-white/60">Your pass is on its way to {studentEmail}. You can also show this QR at the gate.</p>
+          <p className="text-[11px] text-white/60">
+            Your pass is on its way to {studentEmail.trim()}. You can also show this QR at the gate.
+          </p>
         </div>
 
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={qrUrl(outcome.passCode)} alt={`Entry QR for pass ${outcome.passId}`} width={180} height={180} className="mx-auto rounded-xl bg-white p-2" />
+        <img
+          src={qrUrl(outcome.passCode)}
+          alt={`Entry QR for pass ${outcome.passId}`}
+          width={180}
+          height={180}
+          className="mx-auto rounded-xl bg-white p-2"
+        />
 
         <div className="bg-black border border-white/5 p-4 rounded-xl text-left font-mono text-[11px] space-y-2">
           <p className="text-nebula-400 font-bold text-xs border-b border-white/5 pb-1.5">{"// ENTRY SLIP"}</p>
-          <p><span className="text-white/60">EVENT:</span> {selectedEvent.title}</p>
-          <p><span className="text-white/60">NAME:</span> {studentName}</p>
-          <p><span className="text-white/60">ID:</span> {outcome.passId}</p>
+          <p>
+            <span className="text-white/60">EVENT:</span> {selectedEvent.title}
+          </p>
+          <p>
+            <span className="text-white/60">NAME:</span> {studentName.trim()}
+          </p>
+          <p>
+            <span className="text-white/60">ID:</span> {outcome.passId}
+          </p>
         </div>
 
         {outcome.team && (
@@ -211,7 +268,12 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
               <button
                 type="button"
                 onClick={() => {
-                  navigator.clipboard?.writeText(outcome.team!.code).then(() => setCopied(true), () => {});
+                  const code = outcome.team?.code || "";
+                  if (!code) return;
+                  navigator.clipboard?.writeText(code).then(
+                    () => setCopied(true),
+                    () => {},
+                  );
                 }}
                 className="text-[10px] font-bold uppercase text-nebula-300 hover:text-white flex items-center gap-1"
               >
@@ -224,13 +286,24 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
         <canvas ref={canvasRef} width={450} height={250} className="hidden" />
 
         <div className="flex flex-col gap-2">
-          <button onClick={downloadTicketAsImage} className="w-full py-2.5 bg-nebula-600 hover:bg-nebula-700 text-white font-bold uppercase tracking-wider text-[10px] rounded-xl transition flex items-center justify-center gap-1.5 shadow-md">
+          <button
+            type="button"
+            onClick={downloadTicketAsImage}
+            className="w-full py-2.5 bg-nebula-600 hover:bg-nebula-700 text-white font-bold uppercase tracking-wider text-[10px] rounded-xl transition flex items-center justify-center gap-1.5 shadow-md"
+          >
             <Download size={12} /> Download pass card
           </button>
-          <button type="button" onClick={addToCalendar} className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white border border-white/10 font-bold uppercase tracking-wider text-[10px] rounded-xl transition flex items-center justify-center gap-1.5 shadow-md">
+          <button
+            type="button"
+            onClick={addToCalendar}
+            className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white border border-white/10 font-bold uppercase tracking-wider text-[10px] rounded-xl transition flex items-center justify-center gap-1.5 shadow-md"
+          >
             <Calendar size={12} /> Add to Google Calendar
           </button>
-          <Link href="/results#my-ecell" className="text-[11px] text-white/60 hover:text-white underline underline-offset-2 pt-1">
+          <Link
+            href="/results#my-ecell"
+            className="text-[11px] text-white/60 hover:text-white underline underline-offset-2 pt-1"
+          >
             Find this pass later in My E-Cell
           </Link>
         </div>
@@ -245,7 +318,7 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
           <h3 className="text-sm font-bold text-nebula-400 uppercase tracking-wider">Event signup</h3>
           <p className="text-[10px] font-mono text-white/60 truncate max-w-[200px]">{selectedEvent.title}</p>
         </div>
-        <button onClick={onCancel} className="text-white/60 hover:text-white text-xs">
+        <button type="button" onClick={onCancel} className="text-white/60 hover:text-white text-xs">
           Cancel
         </button>
       </div>
@@ -254,21 +327,42 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
         <Field label="Full name">
           <div className="relative">
             <User className="absolute left-3 top-2.5 text-white/60" size={12} />
-            <input required type="text" value={studentName} onChange={(e) => setStudentName(e.target.value)} className={`${inputClass} pl-8`} placeholder="Your name" />
+            <input
+              required
+              type="text"
+              value={studentName}
+              onChange={(e) => setStudentName(e.target.value)}
+              className={`${inputClass} pl-8`}
+              placeholder="Your name"
+            />
           </div>
         </Field>
 
         <Field label="Email">
           <div className="relative">
             <Mail className="absolute left-3 top-2.5 text-white/60" size={12} />
-            <input required type="email" value={studentEmail} onChange={(e) => setStudentEmail(e.target.value)} className={`${inputClass} pl-8`} placeholder="name@college.com" />
+            <input
+              required
+              type="email"
+              value={studentEmail}
+              onChange={(e) => setStudentEmail(e.target.value)}
+              className={`${inputClass} pl-8`}
+              placeholder="name@college.com"
+            />
           </div>
         </Field>
 
         <Field label="Roll / registration number">
           <div className="relative">
             <FileText className="absolute left-3 top-2.5 text-white/60" size={12} />
-            <input required type="text" value={rollNumber} onChange={(e) => setRollNumber(e.target.value)} className={`${inputClass} pl-8`} placeholder="e.g., 2025-PGDM-044" />
+            <input
+              required
+              type="text"
+              value={rollNumber}
+              onChange={(e) => setRollNumber(e.target.value)}
+              className={`${inputClass} pl-8`}
+              placeholder="e.g., 2025-PGDM-044"
+            />
           </div>
         </Field>
 
@@ -277,13 +371,27 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
             <Field label="College">
               <div className="relative">
                 <Building2 className="absolute left-3 top-2.5 text-white/60" size={12} />
-                <input required type="text" value={college} onChange={(e) => setCollege(e.target.value)} className={`${inputClass} pl-8`} placeholder="Your college" />
+                <input
+                  required
+                  type="text"
+                  value={college}
+                  onChange={(e) => setCollege(e.target.value)}
+                  className={`${inputClass} pl-8`}
+                  placeholder="Your college"
+                />
               </div>
             </Field>
             <Field label="City">
               <div className="relative">
                 <MapPin className="absolute left-3 top-2.5 text-white/60" size={12} />
-                <input required type="text" value={city} onChange={(e) => setCity(e.target.value)} className={`${inputClass} pl-8`} placeholder="City" />
+                <input
+                  required
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className={`${inputClass} pl-8`}
+                  placeholder="City"
+                />
               </div>
             </Field>
           </div>
@@ -295,7 +403,7 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
               required
               type="text"
               value={customAnswers[field] || ""}
-              onChange={(e) => setCustomAnswers({ ...customAnswers, [field]: e.target.value })}
+              onChange={(e) => updateCustomAnswer(field, e.target.value)}
               className={inputClass}
               placeholder={`Enter ${field.toLowerCase()}`}
             />
@@ -313,7 +421,9 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
                   key={mode}
                   type="button"
                   onClick={() => setTeamMode(mode)}
-                  className={`py-1.5 rounded-md text-[10px] font-bold uppercase ${teamMode === mode ? "bg-white text-black" : "text-white/60 hover:text-white"}`}
+                  className={`py-1.5 rounded-md text-[10px] font-bold uppercase ${
+                    teamMode === mode ? "bg-white text-black" : "text-white/60 hover:text-white"
+                  }`}
                 >
                   {mode === "create" ? "Start a team" : "Join a team"}
                 </button>
@@ -321,7 +431,15 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
             </div>
             {teamMode === "create" ? (
               <Field label="Team name">
-                <input required type="text" value={teamName} onChange={(e) => setTeamName(e.target.value)} className={inputClass} placeholder="e.g., Night Owls" maxLength={60} />
+                <input
+                  required
+                  type="text"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  className={inputClass}
+                  placeholder="e.g., Night Owls"
+                  maxLength={60}
+                />
               </Field>
             ) : (
               <Field label="Team code from your leader">
@@ -343,7 +461,10 @@ export default function RegistrationForm({ selectedEvent, meta, onCancel }: Regi
         <Turnstile onToken={setCaptchaToken} resetKey={captchaReset} />
 
         {error && (
-          <p role="alert" className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 leading-relaxed">
+          <p
+            role="alert"
+            className="text-[11px] text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 leading-relaxed"
+          >
             {error}
           </p>
         )}
